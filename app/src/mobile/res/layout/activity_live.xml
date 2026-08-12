@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/transparent"
+    android:keepScreenOn="true"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:id="@+id/video"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="9"
+        android:background="@color/black"
+        android:clickable="true"
+        android:focusable="true">
+
+        <androidx.media3.ui.PlayerView
+            android:id="@+id/exo"
+            style="@style/Player.Live"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:surface_type="none" />
+
+        <include
+            android:id="@+id/widget"
+            layout="@layout/view_widget_live"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <include
+            android:id="@+id/control"
+            layout="@layout/view_control_live"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <include
+            android:id="@+id/progress"
+            layout="@layout/view_progress"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <include
+            android:id="@+id/osd"
+            layout="@layout/view_player_osd"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </FrameLayout>
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/recycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="14"
+        android:background="@drawable/shape_live_embedded_list"
+        android:orientation="vertical"
+        tools:visibility="visible">
+
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:id="@+id/liveCurrent"
+            android:layout_width="match_parent"
+            android:layout_height="86dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/shape_live"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="14dp"
+            android:paddingEnd="10dp">
+
+            <FrameLayout
+                android:layout_width="58dp"
+                android:layout_height="58dp"
+                android:layout_marginEnd="14dp">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/liveLogo"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:scaleType="fitCenter" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/liveLogoFallback"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="TV"
+                    android:textColor="@color/white_90"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+            </FrameLayout>
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/liveTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="marquee"
+                    android:singleLine="true"
+                    android:textColor="@color/white"
+                    android:textSize="17sp"
+                    tools:text="CCTV3" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/liveProgram"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="@string/live_no_epg"
+                    android:textColor="@color/white_80"
+                    android:textSize="13sp" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/liveProgramNext"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="@string/live_no_epg"
+                    android:textColor="@color/white_70"
+                    android:textSize="13sp" />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/liveSource"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:layout_marginStart="8dp"
+                android:background="@null"
+                android:contentDescription="@string/live_control_source"
+                android:padding="11dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_live_source" />
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/liveSetting"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:layout_marginStart="4dp"
+                android:background="@null"
+                android:padding="11dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_control_setting_shadow" />
+
+        </androidx.appcompat.widget.LinearLayoutCompat>
+
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="10dp">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/group"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="31"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:paddingEnd="6dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:itemCount="5"
+                tools:listitem="@layout/adapter_group" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/channel"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="57"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:itemCount="5"
+                tools:listitem="@layout/adapter_channel" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/epgData"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="0"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:paddingStart="4dp"
+                android:visibility="gone"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:itemCount="5"
+                tools:listitem="@layout/adapter_epg_data" />
+
+        </androidx.appcompat.widget.LinearLayoutCompat>
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/navigation"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@color/transparent"
+        app:elevation="0dp"
+        app:itemIconTint="@color/selector_nav"
+        app:itemTextColor="@color/selector_nav"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/menu_nav" />
+</androidx.appcompat.widget.LinearLayoutCompat>

@@ -1,0 +1,8 @@
+{
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "check": "node --check main.js && node --check relay.js && node --check playback-sync.js && node --check playback-store.js",
+    "test": "node --test test/*.test.js"
+  }
+}

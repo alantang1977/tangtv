@@ -1,0 +1,2414 @@
+<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
+
+    <!-- App -->
+    <string name="app_name">TANG TV</string>
+    <string name="app_exit_confirm">Press back again to exit</string>
+
+    <!-- Live -->
+    <string name="live_pass">Pass</string>
+    <string name="live_refresh">Refresh</string>
+    <string name="live_line">Line <xliff:g name="name">%s</xliff:g></string>
+    <string name="live_control_source">Live source</string>
+    <string name="live_no_epg">00:00 - 23:59 暂无节目信息</string>
+
+    <!-- Detail -->
+    <string name="detail_title"><xliff:g name="name">%s</xliff:g> : <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_site">Site: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_year">Year: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_area">Area: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_type">Type: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_director">Director: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_actor">Actor: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_content">Summary: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_desc">Summary</string>
+    <string name="detail_episode">Episode</string>
+    <string name="detail_episode_season_context">Episode · Season %1$d</string>
+    <string name="detail_episode_reverse">Reverse</string>
+    <string name="detail_episode_forward">Forward</string>
+    <string name="detail_episode_view_grid">Grid</string>
+    <string name="detail_episode_view_list">List</string>
+    <string name="detail_episode_view_grid_action">Switch to grid</string>
+    <string name="detail_episode_view_list_action">Switch to list</string>
+    <string name="detail_episode_file_name_original">Original</string>
+    <string name="detail_episode_file_name_scraped">Scraped</string>
+    <string name="detail_episode_file_name_original_action">Switch to original filename</string>
+    <string name="detail_episode_file_name_scraped_action">Switch to scraped filename</string>
+
+    <!-- Keep -->
+    <string name="keep">Keep</string>
+    <string name="keep_add">Added</string>
+    <string name="keep_del">Removed</string>
+    <string name="exit_confirm_title">Exit app</string>
+    <string name="exit_confirm_message">The app, playback, and background services will stop.</string>
+    <string name="exit_confirm_playing_message">Playback is active. Background playback keeps it playing; Exit completely stops playback and background services.</string>
+    <string name="exit_confirm_background">Background playback</string>
+    <string name="exit_confirm_positive">Exit completely</string>
+
+    <!-- Play -->
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="play_op">OP</string>
+    <string name="play_ed">ED</string>
+    <string name="play_exo">EXO</string>
+    <string name="play_next">Next</string>
+    <string name="play_prev">Prev</string>
+    <string name="play_stop">Stop</string>
+    <string name="play_repeat">Repeat</string>
+    <string name="play_forward">→</string>
+    <string name="play_backward">←</string>
+    <string name="play_speed">1.00</string>
+    <string name="play_reset">Reset</string>
+    <string name="play_decode">Hard</string>
+    <string name="play_params">Playback params</string>
+    <string name="codec_capability_short">Codec caps</string>
+    <string name="codec_capability_title">Hardware codec capabilities</string>
+    <string name="codec_capability_search">Search codec, mime, decoder, resolution, audio...</string>
+    <string name="codec_capability_current">Current</string>
+    <string name="codec_capability_all">All</string>
+    <string name="codec_capability_video">Video</string>
+    <string name="codec_capability_audio">Audio</string>
+    <string name="codec_capability_copy">Copy</string>
+    <string name="play_timer">Timer</string>
+    <string name="play_title">Chapter</string>
+    <string name="play_scale">Default</string>
+    <string name="play_lut">LUT</string>
+    <string name="play_config">Config</string>
+    <string name="play_cast">Cast</string>
+    <string name="play_change">Change</string>
+    <string name="play_short_display">Short</string>
+    <string name="play_search">Search</string>
+    <string name="play_fullscreen">Fullscreen</string>
+    <string name="play_exit_fullscreen">Exit full</string>
+    <string name="play_invert">Invert</string>
+    <string name="play_across">Across</string>
+    <string name="play_reverse">Reverse</string>
+    <string name="play_track_text">Text</string>
+    <string name="play_track_audio">Audio</string>
+    <string name="play_track_video">Video</string>
+    <string name="play_track_disable_subtitle">Subtitle off</string>
+    <string name="play_track_disable_secondary_subtitle">Secondary subtitle off</string>
+    <string name="play_track_secondary_subtitle">Secondary</string>
+    <string name="play_track_primary_subtitle">Main</string>
+    <string name="offset_text">Text offset</string>
+    <string name="offset_audio">Audio offset</string>
+    <string name="offset_setting">Offset settings</string>
+    <string name="play_forward_hint">Normal play switched</string>
+    <string name="play_backward_hint">Reverse play switched</string>
+    <string name="play_ready">Ready to play: <xliff:g name="name">%s</xliff:g></string>
+    <string name="play_switch_flag">Switching flag to <xliff:g name="name">%s</xliff:g></string>
+    <string name="play_switch_site">Switching site to <xliff:g name="name">%s</xliff:g></string>
+    <string name="play_switch_parse">Switching parse to <xliff:g name="name">%s</xliff:g></string>
+    <string name="play_night_mode">Night mode</string>
+    <string name="night_mode_off">Night mode off</string>
+    <string name="night_mode_low">Night mode: Low</string>
+    <string name="night_mode_medium">Night mode: Medium</string>
+    <string name="night_mode_high">Night mode: High</string>
+
+    <!-- Danmaku Setting -->
+    <string name="danmaku">Danmaku</string>
+    <string name="danmaku_show_on">Danmaku enabled</string>
+    <string name="danmaku_show_off">Danmaku disabled</string>
+    <string name="danmaku_select">Select danmaku</string>
+    <string name="danmaku_setting">Danmaku setting</string>
+    <string name="danmaku_text_size">Text scale</string>
+    <string name="danmaku_transparency">Opacity</string>
+    <string name="danmaku_text_bold">Bold</string>
+    <string name="danmaku_style_mode">Text style</string>
+    <string name="danmaku_style_none">None</string>
+    <string name="danmaku_style_shadow">Shadow</string>
+    <string name="danmaku_style_stroke">Stroke</string>
+    <string name="danmaku_style_projection">Projection</string>
+    <string name="danmaku_shadow_transparency">Shadow opacity</string>
+    <string name="danmaku_stroke_width">Stroke width</string>
+    <string name="danmaku_projection_offset_x">Projection offset X</string>
+    <string name="danmaku_projection_offset_y">Projection offset Y</string>
+    <string name="danmaku_projection_transparency">Projection opacity</string>
+    <string name="danmaku_color_mode">Color mode</string>
+    <string name="danmaku_color_default">Default</string>
+    <string name="danmaku_color_colorful">Colorful</string>
+    <string name="danmaku_color_gradient">Gradient</string>
+    <string name="danmaku_color_override_hint">Original colors will be ignored</string>
+    <string name="danmaku_auto">Auto</string>
+    <string name="danmaku_duration">Scroll duration</string>
+    <string name="danmaku_fixed_duration">Fixed duration</string>
+    <string name="danmaku_time_offset">Time offset</string>
+    <string name="danmaku_max_on_screen">Max on screen</string>
+    <string name="danmaku_scroll_area_ratio">Scroll area</string>
+    <string name="danmaku_max_scroll_lines">Max scroll rows</string>
+    <string name="danmaku_max_top_lines">Max top rows</string>
+    <string name="danmaku_max_bottom_lines">Max bottom rows</string>
+    <string name="danmaku_top_rows">Top rows</string>
+    <string name="danmaku_bottom_rows">Bottom rows</string>
+    <string name="danmaku_display_rows">Display rows</string>
+    <string name="danmaku_rows_1">1 row</string>
+    <string name="danmaku_rows_2">2 rows</string>
+    <string name="danmaku_rows_3">3 rows</string>
+    <string name="danmaku_rows_4">4 rows</string>
+    <string name="danmaku_rows_5">5 rows</string>
+    <string name="danmaku_line_spacing">Line gap</string>
+    <string name="danmaku_scroll_gap_ratio">Row gap</string>
+    <string name="danmaku_show_scroll">Scrolling</string>
+    <string name="danmaku_show_top">Top pinned</string>
+    <string name="danmaku_show_bottom">Bottom pinned</string>
+    <string name="danmaku_show_reverse">Reverse scroll</string>
+    <string name="danmaku_show_positioned">Positioned</string>
+    <string name="danmaku_show_subtitle">Subtitle type</string>
+    <string name="danmaku_show_special">Special type</string>
+    <string name="danmaku_section_appearance">Appearance</string>
+    <string name="danmaku_section_display">Display</string>
+    <string name="danmaku_section_timing">Timing</string>
+    <string name="danmaku_section_density">Density</string>
+    <string name="danmaku_reset">Reset</string>
+
+    <!-- Parse -->
+    <string name="parse">Parse</string>
+    <string name="parse_god">Super</string>
+    <string name="parse_from">Parse from: <xliff:g name="name">%s</xliff:g></string>
+
+    <!-- Push -->
+    <string name="push">Push</string>
+    <string name="push_image" translatable="false">data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCADwAPADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9U6KKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACvN7bxhffFCaRPB+oWZ8KSQX1hd65C7reWd/GwRPKjZdrAHLZPB4OcY3aPxe1j+z/CiWMeo6lo95rN3DpdpqOlWn2ma2mkJ2vt/u/KQT2zXXafafYbGGAyNO6KA8zKqtI38TkKAMsck4AGSafmI42H4S2T7Z7/AFjWNQ1JvDx8OT3rXjI00JOWmKrwJicnzBzzVO78L+JfAdi174a1C88RwaZoK6fZeGb6WNftdyjArPJdPzvK5B6A8dMV6PRRcLGL4a8VWHiaK7S1u7Wa+sJRa6hbWtwJvslwFDPEzDHK7sdB0+orarloPDOo6f47bUtPudPsfD9xbOb7TorBRPdXhYYnaYEHIQbec5/IjqaACiiikMKKimuIrdQZZFjBzjccZwCTj8AT+FcVbfFrTNdl0dPDdpeeI4dYtbq4sdSs4j9g3QEqUln/AOWe5xtBKkZpgd1UX2iIXAg81PPKlxFuG4qCATj0yRz71wVjp/jnxZb2E+sXMPhW0vNImttS0izcS3NvdOSFlhuVPBVeRjPP5i/ovw98PeC5bHXLqV7vWNN0lNJfxDq0+65ktVbdiV+FJLcliM5oEdnRXiev/tWeG21R9G8D6bqPxI11Tg2+gRFreM88yXB+RRx1G6vmb9ov9or4iaes+jar4lsvDmqS5RvDXhKXzbi2BGALq852tkn5Isk4525BNqDZLmkfY/xI+O3gT4Sqn/CUeIrWwuHIC2ke6a4Oe/lICwHuRj3rvq/NT4Xfs1apF8XvhtbeLA41zWJn1++0uYkvZ2MBDJ5+cnfM4K7eq4AJ3MQn6V0pRUbWCMnLcKKKKgsKKKKACiiigAooooAKKKKACiiigAooooA4T4xag2h+G7HW21bVdLtdK1O2u7mPR7X7RLex79n2ZkHOx2dckcjFd0DkA0yaLzoZI9zJvUruQ4YZHUHsa8w03xO3wa06503xXPeDwpo9rB5fjLW75Jpb6eWVgY2RBuypKjOOnX1L3Fsep0VV/tSz3zobuAPAVWVTIAYywyoYdiQRjPrXOeJvil4d8K2eoTz3v219PuILW7ttOQ3M0EkxAjDomSuc55xxSGdbSEgdTiuDvtY8d61caja6Potjof2DVoI0vdYmM0WoWOA0rxLH80b/AMI3gjrz6DfCW11a4d/Eeq3/AIiSHXl17TY7iUxf2fIgxHGhjILIvXaxIJ5INMRcuPiv4eFzp0NjcS62LzVW0Yy6TGbmO3uVXcyzMvCBR1J6d6qaXqHjzxDcaRdzadY+FbW31C5j1HT7qQXct1aqCsLxSJgIWPzEMMjgfXrrPTNP0OK6a0tbXT45pnu7gwxrEHkbl5HwBlj1LHk968s8XftSeDtD1JtG0D7Z468R52jSvDUJumBzj55B8ij15JGDxTWuyFtudP4d+EemaU/h+81W+1DxPrmhSXUljrGq3Ba4j+0Z8xcrtDLtO0BgcAYFTeL/AIjeB/g3o0Z1vVtN8O2aL+5tFwrMOeI4UG49/uivL7yL4y/Ej59Y1bT/AIReH5RkWmnkXurOvXBk+4h6cryOeKs+EPhD4D+H94dQ0/Rn13XmO59e8RSG8u2b+8C3Cn3UCnp1YteiGN8bviB8TPk+GvgWSw0uQceJvGGbW3x03xwD55B1wenHIqnH8ALTxMZNX+K/jW+8di0BuJraSb7BotoB8xJRSAQoH3ieg5Fdf8QPiFo/w98PN4g8caubCw5+z2i8z3bgZ2RRjqTxz0Gckgc14Z8QbzUPHHhgeMvjF9o8E/DS2kX+yfAdk5S+1iT7yC4OQctj7vBABPyY3tUb9NBO3XUrfEv9oaN/CF7pvwrji8DfD2wf7Jc+Kre0ET3UxGPs+nQjaXlIGS/BHUmMYZtf9mL9l218L6pY+N/GGl+Tr87CTR9Bum82TT16i4uWIG+4P3ugCHsrYWLofhf8L72+1XTfiH8QtLt9O1C1jC+FfBMMYW10C36q7RgAed0PIypAJAYARegeOfHLeAfh/wCL/GtzIDPptg7W7Sfda4f5IV+hcov/AAKm5fZiJR+1Iwfgj/xX/wAcvil8QHzJaWlwnhXS3PIEVvhrgqe6tLtYY9TXvtea/s5eA3+HPwX8L6POpW/NqLu8LcsbiYmWQMe5Bfb/AMBFelVnLcuOwUUUVJQUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAVFc2sN5C8NxEk8LjDRyKGVvqDUtFAHGa38HfBviKLXY9Q0OG4XXJoZ9R/eSIbiSH/AFTMVYEFe2MdBXSWeg6bpupahqFpp9tbX+oMjXl1DCqy3BRdqGRgMttXgZ6CvOvHH7SngfwXfHS476XxJ4hJ2ponh+I3l0zehCfKp6feI61yd1q3xn+JibkTTvhB4ek4868K32rSL/sp9yM4zwfmGRV2fUm66HsPjDx54d+H+mtqHiPWrLRrQdJLuYIW9lHVj7AE15G37Q/iX4ifuvhT4Fu9atW4/wCEi8QBrHTR/tKD88o6cDB5qDw78FfA3hfVP7Xu7S68c+JDy+teKJjdPu9URvlUZJxgAj1rubzV7q+ULJKRGOBGnyqPbApaINWec3nwZv8AxlJ5/wAVvHl94rXO4+HNDJstMX/ZbaQ0g9yQeTXd6Db6Z4N0saZ4X0ex8O6eP+WNjCqFvdmxlj7nn3ptWLWza4jlmd0t7WFTJNczMFjiUDJZmPAAAJpXbHZIYqzXk4UB5pXP1JrjfiB8XLPwBrUHhXw9ph8b/Eu8GLXQ7RgYrQkcSXL5wigHcQSOOSVB31zuofFHXfixeXvhz4RSjS/D0BMOs/Ea+iIhhAALpaA43uAcbvcEbRtkq/oz+Av2Z/hze6zEJotMlk/e6tcYfVfEdyckIhODsJz6D7x4+ZjMpKDUXrJ9DSNOVSLmtIrd/p5spTeEdI+C9nJ8WvjZrY8W+OFIFjbp81vaScmO3soTgF85O8gY+98uGdrvgXwLrfivxRbfFT4qW6jxABu8OeE3yYdEiJyskinrOcA8jKkAnDACJvgPwHrXijxNbfFL4p2yrr6ru8OeE25g0SEnKySKes5wDyMqQCcMAIvR7i5ku5mllcvIxySa1cjBRC5uZLyZ5ZnLyMckmvP/AI1WZ8W618LvhqgLJrurf2xqiDobK1XeUf2c7ce6V6FZWxvLuGBesjBfp71yXwqVfH37RvxG8YYD6f4eii8Jaa2OAyfvbr8RIQM+jVMe5Uux75RRRUlBRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABWX4i8T6R4R0yTUdb1O00mxjGWuLyZYkHtljyfatSvk7xd+yx4x0/xy/jCz1PS/inKrb00vxwJCYhn7sRVvKz0xlABjpVRSe5LbWx3lx+0tdeNJpLL4VeD9R8ayhth1e5U2WlxnOM+c4BfGDwo5xwayb/AOFvirx5+8+KPxAma1blvC/hDNraY/uSTH95IOe5HQc02T9pKy0BINK+I3hTXvhhIoEST+R9q0s9gFmiHIz7YHHNd3oklh4s07+0PDer6f4isDj99p1wsoXPZgDwfbrVO8dkJWluyt4W0Xw/8PbE2PhDw/Y+HrYjDNbxAzSf78hyzfiSasTTSXEheV2kc9WY5NEkLwuUkRkYdVYYNMrMsKKfFE80ixxqXdjgKoyTXIfEX4tad8NdRg8O6Vp0njP4kXgAsvDdh83k5G7zLhh9xQvzYPOMHhcuGk3sJu250HizxNoHw28My+I/F2pJpWlR8RoeZ7p+0cSdWY+3QZJwASPJ9Wt9d+OFjBrXxA+0eA/hLuD2HhK3kK6hrIUgq1wRghGOG29gBjHEpcvhhfDPiOPxr8Tr+Hxx8SyN1po686ZoQ6qqJ0LLxz1zzy37w2de8Q2Wg6LL8RfiVdyS2Jbbp2lj/W6jL1WONOyfpjk8dfNrYy1T6vhlzVPwXqe9hcrvR+u498lFbfzS8l/mamveLtD8HeA4Nc8R2sfh7wBp+ItF8L2KhX1CQZKoF43ZPJJ45JPGSV+H/wAP9Z8S+JLX4o/FK1RdfVc+HPCZH7jQ4eqyOp/5bcA8jKkAnDACJvw9+Hus+JPEtt8UvilbKPEIXPh3woR+40OHqrup/wCW3Q8jKkZPzYEfpdxcSXczyyuXkY5JNdlGiqCet5Pd9/8AgHm4rFPFSVo8sF8MVsv82+r6hcXEl3M8srF5GOSTUVFFanIM1bxNB4C8I+JPFlyFaLRdPluVRzgSSBTsT6scL/wIVn/s+2lh8Jfgz4NtfEeow2Ws+IphPI144V7m+uiZRH7vjC4/2a5f47Wp8Taf4A+G0fL+MNbSe/QDOdPtcTTZ9ORGR9DXqXiC4XVPip4Y0O3vtBki0+1m1O90e8t/Mvdn+rt7i3OMRhJAQW9Gx6VfQjqd/RRRUFhRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQBDdWsN9byW9zDHcQSDa8UqhlYehB4Irx3xR+yX4D1jUW1bQob3wLr3JXUvC9y1m4J55QfJjPXCgn1r2iimm1sJpPc+eLjQfjr8OU2wXei/F7RY+lvqKDT9SC+iyD92T/tMST6VRs/2iPBf9oJpfjCw1r4Ya2/At/EFowtnP8AsTAEFf8AabaK+la5j4m6VZax8PvENvf2dvfW/wBgnfyrmJZE3CNiDhgRkVV090TZrZngGqfFjXPijql/4S+DBjjtLcmPWPiFeri0tFAyy22fvt2DfUjjEgy9Hk8O/B3TbnTfBHmX2t3m7+1vF18S95fSFizFWOdqluePQHk/Oa2h3c2m/s0/CqytHNta3djNLcQw/KsrB1ILY68sx+pzU3gex0uD+1fEXiLjw5oFq99e5x+82glIxkjLMRwuecY7181mGMrTr/UcPo9rn3uT5XhaWD/tbGvmSu0umjt823t0GSSaJ8O/C7+OvHTudPLH+z9Lzm41SfqFUH+HPU/ieOvRfDr4d6z4i8TW/wAU/inbofEe3Ph7wqw/caJD1R3Q/wDLbocHlTyfnwI/G/CHxK1CP4hWHxa+M/g3W59Gngjfw3eWdv5umaUpJ2v5WeGwAysTu/iCk7GX6o8O+JtD+J1rJqnhXxFZeJYT80gt5MTR56b4zhk+hA+lezhcHDA0+SG73fc+WzDM6uaVvaVNEto9l/XUs3FxJdTPLKxeRjkk1FT5I3hcpIjIw6qwwaZXSecFS20DXVxFEv3pGCj8TUVStrlr4R0XWvEt9/x5aLYzXsgzjdsQnaPc4IHvigDlvAca+PP2nvGWvgb9L8HafD4bsTn5ftD/AL24YD+8vEZ9sV33gu+HiLx54v1OLUdE1Sxs5o9KtvsVvi9s5Ix/pMFxIevz7GCjpnnsa5P9mjSz4G+BFvr/AIglEF7q/wBo8TatcyKRhpsyl2HXiMJnvxXafCFbiTwLZX95f6Vq13qTPfSalo9r9nguw7HZLt6ljGEyx6kVciEdpRRRUFhRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFYXjz/kR/EX/YOuP/RTVu1hePP+RH8Rf9g64/8ARTU1uB8p2P8Aybv8H/8AsHT/APoUdRfETQ5vE194J+CNhK0MusSLr3iyeNsG3s0+ZImIOAcLnDD7wiP8VdV8OLewtfgH8LPEGtP5Wg6Bot1qV6/HKoUKoASMszDAHfpWB8IPEln4L8C+LPjj8QIXn13xxdmPTdLQF55rcHEFrCp+YhyoGOR5ccZPFedRwrWNrYlrsl9yPfxOPTyvDYGL01cv/AnZfr9x6H4v+I7/AAysf7SW3mvLnVwNK8J+Crb/AJelUBUdo/4UAIJPYMB1Kiuf8FfsV6fDoZ1nWdXvdE+Il5M17Lqnhmb7JFZuxBEEUajYY1OM8ZPPIGK7r4M/DHWJtcufiT8QVSXxzqkXl29mDui0W0OSttF6Ngnew6knnlifZq7qcfYx5U7vq/M8WvV+sT52rJaJdktvn5nzldt8avhYpTVdMsvjD4bj4FzZKLTV4155MfSQ9OFyT61e8F/GTwF8Rbo2Onay2h68p2yaF4gQ2tyj4GVG7hjz0BNe/wBcZ8RPg74M+K1mbfxR4fs9UYLtS5ZNlxH/ALkq4dfoDitbp7mFmtjGvNNudPbbcQtH6NjIP41518fo5NY8G+FfAFsxS88da3DaTbSQy2ULCWdwRzwFX8GNTyfBX4nfCdd/w38bf8JHoqf8yx4w/ertzkrFcDkdwAQoHcml+F9n4v8AiP8AHCLxZ4w8H3Xg6Hwxop020sZ3WSF7yaQmWWGQcOvlhVyOOcZOKaVtbkt30seofFbVo/C/gCS2s9Y07w3dXTRabp9xqUBmt/NcgLEYwDuDKGXFdhptmun6fa2qrGiwRLEFhQRoAoAwqjhRxwB0p11ZW98ipcwRXCK6yKsqBgGByGGe4PQ1PUFhRRRSGFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAVhePP+RH8Rf9g64/9FNW7WD483HwN4i2RvK/9nXOI413Mx8puAO5NNbgfB/jX4kWV58A/hN8NZdQaw0u40+PVvEl1Dy0NjHI2yMdi7sPlU9XEQ/ir6Q+DPw1vPGOt6f8RfGGljTBZ262/hTwww/d6LZgAK7L/wA92ULk/wAIAHYBfFf2N/2XJtelsfiN47tWeKIRjR9LuoyN4jUIk8in+EBRsB643dMZ+6K1m0tEYwTerCiiisTYKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/Z</string>
+
+    <!-- Setting -->
+    <string name="setting_vod">Vod</string>
+    <string name="setting_live">Live</string>
+    <string name="setting_wall">Wallpaper</string>
+    <string name="setting_config_dialog_title">%1$s %2$s</string>
+    <string name="setting_builtin_wall">Built-in wallpapers</string>
+    <string name="setting_player">Player setting</string>
+    <string name="setting_danmaku">Danmaku setting</string>
+    <string name="setting_subtitle">Subtitle setting</string>
+    <string name="setting_enhance">Enhancements</string>
+    <string name="setting_personal">Personal</string>
+    <string name="setting_group_rule">Group rules</string>
+    <string name="setting_group_rule_summary">Enabled %1$d / %2$d</string>
+    <string name="group_rule_add">Add rule</string>
+    <string name="group_rule_edit">Edit rule</string>
+    <string name="group_rule_manage">Manage</string>
+    <string name="group_rule_delete">Delete</string>
+    <string name="group_rule_name">Rule name</string>
+    <string name="group_rule_regex">Regular expression</string>
+    <string name="group_rule_regex_hint">Capture group 1 is used as the group name. Multiple enabled rules use OR matching.</string>
+    <string name="group_rule_regex_required">Regex is required</string>
+    <string name="group_rule_regex_invalid">Invalid regular expression</string>
+    <string name="group_rule_empty_custom">No custom or interface rules</string>
+    <string name="group_rule_edit_item">Edit · %1$s\n%2$s</string>
+    <string name="group_rule_interface_item">Interface · %1$s\n%2$s</string>
+    <string name="group_rule_ai_identify">AI identify</string>
+    <string name="group_rule_ai_reidentify">AI re-identify</string>
+    <string name="group_rule_ai_privacy_title">Use AI group identification</string>
+    <string name="group_rule_ai_privacy_message">Visible source names from the current VOD configuration will be sent to your configured AI service. Large lists may be split into multiple requests (up to 8). Source APIs, interface URLs, extension settings, playback history, and AI credentials are not included in the analysis content.</string>
+    <string name="group_rule_ai_start">Start</string>
+    <string name="group_rule_ai_config_incomplete">AI service configuration is incomplete. Complete endpoint, API key, and model in Enhance → AI configuration.</string>
+    <string name="group_rule_ai_no_sources">The current VOD configuration has no visible source names to analyze.</string>
+    <string name="group_rule_ai_analyzing_title">AI is identifying groups</string>
+    <string name="group_rule_ai_analyzing_message">Analyzing %1$d source names… Candidate rules will be validated locally before preview.</string>
+    <string name="group_rule_ai_preview_title">AI group preview</string>
+    <string name="group_rule_ai_preview_summary">%1$d sources · %2$d candidate rules · final coverage %3$d/%4$d (%5$d%%)</string>
+    <string name="group_rule_ai_groups_title">Extracted groups</string>
+    <string name="group_rule_ai_rules_title">Generated rules</string>
+    <string name="group_rule_ai_rule_summary">%1$s\n%2$s\nMatched %3$d sources · %4$d groups · %5$d newly covered · %6$d in repeated groups</string>
+    <string name="group_rule_ai_unmatched">Ungrouped · %1$d sources</string>
+    <string name="group_rule_ai_more_groups">…and %1$d more groups</string>
+    <string name="group_rule_ai_preview_note">Applying replaces only AI rules for the current VOD configuration. Built-in, interface, and manual rules are unchanged.</string>
+    <string name="group_rule_ai_retry">Retry</string>
+    <string name="group_rule_ai_apply">Apply rules</string>
+    <string name="group_rule_ai_select_required">Keep at least one candidate rule before applying.</string>
+    <string name="group_rule_ai_saved">Saved %1$d AI group rules for “%2$s”</string>
+    <string name="group_rule_ai_failed_title">AI identification failed</string>
+    <string name="group_rule_ai_error_http">AI service returned HTTP %1$s.</string>
+    <string name="group_rule_ai_error_invalid_response">AI returned an invalid rule response. Try again.</string>
+    <string name="group_rule_ai_error_no_valid_rules">AI did not produce any safe and useful group rules.</string>
+    <string name="group_rule_ai_error_timeout">AI identification timed out.</string>
+    <string name="group_rule_ai_error_network">Unable to connect to the AI service.</string>
+    <string name="group_rule_ai_error_too_many_sources">There are too many source names to analyze safely. Reduce the current VOD source list and try again.</string>
+    <string name="group_rule_ai_error_prompt_too_large">The custom group-rule prompt is too long. Shorten it in AI prompt configuration.</string>
+    <string name="group_rule_ai_error_generic">AI identification failed.</string>
+    <string name="group_rule_ai_config_changed">The VOD configuration changed during analysis. Run identification again.</string>
+    <string name="group_rule_ai_label">AI · %1$s\n%2$s</string>
+    <string name="group_rule_ai_current_interface">Current VOD configuration</string>
+
+    <string name="setting_home_vod_auto_load">Auto-load VOD</string>
+    <string name="setting_home_site_lock">Home source lock</string>
+    <string name="setting_auto_backup">Automatic backup</string>
+    <string name="setting_fullscreen_menu_key">Fullscreen menu key</string>
+    <string name="setting_home_menu_key">Home menu key</string>
+    <string name="setting_play_back_to_detail">Return playback to detail</string>
+    <string name="setting_play_speed">Playback speed</string>
+    <string name="setting_episode_history">Remember episode progress</string>
+    <string name="setting_history_aggregation">Aggregate history by TMDB</string>
+    <string name="setting_history_aggregation_hint">Unify history across sources based on TMDB match</string>
+    <string name="setting_global_history">Global history resume</string>
+    <string name="history_other_config">Other config</string>
+    <string name="history_source_searching">Matching a playable source…</string>
+    <string name="history_source_not_found">No reliable playback source found</string>
+    <string name="history_source_open_search">Open global search</string>
+    <string name="history_source_episode_missing">The selected source does not match the history or lacks the saved episode</string>
+    <string name="history_source_load_failed">Unable to load the selected source</string>
+    <string name="history_record_missing">The history record no longer exists</string>
+    <string name="history_config_changed">VOD configuration changed. Please try again.</string>
+    <string name="dialog_delete_global_history">Delete history from all VOD configurations?</string>
+    <string name="setting_home_history">Home recent history</string>
+    <string name="setting_personal_recommendation">Personal recommendations</string>
+    <string name="setting_recommendation_feedback">Not interested management</string>
+    <string name="setting_recommendation_feedback_count">%1$d items · auto-restore after 90 days</string>
+    <string name="setting_recommendation_feedback_empty">None · auto-restore after 90 days</string>
+    <string name="setting_tmdb_episode_file_size">Keep file size in TMDB episodes</string>
+    <string name="setting_auto_skip_intro_outro">Auto skip intro/outro</string>
+    <string name="intro_skip_confirm_title">Skip intro/outro?</string>
+    <string name="intro_skip_confirm_intro">Skip intro</string>
+    <string name="intro_skip_confirm_recap">Skip recap</string>
+    <string name="intro_skip_confirm_outro">Skip outro</string>
+    <string name="personal_recommendation_confirm_title">Enable personal recommendations</string>
+    <string name="personal_recommendation_confirm_message">Personal recommendations read movie and show titles from local viewing history, and may send the current title and history titles to TMDB or Douban as search keywords to build related lists.\n\nPlayback URLs, account information, source configuration, and playback progress are not sent. You can turn this off at any time.</string>
+    <string name="setting_search_thread">Search threads</string>
+    <string name="setting_search_ui">Search layout</string>
+    <string name="setting_search_column">Search results per row</string>
+    <string name="setting_site_column">Site display mode</string>
+    <string name="setting_search_result_sort">Search result mode</string>
+    <string name="repo_github">GitHub repository</string>
+    <string name="repo_cnb">CNB repository</string>
+    <string name="setting_debug_log">Debug log</string>
+    <string name="setting_manage_page">Management page</string>
+    <string name="setting_remote_trust">Remote trust</string>
+    <string name="setting_git_cloud">Git cloud drive</string>
+    <string name="git_cloud_account_count">Accounts %1$d</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_confirm">Confirm</string>
+    <string name="remote_trust_server_url">Relay server URL</string>
+    <string name="remote_trust_enable">Enable this relay</string>
+    <string name="remote_trust_keep_online">Keep remote trust online</string>
+    <string name="remote_trust_save_register">Save / Register</string>
+    <string name="remote_trust_create_bind_code">Binding code</string>
+    <string name="remote_trust_file_permission">File permission</string>
+    <string name="remote_trust_clear">Clear trust</string>
+    <string name="remote_trust_clear_message">Clear all remote trust profiles, device tokens, groups, and pending binding codes on this device?</string>
+    <string name="remote_trust_no_bind_code">No binding code</string>
+    <string name="remote_trust_dialog_hint">Enter your relay server URL, then save/register this device. Create a binding code when adding this device to a controller.</string>
+    <string name="remote_trust_bind_code_hint">Tap the code to copy it. It is valid for a short time and can be used by the Web console or another WebHTV device.</string>
+    <string name="remote_trust_file_permission_hint">File permission is recommended so trust data can be restored after reinstall.</string>
+    <string name="remote_trust_server_required">Enter a valid relay server URL</string>
+    <string name="remote_trust_register_done">Remote trust registered</string>
+    <string name="remote_trust_bind_code_done">Binding code created</string>
+    <string name="remote_trust_bind_code_copied">Binding code copied</string>
+    <string name="remote_trust_bind_code_expired">Binding code was not found or expired. Check that both devices use the same relay server, then enter the latest code from the target device.</string>
+    <string name="remote_trust_status_unbound">Unbound</string>
+    <string name="remote_trust_status_enabled">Enabled</string>
+    <string name="remote_trust_status_online">Online</string>
+    <string name="remote_trust_current_status_summary">%1$s · Groups %2$d · Devices %3$d</string>
+    <string name="remote_trust_notification_title">Remote trust online</string>
+    <string name="remote_trust_section_local">This device</string>
+    <string name="remote_trust_section_local_hint">Register this WebHTV device with the relay. Generate a code when another device needs to manage it.</string>
+    <string name="remote_trust_section_manage">Manage devices</string>
+    <string name="remote_trust_section_manage_hint">Enter the binding code shown on another WebHTV device, then manage it from here.</string>
+    <string name="remote_trust_bind_code">Binding code</string>
+    <string name="remote_trust_device_alias">Device alias</string>
+    <string name="remote_trust_add_device">Add device</string>
+    <string name="remote_trust_add_short">Add</string>
+    <string name="remote_trust_no_devices">No managed devices. Generate a code on the target device and add it here.</string>
+    <string name="remote_trust_wait_devices">Device group added. Waiting for the target device to sync and come online.</string>
+    <string name="remote_trust_device_online">Online</string>
+    <string name="remote_trust_device_offline">Offline</string>
+    <string name="remote_trust_selected_device">Selected: %1$s</string>
+    <string name="remote_trust_action_status">Status</string>
+    <string name="remote_trust_action_search">Search playback</string>
+    <string name="remote_trust_action_push">Push</string>
+    <string name="remote_trust_action_log">Log</string>
+    <string name="remote_trust_action_config">Config</string>
+    <string name="remote_trust_action_sync">Sync</string>
+    <string name="remote_trust_search_keyword">Search keyword</string>
+    <string name="remote_trust_push_url">Push URL</string>
+    <string name="remote_trust_add_done">Device added</string>
+    <string name="remote_trust_no_self_add">Cannot add this device to itself</string>
+    <string name="remote_trust_no_profile">Save/register the relay first</string>
+    <string name="remote_trust_no_group">No trusted group yet</string>
+    <string name="remote_trust_no_device_selected">Select a device first</string>
+    <string name="remote_trust_code_required">Enter binding code</string>
+    <string name="remote_trust_group_title">Group %1$s</string>
+    <string name="remote_trust_self_device">This device</string>
+    <string name="remote_trust_controlled_device">Managed device</string>
+    <string name="remote_trust_command_result">Command %1$s · %2$s</string>
+    <string name="remote_trust_command_success">Success</string>
+    <string name="remote_trust_command_failed">Failed</string>
+    <string name="remote_trust_command_waiting">Waiting for target device. If it is offline, the command will run after it reconnects.</string>
+    <string name="remote_trust_empty_result">Command sent, no result yet</string>
+    <string name="remote_trust_tab_devices">Devices</string>
+    <string name="remote_trust_tab_settings">Settings</string>
+    <string name="remote_trust_local_status">This device</string>
+    <string name="remote_trust_device_list">Managed devices</string>
+    <string name="remote_trust_bind_local">Bind this device</string>
+    <string name="remote_trust_go_settings">Open settings</string>
+    <string name="remote_trust_service_entry">Service</string>
+    <string name="remote_trust_done">Done</string>
+    <string name="remote_trust_bind_code_inline">Code %1$s</string>
+    <string name="remote_trust_bind_code_empty">Code --</string>
+    <string name="remote_trust_bind_code_loading">Code ...</string>
+    <string name="remote_trust_bind_code_unavailable">Not configured</string>
+    <string name="remote_trust_command_result_title">Result</string>
+    <string name="remote_trust_command_log_title">Log</string>
+    <string name="remote_trust_result_action">Action</string>
+    <string name="remote_trust_result_status">Status</string>
+    <string name="remote_trust_result_state">Result</string>
+    <string name="remote_trust_result_log_lines">Recent logs: %1$d lines</string>
+    <string name="remote_trust_result_copied">Result copied</string>
+    <string name="remote_trust_settings_title">Relay service</string>
+    <string name="remote_trust_edit_server">Edit relay URL</string>
+    <string name="remote_trust_detect_service">Check service</string>
+    <string name="remote_trust_copy_diagnostics">Copy diagnostics</string>
+    <string name="remote_trust_diagnostics_copied">Diagnostics copied</string>
+    <string name="remote_trust_service_unchecked">Service not checked</string>
+    <string name="remote_trust_service_ok">Service available</string>
+    <string name="remote_trust_service_error">Service unavailable</string>
+    <string name="remote_trust_service_failed_with_reason">Reason: %1$s</string>
+    <string name="remote_trust_service_connect_failed">Connection failed. Check the service URL, network, or deployment status.</string>
+    <string name="remote_trust_service_request_failed">Check failed. Copy diagnostics for details.</string>
+    <string name="remote_trust_service_memory_warning">Memory relay mode may lose bind codes across devices. Update the Cloudflare Worker Durable Object config before production use.</string>
+    <string name="remote_trust_bind_local_title">This device binding code</string>
+    <string name="remote_trust_refresh_bind_code">Refresh</string>
+    <string name="remote_trust_refresh_short">Refresh</string>
+    <string name="remote_trust_copy">Copy</string>
+    <string name="remote_trust_add_device_title">Add device</string>
+    <string name="remote_trust_back_devices">Back</string>
+    <string name="remote_trust_send_search">Send search</string>
+    <string name="remote_trust_send_push">Push playback</string>
+    <string name="remote_trust_config_hint">Choose a local config or enter a URL manually.</string>
+    <string name="remote_trust_config_type">Type</string>
+    <string name="remote_trust_config_type_vod">VOD</string>
+    <string name="remote_trust_config_type_live">Live</string>
+    <string name="remote_trust_config_type_wall">Wallpaper</string>
+    <string name="remote_trust_config_mode_local">Local configs</string>
+    <string name="remote_trust_config_mode_manual">Manual input</string>
+    <string name="remote_trust_config_url">Config URL</string>
+    <string name="remote_trust_config_name">Config name, optional</string>
+    <string name="remote_trust_config_list">List configs</string>
+    <string name="remote_trust_config_add">Add</string>
+    <string name="remote_trust_config_edit">Edit</string>
+    <string name="remote_trust_config_active">Active</string>
+    <string name="remote_trust_config_loading">Loading remote configs…</string>
+    <string name="remote_trust_config_load_failed">Failed to load configs</string>
+    <string name="remote_trust_config_remote_empty">No configs on the remote device</string>
+    <string name="remote_trust_config_manage_hint">Remote configs</string>
+    <string name="remote_trust_config_summary">%1$s · %2$d configs</string>
+    <string name="remote_trust_config_add_local_summary">Local %1$s config</string>
+    <string name="remote_trust_config_add_manual_summary">Manual %1$s config</string>
+    <string name="remote_trust_config_edit_summary">Edit %1$s config</string>
+    <string name="remote_trust_config_save">Continue</string>
+    <string name="remote_trust_config_save_remote">Save to remote</string>
+    <string name="remote_trust_config_upsert">Save config</string>
+    <string name="remote_trust_config_use">Switch config</string>
+    <string name="remote_trust_config_home">Home site</string>
+    <string name="remote_trust_config_delete">Delete config</string>
+    <string name="remote_trust_config_upsert_short">Save</string>
+    <string name="remote_trust_config_use_short">Use</string>
+    <string name="remote_trust_config_use_setting">Setting…</string>
+    <string name="remote_trust_config_current">Current</string>
+    <string name="remote_trust_config_use_status_setting">Switching</string>
+    <string name="remote_trust_config_use_status_success">Switched</string>
+    <string name="remote_trust_config_use_status_failed">Switch failed</string>
+    <string name="remote_trust_config_home_short">Home</string>
+    <string name="remote_trust_config_home_label">Home: %1$s</string>
+    <string name="remote_trust_config_home_loading">Loading sites…</string>
+    <string name="remote_trust_config_home_setting">Setting…</string>
+    <string name="remote_trust_config_home_status_setting">Setting home: %1$s</string>
+    <string name="remote_trust_config_home_status_success">Home set: %1$s</string>
+    <string name="remote_trust_config_home_status_failed">Home failed: %1$s</string>
+    <string name="remote_trust_config_delete_short">Delete</string>
+    <string name="remote_trust_config_url_required">Enter config URL</string>
+    <string name="remote_trust_config_delete_message">Delete this config on the remote device?\n%1$s</string>
+    <string name="remote_trust_config_local_empty">No local config of this type</string>
+    <string name="remote_trust_result_config_count">Configs: %1$d</string>
+    <string name="remote_trust_result_site_count">Sites: %1$d</string>
+    <string name="remote_trust_config_home_empty">No sites found after parsing this config</string>
+    <string name="remote_trust_sync_confirm">Send this device default sync data to %1$s and overwrite related target data?</string>
+    <string name="remote_trust_sync_started">Sync task created. The source device uploads data first, then the target device restores it.</string>
+    <string name="remote_trust_sync_self_forbidden">Cannot sync this device to itself</string>
+    <string name="remote_trust_sync_missing_id">Sync task failed: missing task ID</string>
+    <string name="remote_trust_sync_device">Device</string>
+    <string name="remote_trust_sync_task">Task</string>
+    <string name="remote_trust_sync_uploaded">Uploaded</string>
+    <string name="remote_trust_sync_message">Info</string>
+    <string name="remote_trust_sync_running">Syncing</string>
+    <string name="remote_trust_sync_progress">Progress: %1$d/%2$d</string>
+    <string name="remote_trust_sync_background_hint">You can close this window; sync continues in the background. Reopen it to view recent progress.</string>
+    <string name="remote_trust_sync_step_line">%1$d. %2$s: %3$s</string>
+    <string name="remote_trust_sync_step_create">Create task</string>
+    <string name="remote_trust_sync_step_export">Export this device</string>
+    <string name="remote_trust_sync_step_upload">Upload sync data</string>
+    <string name="remote_trust_sync_step_restore">Restore on target</string>
+    <string name="remote_trust_sync_step_finish">Finish sync</string>
+    <string name="remote_trust_sync_step_done">Done</string>
+    <string name="remote_trust_sync_step_current">Running</string>
+    <string name="remote_trust_sync_step_pending">Pending</string>
+    <string name="remote_trust_sync_step_failed">Failed</string>
+    <string name="remote_trust_sync_state_creating">Creating sync task...</string>
+    <string name="remote_trust_sync_state_created">Waiting for this device to export data...</string>
+    <string name="remote_trust_sync_state_exporting">Uploading sync data...</string>
+    <string name="remote_trust_sync_state_exported">Waiting for target restore...</string>
+    <string name="remote_trust_sync_state_done">Sync complete</string>
+    <string name="remote_trust_sync_state_failed">Sync failed</string>
+    <string name="remote_trust_sync_state_timeout">Still waiting for completion; this can time out when the target is offline or remote trust is disabled</string>
+    <string name="remote_trust_sync_part_backup">Config backup</string>
+    <string name="remote_trust_sync_part_remote_relay">Relay config</string>
+    <string name="remote_trust_sync_part_sync_files">Files</string>
+    <string name="remote_trust_sync_part_login_state">Login state</string>
+    <string name="remote_trust_sync_result_counts">Restored files: %1$s, login state: %2$s</string>
+    <string name="remote_trust_device_id">Device</string>
+    <string name="remote_trust_app_version">Version</string>
+    <string name="remote_trust_service_info">Mode: %1$s\nRelay: %2$s\nSupport: %3$s\nMax part: %4$s</string>
+    <string name="remote_trust_support_none">None</string>
+    <string name="remote_trust_cap_device">Device trust</string>
+    <string name="remote_trust_cap_config">Config</string>
+    <string name="remote_trust_cap_sync">Remote sync</string>
+    <string name="remote_trust_cap_push">Push</string>
+    <string name="remote_trust_cap_log">Recent log</string>
+    <string name="remote_trust_advanced">Advanced</string>
+    <string name="remote_trust_advanced_hide">Hide advanced</string>
+    <string name="remote_trust_added_devices">Added devices</string>
+    <string name="remote_trust_delete_device">Delete device</string>
+    <string name="remote_trust_delete_device_message">Delete local trust data for %1$s?</string>
+    <string name="remote_trust_delete_device_done">Device trust data deleted</string>
+    <string name="remote_trust_reset_local">Reset local trust data</string>
+    <string name="remote_trust_scan_server">Scan</string>
+    <string name="remote_trust_scan_unavailable">QR scan is unavailable on this device</string>
+    <string name="remote_trust_server_qr">Relay QR code</string>
+    <string name="remote_trust_scan_filled">Scanned URL filled. Tap Done to save.</string>
+    <string name="remote_trust_send_server_title">Send relay URL</string>
+    <string name="remote_trust_send_server_hint">This will save the relay URL directly on the scanned device.</string>
+    <string name="remote_trust_send_server_save">Save to device</string>
+    <string name="remote_trust_send_server_done">Relay URL saved on the other device</string>
+    <string name="remote_trust_send_server_failed">Failed to save on the other device: %1$s</string>
+    <string name="remote_trust_config_select">Select</string>
+    <string name="setting_login_state">Login state learning</string>
+    <string name="setting_site_health_sort">Site health ranking</string>
+    <string name="setting_site_health_enable">Enable site health ranking</string>
+    <string name="setting_site_health_dialog_sort">Sort site dialog</string>
+    <string name="site_health_clear_done">Site health data cleared</string>
+    <string name="site_health_report_view">View report</string>
+    <string name="site_health_report_title">Playback chain health</string>
+    <string name="site_health_report_empty">No site health samples yet</string>
+    <string name="site_health_report_filter_empty">No matching site health samples</string>
+    <string name="site_health_filter_all">All</string>
+    <string name="site_health_filter_bad">Bad</string>
+    <string name="site_health_filter_warn">Degraded</string>
+    <string name="site_health_sort_failures">Failures</string>
+    <string name="site_health_sort_recent">Recent</string>
+    <string name="site_health_sort_rate">Success</string>
+    <string name="site_health_sort_samples">Samples</string>
+    <string name="site_health_report_summary">%1$d sites · %2$d samples · %3$d failures · %4$d degraded</string>
+    <string name="site_health_report_summary_reason">%1$d sites · %2$d samples · %3$d failures · %4$d degraded · Top %5$s x%6$d</string>
+    <string name="site_health_report_setting_summary">%1$d sites · %2$d samples</string>
+    <string name="site_health_report_row_meta">%1$d samples · %2$d failures</string>
+    <string name="site_health_report_ad_blocked">广告拦截 · %1$d 次</string>
+    <string name="site_health_report_stage">%1$s · %2$s · %3$d/%4$d</string>
+    <string name="site_health_report_rate">%1$d%%</string>
+    <string name="site_health_report_no_data">No data</string>
+    <string name="site_health_report_empty_count">empty %1$d</string>
+    <string name="site_health_report_cost">%1$dms</string>
+    <string name="site_health_report_reason">Reason: %1$s x%2$d</string>
+    <string name="site_health_report_reason_tag">%1$s x%2$d</string>
+    <string name="site_health_report_recent_errors">Recent errors</string>
+    <string name="site_health_report_recent_error">%1$s: %2$s</string>
+    <string name="site_health_report_recent_error_time">%1$s · %2$s · %3$s</string>
+    <string name="site_health_clear_site">Clear this site</string>
+    <string name="site_health_clear_site_title">Clear site health?</string>
+    <string name="site_health_clear_site_message">Clear health samples for %1$s?</string>
+    <string name="site_health_stage_search">Search</string>
+    <string name="site_health_stage_detail">Detail</string>
+    <string name="site_health_stage_parse">Parse</string>
+    <string name="site_health_stage_play">Play</string>
+    <string name="site_health_status_good">Healthy</string>
+    <string name="site_health_status_warn">Degraded</string>
+    <string name="site_health_status_bad">Bad</string>
+    <string name="site_health_status_unknown">Unknown</string>
+    <string name="site_health_reason_empty_result">No search results</string>
+    <string name="site_health_reason_timeout">Timeout</string>
+    <string name="site_health_reason_http_403">HTTP 403</string>
+    <string name="site_health_reason_http_404">HTTP 404</string>
+    <string name="site_health_reason_http_429">HTTP 429</string>
+    <string name="site_health_reason_http_5xx">HTTP 5xx</string>
+    <string name="site_health_reason_network">Network error</string>
+    <string name="site_health_reason_parse_failed">Parse failed</string>
+    <string name="site_health_reason_vip_required">VIP required</string>
+    <string name="site_health_reason_geo_blocked">Region blocked</string>
+    <string name="site_health_reason_drm_or_encrypted">DRM or encrypted</string>
+    <string name="site_health_reason_manifest_failed">Manifest failed</string>
+    <string name="site_health_reason_codec_unsupported">Codec unsupported</string>
+    <string name="site_health_reason_cors_blocked">CORS blocked</string>
+    <string name="site_health_reason_search_failed">Search failed</string>
+    <string name="site_health_reason_detail_failed">Detail failed</string>
+    <string name="site_health_reason_play_failed">Playback failed</string>
+    <string name="setting_web_home_extension">WebHome extensions</string>
+    <string name="setting_web_home_theme">Global WebHome theme</string>
+    <string name="setting_web_home_theme_eclipse">Eclipse (built-in)</string>
+    <string name="setting_web_home_theme_custom">Custom URL</string>
+    <string name="setting_web_home_theme_url_hint">https://example.com/webhome.html</string>
+    <string name="setting_web_home_theme_invalid_url">Enter an HTTPS WebHome URL</string>
+    <string name="setting_web_home_theme_remote_warning_title">Trust this remote theme?</string>
+    <string name="setting_web_home_theme_remote_warning_message">The remote theme from %1$s runs website code and can request catalog data or trigger permitted app actions. Continue only if you trust its provider.</string>
+    <string name="setting_web_home_theme_recovery">Version recovery</string>
+    <string name="setting_web_home_theme_recovery_unavailable">No recoverable theme version is available</string>
+    <string name="setting_web_home_theme_rollback_message">Roll back to the previous validated theme version? The current version will be kept so you can retry it later.</string>
+    <string name="setting_web_home_theme_retry_message">Retry the rolled-back theme version? If its first load fails again, the stable version will be restored automatically.</string>
+    <string name="setting_web_home_theme_recovery_success">Theme version updated</string>
+    <string name="setting_web_home_theme_recovery_failed">Unable to update the theme version</string>
+    <string name="setting_web_home_fullscreen">WebHome homepage fullscreen</string>
+    <string name="setting_csp_warmup">CSP warmup</string>
+    <string name="setting_csp_warmup_default">Default</string>
+    <string name="setting_csp_warmup_custom">Custom</string>
+    <string name="setting_csp_warmup_custom_count">Custom · %1$d sites</string>
+    <string name="setting_csp_warmup_select_site">Select CSP sites</string>
+    <string name="setting_csp_warmup_no_site">No jar CSP site available</string>
+    <string name="setting_csp_warmup_select_required">Select at least one CSP site</string>
+    <string name="setting_playback_artwork_wall">Playback stills</string>
+    <string name="setting_viewing_record_sync">Viewing record sync</string>
+    <string name="viewing_record_sync_entry_summary">%1$s · Remote %2$d/%3$d · Webhook %4$d/%5$d</string>
+    <string name="viewing_record_sync_switches">Switches</string>
+    <string name="viewing_record_sync_master_desc">Controls remote sync and webhook reporting.</string>
+    <string name="viewing_record_sync_local_write">Allow local API changes</string>
+    <string name="viewing_record_sync_local_write_desc">Allow crawler HTTP API to write or delete local viewing progress. Reading current playback is still available when off.</string>
+    <string name="playback_remote_sync">Remote sync</string>
+    <string name="playback_remote_sync_manage">Manage</string>
+    <string name="playback_remote_sync_edit">Edit remote sync</string>
+    <string name="playback_remote_sync_empty">No remote sync source yet</string>
+    <string name="playback_remote_sync_summary">Active %1$d · Total %2$d</string>
+    <string name="playback_remote_sync_name">Name</string>
+    <string name="playback_remote_sync_url">Remote API URL</string>
+    <string name="playback_remote_sync_token_optional">Server token, optional</string>
+    <string name="playback_remote_sync_interval">Interval min</string>
+    <string name="playback_remote_sync_max_items">Max items</string>
+    <string name="playback_remote_sync_startup">Sync on startup</string>
+    <string name="playback_remote_sync_now">Sync</string>
+    <string name="playback_remote_sync_saved">Remote sync saved</string>
+    <string name="playback_remote_sync_done">Processed %1$d · Deleted %2$d · Skipped %3$d · Failed %4$d</string>
+    <string name="playback_remote_sync_result">Fetched %1$d · Processed %2$d · Deleted %3$d · Skipped %4$d · Failed %5$d</string>
+    <string name="playback_remote_sync_last_at">Last %1$s</string>
+    <string name="playback_remote_sync_last_error">Error: %1$s</string>
+    <string name="playback_remote_sync_never">Never synced</string>
+    <string name="playback_remote_sync_delete_title">Delete remote sync</string>
+    <string name="playback_remote_sync_delete_message">Delete %1$s?</string>
+    <string name="playback_webhook_manage">Manage</string>
+    <string name="playback_webhook">Webhook reporting</string>
+    <string name="playback_webhook_edit">Edit webhook</string>
+    <string name="playback_webhook_empty">No webhook endpoint yet</string>
+    <string name="playback_webhook_summary">Active %1$d · Total %2$d</string>
+    <string name="playback_webhook_name">Name</string>
+    <string name="playback_webhook_url">Endpoint URL</string>
+    <string name="playback_webhook_token">Server token</string>
+    <string name="playback_webhook_token_optional">Server token, optional</string>
+    <string name="playback_webhook_site_keys">Site keys, blank for all</string>
+    <string name="playback_webhook_preset">Field preset</string>
+    <string name="playback_webhook_preset_safe">Basic</string>
+    <string name="playback_webhook_preset_standard">Standard</string>
+    <string name="playback_webhook_preset_full">Complete</string>
+    <string name="playback_webhook_preset_anonymous">Anonymous</string>
+    <string name="playback_webhook_preset_custom">Custom</string>
+    <string name="playback_webhook_fields">Custom fields</string>
+    <string name="playback_webhook_fields_summary">Fields: %1$s</string>
+    <string name="playback_webhook_select_fields">Select fields</string>
+    <string name="playback_webhook_interval">Progress interval</string>
+    <string name="playback_webhook_retries">Retries</string>
+    <string name="playback_webhook_advanced">Advanced</string>
+    <string name="playback_webhook_advanced_hide">Hide advanced</string>
+    <string name="playback_webhook_back">Back</string>
+    <string name="playback_webhook_save">Save</string>
+    <string name="playback_webhook_active">Active</string>
+    <string name="playback_webhook_incomplete">Incomplete</string>
+    <string name="playback_webhook_suspended">Suspended</string>
+    <string name="playback_webhook_token_set">Server token set</string>
+    <string name="playback_webhook_token_empty">No server token</string>
+    <string name="playback_webhook_all_sites">All sites</string>
+    <string name="playback_webhook_sites">Sites %1$s</string>
+    <string name="playback_webhook_row_meta">%1$s · %2$s · %3$s</string>
+    <string name="playback_webhook_last_error">Last error: %1$s</string>
+    <string name="playback_webhook_saved">Webhook saved</string>
+    <string name="playback_webhook_delete_title">Delete endpoint</string>
+    <string name="playback_webhook_delete_message">Delete %1$s?</string>
+    <string name="playback_webhook_url_invalid">Endpoint URL must start with http</string>
+    <string name="playback_webhook_privacy_title">Viewing record sync privacy notice</string>
+    <string name="playback_webhook_privacy_message">Webhook reporting sends your viewing record, including title, progress, and history deletion operations, to the server you configure.\n\nThe app does not collect or forward this data to other parties. You can disable or delete endpoints at any time. If a server token is set, it is sent in the X-WebHTV-Token header so your server can group and verify reports.</string>
+    <string-array name="playback_webhook_field_descriptions">
+        <item>Local vod configuration id. Not stable across devices.</item>
+        <item>Stable vod configuration key, used to separate different interfaces.</item>
+        <item>Vod configuration display name.</item>
+        <item>App history key, usually siteKey + vodId.</item>
+        <item>Source site key.</item>
+        <item>Source site display name.</item>
+        <item>Vod id.</item>
+        <item>Vod title.</item>
+        <item>Poster URL.</item>
+        <item>Playback line or source name.</item>
+        <item>Episode name or remark.</item>
+        <item>Player state, such as playing, paused, or ended.</item>
+        <item>Current position in milliseconds.</item>
+        <item>Total duration in milliseconds.</item>
+        <item>Progress ratio from 0 to 1.</item>
+        <item>Playback speed.</item>
+        <item>Whether playback speed explicitly overrides the personal default.</item>
+        <item>Whether this item is considered completed.</item>
+        <item>Original episode URL. May contain source-site parameters.</item>
+        <item>Episode index when available.</item>
+        <item>App version name.</item>
+        <item>Client flavor, such as mobile or leanback.</item>
+        <item>Hashed device id. Use only for trusted services.</item>
+    </string-array>
+    <string name="web_home_extension_clear_done">WebHome extension cache cleared</string>
+    <string name="web_home_extension_empty">No extensions yet. Tap Add to create a local script or add an external source.</string>
+    <string name="web_home_extension_add_source">Add</string>
+    <string name="web_home_extension_debug">Debug</string>
+    <string name="web_home_extension_refresh">Refresh</string>
+    <string name="web_home_extension_clear_cache">Clear</string>
+    <string name="web_home_extension_user_sources">User sources</string>
+    <string name="web_home_extension_loaded_extensions">Loaded extensions</string>
+    <string name="web_home_extension_user_source_status">User source · %1$s</string>
+    <string name="web_home_extension_site_scope">Site: %1$s</string>
+    <string name="web_home_extension_add_file">File</string>
+    <string name="web_home_extension_add_link">Link</string>
+    <string name="web_home_extension_add_code">Code</string>
+    <string name="web_home_extension_add_form">Form</string>
+    <string name="web_home_extension_form_mode">Form</string>
+    <string name="web_home_extension_text_mode">Text (JSON)</string>
+    <string name="web_home_extension_source_type">Source type</string>
+    <string name="web_home_extension_choose_file">Choose file</string>
+    <string name="web_home_extension_edit_source">Edit source</string>
+    <string name="web_home_extension_edit_code">Edit local code</string>
+    <string name="web_home_extension_edit_form">Edit form</string>
+    <string name="web_home_extension_link_hint">Extension link</string>
+    <string name="web_home_extension_json_hint">User extension sources JSON</string>
+    <string name="web_home_extension_name_hint">Name</string>
+    <string name="web_home_extension_run_at_hint">Run at</string>
+    <string name="web_home_extension_run_at_start_short">Start</string>
+    <string name="web_home_extension_run_at_end_short">End</string>
+    <string name="web_home_extension_run_at_idle_short">Idle</string>
+    <string name="web_home_extension_match_mode">Match mode</string>
+    <string name="web_home_extension_match_sites">Select</string>
+    <string name="web_home_extension_match_regex">Regex</string>
+    <string name="web_home_extension_choose_sites">Choose sites</string>
+    <string name="web_home_extension_no_webhome_sites">No WebHome sites in current VOD config</string>
+    <string name="web_home_extension_match_hint">Site key or regex</string>
+    <string name="web_home_extension_code_hint">JavaScript / CSS injector code</string>
+    <string name="web_home_extension_local_code_default">Local extension %1$d</string>
+    <string name="web_home_extension_delete_source_title">Delete source</string>
+    <string name="web_home_extension_delete_source_message">Delete %1$s?</string>
+    <string name="web_home_extension_source_saved">Extension source saved</string>
+    <string name="web_home_extension_source_empty">Source or code cannot be empty</string>
+    <string name="web_home_extension_source_invalid">Invalid JSON source</string>
+    <string name="web_home_extension_summary">Sources %1$d · Installed %2$d · Matched %3$d · Ready %4$d · Site %5$s</string>
+    <string name="web_home_extension_source">Source: %1$s</string>
+    <string name="web_home_extension_inline_source">Inline config</string>
+    <string name="web_home_extension_unknown_site">None</string>
+    <string name="web_home_extension_match">Match: %1$s</string>
+    <string name="web_home_extension_exclude">Exclude: %1$s</string>
+    <string name="web_home_extension_depends">Depends: %1$s</string>
+    <string name="web_home_extension_last_log">Last log: %1$s</string>
+    <string name="web_home_extension_enable_confirm_title">Enable extension</string>
+    <string name="web_home_extension_enable_confirm_message">After enabling, this extension can call the WebHome SDK.\n\nName: %1$s\nSource: %2$s\nMatch: %3$s</string>
+    <string name="web_home_extension_status_ready">Ready</string>
+    <string name="web_home_extension_status_injected">Injected</string>
+    <string name="web_home_extension_status_disabled">Disabled</string>
+    <string name="web_home_extension_status_unmatched">Unmatched</string>
+    <string name="web_home_extension_status_skipped">Skipped</string>
+    <string name="web_home_extension_status_matched">Matched</string>
+    <string name="web_home_extension_debug_title">WebHome debug workspace</string>
+    <string name="web_home_extension_tab_web">Web</string>
+    <string name="web_home_extension_tab_console">Console</string>
+    <string name="web_home_extension_tab_elements">Elements</string>
+    <string name="web_home_extension_tab_network">Network</string>
+    <string name="web_home_extension_tab_code">Code</string>
+    <string name="web_home_extension_inspect_element">Inspect</string>
+    <string name="web_home_extension_inspect_hint">Click an element in the Web tab to inspect it</string>
+    <string name="web_home_extension_clear_panel">Clear</string>
+    <string name="web_home_extension_select_script">Select script</string>
+    <string name="web_home_extension_save_preview">Save</string>
+    <string name="web_home_extension_network_all">All</string>
+    <string name="web_home_extension_network_web">Resources</string>
+    <string name="web_home_extension_network_fetch">Fetch</string>
+    <string name="web_home_extension_network_xhr">XHR</string>
+    <string name="web_home_extension_network_script">Scripts</string>
+    <string name="web_home_extension_network_error">Errors</string>
+    <string name="web_home_extension_network_native">Native</string>
+    <string name="web_home_extension_network_detail">Request detail</string>
+    <string name="web_home_extension_network_detail_smaller">-</string>
+    <string name="web_home_extension_network_detail_bigger">+</string>
+    <string name="web_home_extension_network_filter">Filter URL / status / detail</string>
+    <string name="web_home_extension_network_empty">No requests captured for this filter</string>
+    <string name="web_home_extension_network_select">Select a request to view details.</string>
+    <string name="web_home_extension_network_clear">Clear requests</string>
+    <string name="setting_shell_proxy">Proxy</string>
+    <string name="setting_shell_proxy_config">Proxy</string>
+    <string name="setting_custom_csp">Site Injection</string>
+    <string name="setting_custom_csp_add">Add</string>
+    <string name="setting_custom_csp_insert_short">Pos</string>
+    <string name="setting_custom_csp_recognize">Detect</string>
+    <string name="setting_custom_csp_recognize_title">Detect sites</string>
+    <string name="setting_custom_csp_recognize_hint">Paste site JSON snippets</string>
+    <string name="setting_custom_csp_recognize_empty">Paste site JSON first</string>
+    <string name="setting_custom_csp_recognize_invalid">No valid site JSON detected</string>
+    <string name="setting_custom_csp_recognize_done">Added %1$d items</string>
+    <string name="setting_custom_csp_sort">Sort</string>
+    <string name="setting_custom_csp_sort_done">Done</string>
+    <string name="setting_custom_csp_sort_drag">Drag to sort</string>
+    <string name="setting_custom_csp_sort_more">Sort actions</string>
+    <string name="setting_custom_csp_sort_top">Move to top</string>
+    <string name="setting_custom_csp_sort_bottom">Move to bottom</string>
+    <string name="setting_custom_csp_sort_forward_five">Move up 5</string>
+    <string name="setting_custom_csp_sort_backward_five">Move down 5</string>
+    <string name="setting_custom_csp_sort_move_to">Move to position</string>
+    <string name="setting_custom_csp_sort_move_to_title">Move to position</string>
+    <string name="setting_custom_csp_sort_move_to_hint">Position 1-%1$d</string>
+    <string name="setting_custom_csp_count">%1$d/%2$d active</string>
+    <string name="setting_custom_csp_api">api</string>
+    <string name="setting_custom_csp_code">Code</string>
+    <string name="setting_custom_csp_down">Move down</string>
+    <string name="setting_custom_csp_ext">ext</string>
+    <string name="setting_custom_csp_home">Home</string>
+    <string name="setting_custom_csp_home_page">homePage</string>
+    <string name="setting_custom_csp_home_page_optional">homePage</string>
+    <string name="setting_custom_csp_extensions_toggle">Extensions</string>
+    <string name="setting_custom_csp_extensions">Extension URL / JSON</string>
+    <string name="setting_custom_csp_extensions_file">File</string>
+    <string name="setting_custom_csp_files">Files</string>
+    <string name="setting_custom_csp_extensions_example">https://example.com/site.js</string>
+    <string name="setting_custom_csp_extensions_invalid">Invalid extensions JSON</string>
+    <string name="setting_custom_csp_permission_required">Site injection needs file access permission.</string>
+    <string name="setting_custom_csp_save_failed">Site injection save failed: %1$s</string>
+    <string name="setting_custom_csp_webhome">WebHome</string>
+    <string name="setting_custom_csp_common">General CSP</string>
+    <string name="setting_custom_csp_live">Live</string>
+    <string name="setting_custom_csp_other">Other</string>
+    <string name="setting_custom_csp_webhome_name">WebHome %1$d</string>
+    <string name="setting_custom_csp_common_name">General CSP %1$d</string>
+    <string name="setting_custom_csp_live_name">Live %1$d</string>
+    <string name="setting_custom_csp_other_name">Other %1$d</string>
+    <string name="setting_custom_csp_other_fields">field</string>
+    <string name="setting_custom_csp_other_json">value JSON</string>
+    <string name="setting_custom_csp_key">key</string>
+    <string name="setting_custom_csp_type">type</string>
+    <string name="setting_custom_csp_player_type">playerType</string>
+    <string name="setting_custom_csp_unset">Unset</string>
+    <string name="setting_custom_csp_player_system">0 System</string>
+    <string name="setting_custom_csp_player_ijk">1 IJK</string>
+    <string name="setting_custom_csp_player_exo">2 EXO</string>
+    <string name="setting_custom_csp_live_url">url</string>
+    <string name="setting_custom_csp_logo">logo</string>
+    <string name="setting_custom_csp_epg">epg</string>
+    <string name="setting_custom_csp_ua">ua</string>
+    <string name="setting_custom_csp_origin">Origin</string>
+    <string name="setting_custom_csp_referer">Referer</string>
+    <string name="setting_custom_csp_time_zone">timeZone</string>
+    <string name="setting_custom_csp_timeout">timeout</string>
+    <string name="setting_custom_csp_click">click</string>
+    <string name="setting_custom_csp_play_url">playUrl</string>
+    <string name="setting_custom_csp_hide">hide</string>
+    <string name="setting_custom_csp_searchable">searchable</string>
+    <string name="setting_custom_csp_changeable">changeable</string>
+    <string name="setting_custom_csp_quick_search">quickSearch</string>
+    <string name="setting_custom_csp_insert">Insert position</string>
+    <string name="setting_custom_csp_insert_decrease">Decrease insert position</string>
+    <string name="setting_custom_csp_insert_increase">Increase insert position</string>
+    <string name="setting_custom_csp_import">File</string>
+    <string name="setting_custom_csp_json_hint">Raw JSON: full registry, sites/lives arrays, or one site/live object</string>
+    <string name="setting_custom_csp_json_invalid">Invalid site injection JSON</string>
+    <string name="setting_custom_csp_jar">Jar</string>
+    <string name="setting_custom_csp_link">Link</string>
+    <string name="setting_custom_csp_up">Move up</string>
+    <string name="setting_proxy_url">socks5://127.0.0.1:9978</string>
+    <string name="setting_proxy_hosts">Matched hosts</string>
+    <string name="setting_proxy_rules">Proxy rules</string>
+    <string name="setting_proxy_rules_raw">Raw rules</string>
+    <string name="setting_proxy_rules_hint">Raw JSON: {&quot;proxy&quot;:[{&quot;hosts&quot;:[&quot;example.com&quot;],&quot;urls&quot;:[&quot;socks5://127.0.0.1:1080&quot;]}]}</string>
+    <string name="setting_proxy_default_url">Default proxy URL</string>
+    <string name="setting_proxy_rule_url">Proxy URL</string>
+    <string name="setting_proxy_edit_rule">Edit rule %1$d</string>
+    <string name="setting_proxy_rule_use_default">Default proxy · %1$s</string>
+    <string name="setting_proxy_rule_use_default_empty">Uses default proxy (not set)</string>
+    <string name="setting_proxy_text_mode">Text</string>
+    <string name="setting_proxy_ui_mode">Edit</string>
+    <string name="setting_proxy_add_rule">Add rule</string>
+    <string name="setting_proxy_rule_count">%1$d rules</string>
+    <string name="setting_proxy_invalid">Invalid proxy URL</string>
+    <string name="setting_proxy_suggest">Auto suggest</string>
+    <string name="setting_proxy_recognize">Auto detect</string>
+    <string name="setting_proxy_recognize_hint">Paste full config, proxy snippet, rule array, or one rule object</string>
+    <string name="setting_proxy_recognize_empty">Paste proxy rules first</string>
+    <string name="setting_proxy_recognize_failed">No proxy rule detected</string>
+    <string name="setting_proxy_recognize_done">Detected %1$d proxy rules</string>
+    <string name="setting_proxy_test">Test proxy</string>
+    <string name="setting_proxy_select_site">Select source</string>
+    <string name="setting_proxy_no_site">No source available</string>
+    <string name="setting_proxy_no_suggest">No proxy host found</string>
+    <string name="setting_proxy_suggest_added">Added %1$d hosts, %2$d total</string>
+    <string name="setting_proxy_test_no_rule">No matched proxy rule</string>
+    <string name="setting_proxy_test_running">Testing proxy...</string>
+    <string name="setting_proxy_test_success">Proxy test passed: %1$s</string>
+    <string name="setting_proxy_test_failed">Proxy test failed: %1$s</string>
+    <string name="setting_one_key_sync">One-key sync</string>
+    <string name="setting_incognito">Incognito mode</string>
+    <string name="setting_drive_check">Drive link check</string>
+    <string name="setting_audio_source">Audio source config</string>
+    <string name="setting_site_name">Site names and groups</string>
+    <string name="setting_site_name_summary">%1$d customized</string>
+    <string name="site_name_custom">Custom name</string>
+    <string name="site_name_original">Original: %1$s</string>
+    <string name="site_name_key">Key: %1$s</string>
+    <string name="site_name_group_hint">Use [tag] in the custom name to create groups, or configure regex group rules in Personal settings</string>
+    <string name="site_name_empty">No sites available</string>
+    <string name="site_name_reset_title">Reset custom site names?</string>
+    <string name="site_name_reset_message">All custom names and groups for the current interface will be removed.</string>
+    <string name="setting_short_drama_source">Short drama source config</string>
+    <string name="setting_theme_color">Theme color</string>
+    <string name="setting_appearance">Appearance &amp; language</string>
+    <string name="setting_appearance_summary">4 options</string>
+    <string name="setting_auto">Auto</string>
+    <string name="setting_custom">Custom</string>
+    <string name="setting_language">Language</string>
+    <string name="setting_size">Image size</string>
+    <string name="setting_ui_scale">Interface size</string>
+    <string name="dialog_close">Close</string>
+    <string name="setting_doh">DoH</string>
+    <string name="setting_proxy">Proxy</string>
+    <string name="setting_cache">Cache</string>
+    <string name="setting_backup">Backup</string>
+    <string name="setting_restore">Restore</string>
+    <string name="setting_about">About</string>
+    <string name="setting_version">Version</string>
+    <string name="setting_choose">Choose</string>
+    <string name="setting_reset">Reset</string>
+    <string name="setting_delete">Delete</string>
+    <string name="setting_disable">Disable</string>
+    <string name="setting_enable">Enable</string>
+    <string name="setting_order_normal">Normal</string>
+    <string name="setting_order_reverse">Reverse</string>
+    <string name="setting_off">Off</string>
+    <string name="setting_on">On</string>
+
+    <!-- About -->
+    <string name="about_title">About WebHomeTV</string>
+    <string name="about_free_badge">Free</string>
+    <string name="about_version">Version %1$s · %2$s/%3$s</string>
+    <string name="about_disclaimer">WebHomeTV is a technical learning and research project based on open source ecosystems. The software itself is completely free and does not provide paid services, video content, live sources, API sources, resource storage, or content distribution.\n\nThis software is only for technical learning, research, and personal testing. Please uninstall it within 24 hours after downloading, installing, or trying it. All behavior and consequences arising from continued use are borne by the user.\n\nThis software does not embed, sell, or distribute any video resources, and is not responsible for interfaces, sources, plugins, scripts, links, cloud-drive resources, or third-party service content added by users. Users must comply with local laws and regulations, respect the rights of copyright owners and content providers, and must not use this software for infringement, piracy, illegal content distribution, or other illegal purposes.\n\nAny individual or organization is strictly prohibited from selling, traffic diversion, paid maintenance, membership services, advertising monetization, box preinstallation, TV box bundle sales, or any other form of profit-making in the name of this software. The project clearly opposes and condemns selling or promoting this software as part of TV boxes, set-top boxes, paid packages, or commercial services.\n\nIf you do not agree with this statement, please stop using and uninstall this software immediately.</string>
+    <string name="about_check_update">Check updates</string>
+    <string name="about_acknowledge">I understand</string>
+    <string name="setting_github_proxy">GitHub acceleration sources</string>
+    <string name="setting_github_proxy_short">Accelerate</string>
+    <string name="setting_github_proxy_hint">Enter a source URL</string>
+    <string name="setting_github_proxy_message">Tap a source to make it active. Turn acceleration off to use direct GitHub Raw/Release connections.</string>
+    <string name="setting_github_proxy_enabled">Use GitHub acceleration</string>
+    <string name="setting_github_proxy_add">Add</string>
+    <string name="setting_github_proxy_remove">Remove</string>
+    <string name="setting_github_proxy_reset">Reset to default</string>
+    <string name="setting_github_proxy_invalid">Please enter a valid http/https URL</string>
+
+    <!-- Backup & Restore -->
+    <string name="restore_select">Select backup</string>
+    <string name="restore_success">Restore successful</string>
+    <string name="restore_fail">Restore failed</string>
+    <string name="backup_success">Backup successful</string>
+    <string name="backup_fail">Backup failed</string>
+    <string name="backup_permission_denied">Storage permission is required to back up or restore data</string>
+
+    <!-- Device Sync -->
+    <string name="device_select">Select devices</string>
+    <string name="device_offline">Device is offline</string>
+    <string name="cast_not_ready">Playback information is not ready. Try again shortly.</string>
+    <string name="sync_success">Sync completed</string>
+    <string name="sync_progress">Syncing...</string>
+    <string name="sync_failed">Sync failed</string>
+    <string name="sync_mode_to_remote">This device -> selected device</string>
+    <string name="sync_mode_from_remote">Selected device -> this device</string>
+    <string name="sync_local_device">This device</string>
+    <string name="sync_remote_device">Selected device</string>
+    <string name="sync_sender">Sender</string>
+    <string name="sync_receiver">Receiver</string>
+    <string name="sync_direction_change">Switch sync direction</string>
+    <string name="sync_change_device">Select</string>
+    <string name="sync_switch_short">Switch</string>
+    <string name="sync_push">Push</string>
+    <string name="sync_pull">Pull</string>
+    <string name="sync_select_all">Select all</string>
+    <string name="sync_select_none">Deselect all</string>
+    <string name="sync_item_config">Interfaces and source lists</string>
+    <string name="sync_item_spider">Jar/script saved data</string>
+    <string name="sync_item_login_state">Login state</string>
+    <string name="sync_item_webhome">WebHome saved data</string>
+    <string name="sync_item_search">Search records</string>
+    <string name="sync_item_history">Watch history</string>
+    <string name="sync_item_keep">Favorites</string>
+    <string name="sync_item_settings">App settings</string>
+    <string name="sync_item_remote_relay">Relay server config</string>
+    <string name="sync_device_mobile">Phone</string>
+    <string name="sync_device_tv">TV</string>
+    <string name="sync_discovering">Discovering devices...</string>
+    <string name="sync_no_device">No device found. Keep both devices on the same LAN with WebHTV open, then refresh.</string>
+    <string name="sync_selected">Selected: %1$s · %2$s</string>
+    <string name="sync_start">Start sync</string>
+    <string name="sync_cancel">Cancel sync</string>
+    <string name="sync_prepare_files">Preparing sync files...</string>
+    <string name="sync_prepare_progress">Compressing: %1$d files, %2$s, %3$s/s</string>
+    <string name="sync_wait_remote">Waiting for the selected device to send data...</string>
+    <string name="sync_upload_prepare">Ready to upload: %1$d files, %2$s, compressed %3$s</string>
+    <string name="sync_upload_progress">%1$d%% · %2$s / %3$s · %4$s/s · %5$d files</string>
+    <string name="sync_canceled">Sync canceled</string>
+    <string name="sync_select_device_first">Select a device first</string>
+    <string name="sync_failed_with_reason">Sync failed: %1$s</string>
+    <string name="sync_receive_success">Sync data received</string>
+    <string name="sync_paths_title">Sync folders</string>
+    <string name="sync_paths_edit">Edit</string>
+    <string name="sync_paths_desc">One external-storage relative path per line. TV, TVBox and TVData are synced by default. You can add local package folders; folder contents are synced with Jar/script saved data.</string>
+    <string name="sync_paths_hint">TV&#10;TVBox&#10;TVData</string>
+    <string name="sync_paths_up">Collapse</string>
+    <string name="sync_paths_refresh">Refresh</string>
+    <string name="sync_paths_enter">Open folder</string>
+    <string name="sync_paths_empty">No folders in this directory</string>
+    <string name="sync_paths_selected">Selected: %1$s</string>
+    <string name="sync_paths_selected_empty">No folders selected</string>
+    <string name="login_state_message">Learn cookie and login-state file paths for one-key sync. %1$d paths are selected. Use Manage paths to review candidates and inspect file contents.</string>
+    <string name="login_state_learning_message">Learning is active. Log in to the drive account, return here, then finish learning. %1$d paths are currently selected.</string>
+    <string name="login_state_start">Start learning</string>
+    <string name="login_state_finish">Finish learning</string>
+    <string name="login_state_started">Login state learning started</string>
+    <string name="login_state_finished">Login state learning finished: %1$d selected, %2$d pending</string>
+    <string name="login_state_count">%1$d selected · %2$d pending</string>
+    <string name="login_state_learning_count">Learning · %1$d selected · %2$d pending</string>
+    <string name="login_state_learned_title">Selected paths</string>
+    <string name="login_state_pending_title">Pending candidates</string>
+    <string name="login_state_findings_title">Latest findings</string>
+    <string name="login_state_reset_results">Reset candidates and findings</string>
+    <string name="login_state_reset_results_done">Pending candidates and latest findings cleared</string>
+    <string name="login_state_more_count">+%1$d more</string>
+    <string name="login_state_empty">No login state files found</string>
+    <string name="login_state_edit">View/Edit login state file</string>
+    <string name="login_state_saved">Login state file saved</string>
+    <string name="login_state_preview_readonly">Read-only preview</string>
+    <string name="login_state_preview_truncated">Read-only preview, content is truncated</string>
+    <string name="login_state_paths_title">Login state paths</string>
+    <string name="login_state_manage_paths">Manage paths</string>
+    <string name="login_state_paths_empty_selected">No login state paths selected</string>
+    <string name="login_state_paths_selected_count">%1$d selected, %2$d ready, %3$d missing</string>
+    <string name="login_state_paths_empty_selected_with_pending">No login state paths selected · %1$d pending</string>
+    <string name="login_state_paths_selected_count_with_pending">%1$d selected, %2$d ready, %3$d missing · %4$d pending</string>
+    <string name="login_state_confirm_pending">Select pending</string>
+    <string name="login_state_confirm_pending_count">Select pending %1$d</string>
+    <string name="login_state_confirm_empty">No items waiting for confirmation</string>
+    <string name="login_state_confirm_done">%1$d pending items selected</string>
+    <string name="login_state_reveal_pending">Show pending</string>
+    <string name="login_state_reveal_pending_count">Show pending %1$d</string>
+    <string name="login_state_pending_revealed">%1$d pending items are shown in the tree</string>
+    <string name="login_state_pending_detail">%1$s · %2$s · %3$s</string>
+    <string name="login_state_tree_app">App private directory</string>
+    <string name="login_state_tree_sdcard">Shared storage</string>
+    <string name="login_state_tree_title_count">%1$s · selected %2$d · pending %3$d</string>
+    <string name="login_state_tree_expand">Expand folder</string>
+    <string name="login_state_tree_collapse">Collapse folder</string>
+    <string name="login_state_tree_truncated">Large folder limited; select the folder directly or narrow the path</string>
+    <string name="login_state_state_selected">Selected</string>
+    <string name="login_state_state_pending">Pending</string>
+    <string name="login_state_state_has_pending">Has pending</string>
+    <string name="login_state_state_partial">Partial</string>
+    <string name="login_state_state_missing">Missing</string>
+
+    <!-- Player -->
+    <string name="player">Player</string>
+    <string name="player_default">Default player</string>
+    <string name="player_render">Render</string>
+    <string name="player_button_config">Player buttons</string>
+    <string name="player_button_config_summary">Globally enabled %1$d/%2$d; availability varies by player mode</string>
+    <string name="player_pad_live">Tablet live</string>
+    <string name="player_button_up">Up</string>
+    <string name="player_button_down">Down</string>
+    <string name="play_episodes">Episodes</string>
+    <string name="player_exo_4k_compat">Playback performance</string>
+    <string name="player_immersive_audio_mode">Immersive audio mode</string>
+    <string name="player_performance">Playback performance</string>
+    <string name="player_performance_recommended">Balanced</string>
+    <string name="player_performance_auto">Auto</string>
+    <string name="player_performance_compatible">Compatible</string>
+    <string name="player_performance_lightweight">Light</string>
+    <string name="player_performance_original">Original</string>
+    <string name="player_performance_help">Guide</string>
+    <string name="player_performance_help_title">Playback performance guide</string>
+    <string name="player_performance_help_close">Close</string>
+    <string name="player_performance_help_intro">Current player engine: %1$s. Most users should leave the profile on Auto. Light targets lower-end devices, combines stability choices from the former Compatible profile with lower fixed resource budgets, and replaces that separate profile. Engine-specific decode, output, and protocol controls remain available below for unusual devices and create a Custom profile when changed. Most low-level changes take effect after playback restarts or the player is rebuilt.</string>
+    <string name="player_performance_common_section">Common settings</string>
+    <string name="player_performance_profile_merge">Balanced profile merge</string>
+    <string name="player_performance_profile_merge_enabled">Merged into Auto · rollback available</string>
+    <string name="player_performance_profile_merge_rolled_back">Legacy Balanced restored</string>
+    <string name="player_performance_profile_merge_help">Balanced is merged into Auto by default. Legacy Balanced selections are migrated independently for EXO, MPV and IJK, while Compatible, Light and Custom selections are preserved. Local rollback restores only migrated engines that still remain on Auto; choices made after migration are not overwritten. The historical A/B report stays available, but real device acceptance has not been established by build or JVM tests.</string>
+    <string name="player_performance_profile_merge_rollback_title">Restore the legacy Balanced profile?</string>
+    <string name="player_performance_profile_merge_rollback_message">The Balanced tab will return. Engines migrated from Balanced will be restored only if they are still on Auto. Compatible, Light or Custom choices made after migration will not be changed. A/B collection remains off until you explicitly enroll again.</string>
+    <string name="player_performance_profile_merge_rollback_confirm">Restore Balanced</string>
+    <string name="player_performance_profile_merge_enable_title">Merge Balanced into Auto again?</string>
+    <string name="player_performance_profile_merge_enable_message">Legacy Balanced selections will be migrated to Auto independently for each engine and the Balanced tab will be hidden. Existing A/B samples are retained, while new collection is disabled. Compatible, Light and Custom choices are preserved.</string>
+    <string name="player_performance_profile_merge_enable_confirm">Merge into Auto</string>
+    <string name="player_performance_lightweight_assessment_collection">Auto/Light assessment collection</string>
+    <string name="player_performance_lightweight_assessment_help">This is an internal, device-local observational V-06A assessment. It is off by default, has no user-facing enrollment entry and never randomizes profiles. It observes only the selected Auto or Light profile, and admits only hardware-decoded sessions on low-RAM devices or sessions that actually use software decoding. Internal experiment authorization and the current engine domain must both be enabled. Passing only permits a further product review; it never hides or removes Light automatically.</string>
+    <string name="player_performance_lightweight_assessment_enable_title">Join the Auto/Light assessment?</string>
+    <string name="player_performance_lightweight_assessment_enable_message">Samples stay on this device, are not uploaded or backed up, and never switch profiles automatically. Only low-RAM hardware decoding or actual software decoding enters the report. Every valid group needs at least 20 usable Auto and 20 usable Light samples. Pause, seek, speed changes, profile changes and experimental interventions invalidate the current sample.</string>
+    <string name="player_performance_lightweight_assessment_enable_confirm">Join assessment</string>
+    <string name="player_performance_lightweight_assessment_report">Auto/Light assessment report</string>
+    <string name="player_performance_lightweight_assessment_report_value">Auto %1$d · Light %2$d · %3$s</string>
+    <string name="player_performance_lightweight_assessment_report_title">Auto/Light device-local assessment</string>
+    <string name="player_performance_lightweight_assessment_report_summary">Status: %1$s\nAuto samples: %2$d\nLight samples: %3$d\nGroups: %4$d\nEvaluable groups: %5$d\nPassed: %6$d\nFailed: %7$d\nInsufficient or missing: %8$d\nCritical coverage: %9$d / %10$d\n\nFurther retention review requires all six EXO, MPV and IJK low-RAM hardware/software cells and every group to pass. This report never removes the Light profile automatically.</string>
+    <string name="player_performance_lightweight_assessment_coverage_missing">Coverage cells missing</string>
+    <string name="player_performance_lightweight_assessment_missing_coverage">Missing coverage</string>
+    <string name="player_performance_lightweight_assessment_coverage_low_ram_hardware">low-RAM hardware</string>
+    <string name="player_performance_lightweight_assessment_coverage_software">software decode</string>
+    <string name="player_performance_lightweight_assessment_clear">Clear Light assessment</string>
+    <string name="player_performance_lightweight_assessment_clear_title">Clear Auto/Light samples?</string>
+    <string name="player_performance_lightweight_assessment_clear_message">All device-local Auto/Light assessment samples will be deleted. Enrollment remains and eligible sessions can be collected again. The historical Auto/Balanced A/B report is unaffected.</string>
+    <string name="player_performance_lightweight_assessment_clear_confirm">Clear samples</string>
+    <string name="player_performance_compatibility_assessment">Compatible retention assessment</string>
+    <string name="player_performance_compatibility_assessment_help">V-06B is a fail-closed audit of whether the Compatible profile can ever be reconsidered. It checks EXO, MPV and IJK coverage for codec failures, hardware capability misreporting, output-mode faults, and protocol/Range faults, plus visual-correctness detection and long-term problem-device evidence. Existing recovery is bounded and depends on explicit errors or observable metrics. Green screens, wrong colors or an incorrect picture without a decoder error cannot currently be detected reliably, so the present conclusion is to retain Compatible. This report never hides, migrates or removes a profile.</string>
+    <string name="player_performance_compatibility_assessment_value">%1$s · reliable %2$d / %3$d</string>
+    <string name="player_performance_compatibility_assessment_title">Compatible profile retention assessment</string>
+    <string name="player_performance_compatibility_assessment_summary">Current conclusion: %1$s\nReliable coverage: %2$d / %3$d\nLimited: %4$d\nUnverified: %5$d\nUnobservable: %6$d\nMissing: %7$d\n\nEvery requirement must have reliable automated recovery and long-term device evidence before further review. Even full coverage would only permit another product decision; this report never removes Compatible automatically.</string>
+    <string name="player_performance_compatibility_assessment_blockers">Current blockers</string>
+    <string name="player_performance_compatibility_assessment_retain">Retain Compatible</string>
+    <string name="player_performance_compatibility_assessment_review">Further review possible</string>
+    <string name="player_performance_compatibility_coverage_reliable">reliable</string>
+    <string name="player_performance_compatibility_coverage_limited">limited</string>
+    <string name="player_performance_compatibility_coverage_unverified">unverified</string>
+    <string name="player_performance_compatibility_coverage_unobservable">unobservable</string>
+    <string name="player_performance_compatibility_coverage_missing">missing</string>
+    <string name="player_performance_compatibility_area_codec">codec initialization/runtime recovery</string>
+    <string name="player_performance_compatibility_area_hardware_misreport">hardware capability misreport recovery</string>
+    <string name="player_performance_compatibility_area_output">output-mode fault recovery</string>
+    <string name="player_performance_compatibility_area_protocol">protocol and Range fault recovery</string>
+    <string name="player_performance_compatibility_area_visual">green-screen, wrong-color and incorrect-picture detection</string>
+    <string name="player_performance_compatibility_area_device_evidence">long-term evidence from problem devices</string>
+    <string name="player_performance_experiment_profile_ab_collection">Auto/balanced A/B collection</string>
+    <string name="player_performance_experiment_profile_ab_invalid">Invalid or stale enrollment</string>
+    <string name="player_performance_experiment_profile_ab_enable_title">Join Auto/balanced validation?</string>
+    <string name="player_performance_experiment_profile_ab_enable_message">This internal collection is off by default, has no user-facing enrollment entry and stays on this device. It observes only the selected Auto or balanced profile; it never randomizes or changes profiles. Samples are admitted only while internal experiment authorization and the current engine domain are enabled. They store bounded numeric metrics and enum/digest grouping facts, never URLs, hosts, paths, headers, raw fingerprints or decoder names. The report cannot merge or migrate profiles automatically.</string>
+    <string name="player_performance_experiment_profile_ab_enable_confirm">Join validation</string>
+    <string name="player_performance_experiment_profile_ab_help">Device-local, opt-in infrastructure for comparing Auto and balanced within the same device, engine, decoder, protocol, stream, MIME/HDR and path group. Successful samples require at least 30 seconds of valid playback; attributable playback errors can be retained to avoid survivor bias. Data expires after 30 days and is bounded. The report needs at least 20 usable samples per arm for every group and never changes a profile.</string>
+    <string name="player_performance_experiment_profile_ab_report">Auto/balanced A/B report</string>
+    <string name="player_performance_experiment_profile_ab_report_value">Auto %1$d · Balanced %2$d · %3$s</string>
+    <string name="player_performance_experiment_profile_ab_report_title">Auto/balanced local validation report</string>
+    <string name="player_performance_experiment_profile_ab_report_summary">Status: %1$s\nAuto samples: %2$d\nBalanced samples: %3$d\nGroups: %4$d\nEvaluable groups: %5$d\nPassed: %6$d\nFailed: %7$d\nInsufficient or missing: %8$d\n\nThis device-local report is evidence only and never changes the current merge state by itself.</string>
+    <string name="player_performance_experiment_profile_ab_no_data">No data</string>
+    <string name="player_performance_experiment_profile_ab_insufficient">Insufficient samples</string>
+    <string name="player_performance_experiment_profile_ab_metrics_missing">Metrics missing</string>
+    <string name="player_performance_experiment_profile_ab_passed">Passed</string>
+    <string name="player_performance_experiment_profile_ab_failed">Failed</string>
+    <string name="player_performance_experiment_profile_ab_failed_metrics">Regressed metrics</string>
+    <string name="player_performance_experiment_profile_ab_missing_metrics">Missing metrics</string>
+    <string name="player_performance_experiment_profile_ab_metric_first_frame">first frame</string>
+    <string name="player_performance_experiment_profile_ab_metric_rebuffer_ratio">rebuffer ratio</string>
+    <string name="player_performance_experiment_profile_ab_metric_rebuffer_count">rebuffer count</string>
+    <string name="player_performance_experiment_profile_ab_metric_peak_pss">peak PSS</string>
+    <string name="player_performance_experiment_profile_ab_metric_dropped">dropped-frame rate</string>
+    <string name="player_performance_experiment_profile_ab_metric_live_lag">live lag</string>
+    <string name="player_performance_experiment_profile_ab_metric_error_rate">playback error rate</string>
+    <string name="player_performance_experiment_profile_ab_clear">Clear local report</string>
+    <string name="player_performance_experiment_profile_ab_clear_title">Clear Auto/balanced samples?</string>
+    <string name="player_performance_experiment_profile_ab_clear_message">All device-local Auto/balanced validation samples will be deleted. If legacy Balanced is restored, collection can be explicitly enrolled again.</string>
+    <string name="player_performance_experiment_profile_ab_clear_confirm">Clear samples</string>
+    <string name="pan_diagnostic_section">Diagnostics</string>
+    <string name="pan_diagnostic_entry">Link test</string>
+    <string name="pan_diagnostic_title">Playback link diagnostics</string>
+    <string name="player_kernel">Player engine</string>
+    <string name="player_scale">Scale</string>
+    <string name="player_lut">LUT color</string>
+    <string name="player_mpv_config">MPV config manager</string>
+    <string name="player_mpv_render">MPV renderer</string>
+    <string name="mpv_render_native_unavailable">Unavailable</string>
+    <string name="mpv_config_target">%1$s · %2$s</string>
+    <string name="mpv_config_default">Default</string>
+    <string name="mpv_config_local">Local mpv.conf</string>
+    <string name="mpv_config_url">URL mpv.conf</string>
+    <string name="mpv_config_name_hint">Name (optional)</string>
+    <string name="mpv_config_history">History</string>
+    <string name="mpv_config_history_empty">No MPV config history</string>
+    <string name="mpv_config_script_hint">Script URL or choose local script</string>
+    <string name="mpv_config_scripts_count">%1$d scripts</string>
+    <string name="mpv_config_saved">MPV config saved. Reopen playback to apply it.</string>
+    <string name="mpv_config_empty">MPV config is empty</string>
+    <string name="mpv_config_file_invalid">Invalid mpv.conf file</string>
+    <string name="mpv_config_url_invalid">Invalid mpv.conf URL</string>
+    <string name="mpv_config_download_empty">Downloaded mpv.conf is empty</string>
+    <string name="mpv_config_new">New</string>
+    <string name="mpv_config_in_use">In use</string>
+    <string name="mpv_config_more">More actions</string>
+    <string name="mpv_config_edit">Edit</string>
+    <string name="mpv_config_rename">Rename</string>
+    <string name="mpv_config_rename_title">Rename config</string>
+    <string name="mpv_config_new_name">New name</string>
+    <string name="mpv_config_renamed">Config renamed</string>
+    <string name="mpv_config_delete">Delete</string>
+    <string name="mpv_config_delete_title">Delete config</string>
+    <string name="mpv_config_delete_message">Delete “%1$s”? This cannot be undone.</string>
+    <string name="mpv_config_create_title">New config</string>
+    <string name="mpv_config_create_desc">Choose how to start. Leave the name blank to generate one automatically.</string>
+    <string name="mpv_config_done">Done</string>
+    <string name="mpv_config_name">Name</string>
+    <string name="mpv_config_name_optional">Name (optional)</string>
+    <string name="mpv_config_name_example">For example: 4K playback</string>
+    <string name="mpv_config_name_required">Enter a config name</string>
+    <string name="mpv_config_method">Config method</string>
+    <string name="mpv_config_choose_action">Choose a creation method</string>
+    <string name="mpv_config_text_edit">Create text config</string>
+    <string name="mpv_config_text_edit_desc">Open the editor to enter and save config content</string>
+    <string name="mpv_config_import_file">Import config file</string>
+    <string name="mpv_config_import_file_desc">Choose an existing config file from this device</string>
+    <string name="mpv_config_import_url">Import from URL</string>
+    <string name="mpv_config_import_url_desc">Download a remote config and save it as a new profile</string>
+    <string name="mpv_config_url_hint">https://example.com/mpv.conf</string>
+    <string name="mpv_config_import">Import</string>
+    <string name="mpv_config_editor_new">New config</string>
+    <string name="mpv_config_editor_edit">Edit config</string>
+    <string name="mpv_config_save">Save</string>
+    <string name="mpv_config_encoding">Encoding  UTF-8</string>
+    <string name="mpv_config_stats">Lines: %1$d    Characters: %2$d</string>
+    <string name="mpv_config_no_profiles">No configs yet. Tap New to create or import one.</string>
+    <string name="mpv_config_profile_missing">The config no longer exists</string>
+    <string name="mpv_config_profile_saved">Config saved</string>
+    <string name="mpv_config_switched">Now using “%1$s”. Reopen playback to apply it.</string>
+    <string name="mpv_config_text">Text config</string>
+    <string name="mpv_config_untitled">Untitled config</string>
+    <string name="mpv_config_too_large">Config text must be smaller than 1 MB</string>
+    <string name="mpv_config_write_failed">Unable to write the MPV config file</string>
+    <string name="mpv_config_script_exists">A script with this name already exists</string>
+    <string name="mpv_config_default_copy">Default config copy</string>
+    <string name="mpv_config_current">Currently using: %1$s</string>
+    <string name="mpv_config_apply_selected">Apply selected</string>
+    <string name="mpv_config_close">Close</string>
+    <string name="player_libass">libass</string>
+    <string name="player_caption">Caption style</string>
+    <string name="player_background">Background play</string>
+    <string name="player_audio_decode">Audio software decode</string>
+    <string name="player_audio_passthrough">Audio passthrough</string>
+    <string name="player_video_decode">Video software decode</string>
+    <string name="player_ffmpeg_mode">FFmpeg mode</string>
+    <string name="player_aac_track">Prefer aac track</string>
+    <string name="player_music_notification">Music background notification</string>
+    <string name="player_audio_book_notification">Audiobook background notification</string>
+    <string name="player_adblock">Remove ads</string>
+    <string name="player_tunnel">Tunnel mode</string>
+    <string name="player_buffer">Forward buffer target</string>
+    <string name="player_buffer_bytes">Memory buffer limit</string>
+    <string name="player_back_buffer">Played-data retention</string>
+    <string name="player_cache">HLS disk cache limit</string>
+    <string name="player_preload">Disk preload</string>
+    <string name="player_preload_threads">Preload concurrency</string>
+    <string name="player_preload_threads_value">%1$d threads</string>
+    <string name="player_preload_size">Disk preload quota</string>
+    <string name="player_preload_time">Preload chunk duration</string>
+    <string name="player_preload_time_value">%1$d seconds</string>
+    <string name="player_preload_ahead">Preload-ahead target</string>
+    <string name="player_preload_ahead_value">%1$d min</string>
+    <string name="player_preload_ahead_whole">Entire media</string>
+    <string name="player_preload_pause">Continue preload while paused</string>
+    <string name="player_preload_pause_wifi">Wi-Fi only</string>
+    <string name="player_preload_pause_always">Always</string>
+    <string name="player_auto_play">Auto play</string>
+    <string name="player_auto_change">Auto source change</string>
+    <string name="player_failure_fallback">Failure fallback</string>
+    <string name="player_speed">Press speed</string>
+    <string name="player_ua">User-Agent</string>
+    <string name="player_osd">On-screen display</string>
+    <string name="player_subtitle_auto_match">Auto subtitle match</string>
+    <string name="player_subtitle_language">Preferred subtitle language</string>
+    <string name="player_subtitle_assrt_token">ASSRT token</string>
+    <string name="player_subtitle_ai_max_concurrency">AI subtitle max concurrency</string>
+    <string name="player_subtitle_ai_chunk_count">AI subtitle chunks</string>
+    <string name="subtitle_auto_match_hit">Subtitle matched: %1$s</string>
+    <string name="subtitle_auto_match_hit_not_applied">Subtitle found but not applied: %1$s</string>
+    <string name="subtitle_auto_match_empty">No matching subtitle found</string>
+    <string name="subtitle_auto_match_provider_unavailable">Configure a subtitle source first</string>
+    <string name="subtitle_auto_match_failed">Subtitle match failed: %1$s</string>
+    <string name="subtitle_auto_match_unknown_reason">unknown error</string>
+    <string name="subtitle_manual_search">Search subtitles</string>
+    <string name="subtitle_manual_searching">Searching subtitles...</string>
+    <string name="subtitle_manual_select_title">Select subtitle (%1$d)</string>
+    <string name="subtitle_manual_search_empty">No subtitles found</string>
+    <string name="subtitle_manual_search_failed">Subtitle search failed</string>
+    <string name="subtitle_manual_resolving">Loading subtitle...</string>
+    <string name="subtitle_manual_applied">Subtitle applied: %1$s</string>
+    <string name="subtitle_manual_apply_failed">Subtitle found but could not be applied</string>
+    <string name="subtitle_manual_inactive">Start playback before searching subtitles</string>
+    <string name="player_subtitle_realtime_model">Real-time recognition language</string>
+    <string name="subtitle_realtime_model_status">%1$s · %2$s</string>
+    <string name="subtitle_realtime_model_select_title">Select audio source language</string>
+    <string name="subtitle_realtime_model_delete_action">Delete model</string>
+    <string name="subtitle_realtime_model_missing">Not downloaded (tap to download)</string>
+    <string name="subtitle_realtime_model_ready">Downloaded (tap to delete)</string>
+    <string name="subtitle_realtime_model_downloading">Downloading...</string>
+    <string name="subtitle_realtime_model_downloading_progress">Downloading %1$d%%</string>
+    <string name="subtitle_realtime_model_deleting">Deleting...</string>
+    <string name="subtitle_realtime_model_download_success">Real-time subtitle model downloaded</string>
+    <string name="subtitle_realtime_model_download_failed">Model download failed: %1$s</string>
+    <string name="subtitle_realtime_model_delete_title">Delete real-time subtitle model</string>
+    <string name="subtitle_realtime_model_delete_message">Delete the downloaded model and disable real-time AI subtitles?</string>
+    <string name="subtitle_realtime_model_delete_success">Real-time subtitle model deleted</string>
+    <string name="subtitle_realtime_model_delete_failed">Model deletion failed: %1$s</string>
+    <string name="subtitle_realtime_action">Real-time AI subtitles</string>
+    <string name="subtitle_realtime_preparing">Preparing the selected real-time subtitle model...</string>
+    <string name="subtitle_realtime_preparing_progress">Preparing subtitle model %1$d%%</string>
+    <string name="subtitle_realtime_on">Real-time AI subtitles enabled</string>
+    <string name="subtitle_realtime_off">Real-time AI subtitles disabled</string>
+    <string name="subtitle_realtime_failed">Real-time subtitle failed: %1$s</string>
+    <string name="subtitle_realtime_pcm_title">Disable incompatible audio modes</string>
+    <string name="subtitle_realtime_pcm_required">Real-time AI subtitles require PCM audio. Disable audio passthrough and tunnel mode now, then continue?</string>
+    <string name="subtitle_realtime_speed_title">Reset playback speed</string>
+    <string name="subtitle_realtime_speed_required">Synchronized real-time subtitles currently require 1x playback. Reset the speed and continue?</string>
+    <string name="subtitle_realtime_speed_disabled">Real-time subtitles were disabled because playback speed changed</string>
+    <string name="subtitle_realtime_model_delete_error">Cannot delete the subtitle model</string>
+    <string name="subtitle_realtime_model_directory_error">Cannot create the subtitle model directory</string>
+    <string name="subtitle_realtime_model_partial_error">Cannot replace the partial model download</string>
+    <string name="subtitle_realtime_model_incomplete">Incomplete model file: %1$s</string>
+    <string name="subtitle_realtime_model_checksum_error">Model file checksum failed: %1$s</string>
+    <string name="subtitle_realtime_model_install_error">Cannot install model file: %1$s</string>
+    <string name="subtitle_realtime_model_memory_low">This model requires at least %1$d MB of device memory</string>
+    <string name="subtitle_realtime_model_memory_available_low">Available memory is low. Close background apps and try again</string>
+    <string name="subtitle_realtime_model_storage_low">At least %1$d MB of free storage is required</string>
+    <string name="subtitle_ai_translate_title">AI subtitle translation</string>
+    <string name="subtitle_ai_translate_message">Translate this subtitle to Chinese with the current AI configuration?</string>
+    <string name="subtitle_ai_translate_action">AI translate to Chinese</string>
+    <string name="subtitle_ai_regenerate_action">Regenerate AI subtitle</string>
+    <string name="subtitle_ai_translating">Translating subtitle...</string>
+    <string name="subtitle_ai_preparing">Preparing AI subtitle translation...</string>
+    <string name="subtitle_ai_regenerating">Regenerating AI subtitle...</string>
+    <string name="subtitle_ai_progress">AI translating: %1$d/%2$d chunks</string>
+    <string name="subtitle_ai_progress_eta">AI translating: %1$d/%2$d chunks, about %3$s left</string>
+    <string name="subtitle_ai_cache_hit">Using cached AI subtitle...</string>
+    <string name="subtitle_ai_applied">AI subtitle applied: %1$s</string>
+    <string name="subtitle_ai_apply_failed">AI subtitle generated but could not be applied</string>
+    <string name="subtitle_ai_failed">AI subtitle translation failed: %1$s</string>
+    <string name="subtitle_ai_config_required">Configure and enable AI first</string>
+    <string name="subtitle_ai_no_selected_subtitle">Select a subtitle first</string>
+    <string name="subtitle_ai_local_srt_required">Select a local SRT subtitle first</string>
+    <string name="subtitle_ai_unsupported_format">AI subtitle translation currently supports SRT only</string>
+    <string name="subtitle_ai_stale_result">Playback changed, AI subtitle result was ignored</string>
+    <string name="subtitle_ai_unknown_reason">unknown error</string>
+    <string name="lut_original">Original</string>
+    <string name="lut_missing">Preset missing</string>
+    <string name="lut_summary">%1$s · %2$d%%</string>
+    <string name="lut_title_value">%1$s · %2$s</string>
+    <string name="lut_strength_value">Strength %1$d%%</string>
+    <string name="lut_preview_delay_value">%1$ds</string>
+    <string name="lut_import">Import</string>
+    <string name="lut_local">Local</string>
+    <string name="lut_reset">Reset</string>
+    <string name="lut_all">All</string>
+    <string name="lut_favorite">Favorite</string>
+    <string name="lut_directory">Folder</string>
+    <string name="lut_select_current_dir">Use this folder</string>
+    <string name="lut_close">Close</string>
+    <string name="lut_imported">LUT preset imported</string>
+    <string name="lut_directory_selected">LUT folder selected</string>
+    <string name="lut_import_failed">LUT import failed</string>
+    <string name="lut_favorited">Added to favorites</string>
+    <string name="lut_unfavorited">Removed from favorites</string>
+    <string name="lut_empty_presets">No LUT presets</string>
+    <string name="lut_empty_favorites">No favorite LUT presets</string>
+    <string name="lut_apply_failed">LUT color has been disabled temporarily</string>
+    <string name="lut_unavailable_player">Current player engine does not support LUT color</string>
+    <string name="lut_unavailable_drm">DRM protected videos do not support LUT color</string>
+    <string name="lut_unavailable_tunnel">Tunnel mode does not support LUT color</string>
+    <string name="lut_unavailable_soft_decode">Software decode does not support LUT color</string>
+    <string name="lut_unavailable_video_prefer">Extension video decode does not support LUT color</string>
+    <string name="lut_unavailable_hdr">HDR/Dolby Vision content does not support LUT color yet</string>
+    <string name="lut_unavailable_no_video">Current content has no video track</string>
+
+    <!-- Danmaku -->
+    <string name="danmaku_load">Danmaku load</string>
+    <string name="danmaku_api">Search API</string>
+    <string name="danmaku_api_invalid">Invalid danmaku API URL</string>
+    <string name="danmaku_auto_load">Auto search</string>
+    <string name="danmaku_spider_first">Spider first</string>
+    <string name="danmaku_search_title">Danmaku search</string>
+    <string name="danmaku_search_empty">No matching danmaku found</string>
+    <string name="danmaku_source_default">Danmaku</string>
+    <string name="danmaku_source_count">%1$d items</string>
+
+    <!-- Search -->
+    <string name="search_keyword">Keywords…</string>
+    <string name="search_column">Search layout</string>
+    <string name="site_search_hint">Search sites…</string>
+    <string name="site_group_all">All</string>
+    <string name="site_group_sort_desc">%1$s, long press to reorder</string>
+    <string name="site_group_sort_tv_desc">%1$s, long press OK to reorder</string>
+    <string name="site_group_sort_tv_hint">Long press OK on a group to reorder</string>
+    <string name="site_group_sort_tv_active">Reordering: Left/Right move, OK save, Back cancel</string>
+    <string name="site_group_sort_tv_active_desc">%1$s, reordering. Left or right to move, OK to save, Back to cancel</string>
+    <string name="site_group_sort_saved">Group order saved</string>
+    <string name="site_group_sort_cancelled">Group reorder canceled</string>
+    <string name="search_record">History</string>
+    <string name="search_suggest">Suggest</string>
+    <string name="search_hot">Hot</string>
+    <string name="search_hot_tv">TV</string>
+    <string name="search_hot_movie">Movie</string>
+    <string name="search_hot_variety">Variety</string>
+    <string name="search_loading">Searching...</string>
+    <string name="search_progress">(%1$d/%2$d)</string>
+    <string name="search_no_result">No results</string>
+
+    <!-- Dialog -->
+    <string name="dialog_edit">Edit</string>
+    <string name="dialog_positive">OK</string>
+    <string name="dialog_negative">Cancel</string>
+    <string name="dialog_audio_site_rules">Audio source rules: enabled sources or keywords, separated by ;. Default: [音];[听]</string>
+    <string name="dialog_audio_site_manage">Select audio sources</string>
+    <string name="dialog_audio_site_default">Default [音]/[听]</string>
+    <string name="dialog_audio_playback_style">Audio playback style</string>
+    <string name="dialog_audio_playback_style_immersive">Immersive audio (merged upstream)</string>
+    <string name="dialog_audio_playback_style_built_in">Standard audio (built-in)</string>
+    <string name="dialog_audio_enabled_label">启用规则</string>
+    <string name="dialog_audio_add_hint">添加关键词或站点…</string>
+    <string name="dialog_audio_add">添加</string>
+    <string name="dialog_short_drama_site_rules">Short drama source rules: enabled sources or keywords, separated by ;. Default: [短];短剧</string>
+    <string name="dialog_short_drama_site_manage">Select short drama sources</string>
+    <string name="dialog_short_drama_site_default">Default [短]/短剧</string>
+    <string name="dialog_short_drama_site_disabled">Excluded: %1$s</string>
+    <string name="dialog_short_drama_enabled_label">启用规则</string>
+    <string name="dialog_short_drama_disabled_label">已排除</string>
+    <string name="dialog_short_drama_add_hint">添加关键词或站点…</string>
+    <string name="dialog_short_drama_add">添加</string>
+
+    <string name="dialog_reset">Reset</string>
+    <string name="setting_show">Show</string>
+    <string name="setting_hide">Hide</string>
+    <string name="dialog_select_title">Select chapter</string>
+    <string name="dialog_config_hint">Please enter the config…</string>
+    <string name="dialog_config_name">Please enter the name…</string>
+    <string name="dialog_config_url">Please enter the url…</string>
+
+    <!-- Error -->
+    <string name="error_config_get">Configuration get failed</string>
+    <string name="error_play_next">It\'s the last episode!</string>
+    <string name="error_play_prev">It\'s the first episode!</string>
+    <string name="error_play_parse">Unable to parse url</string>
+    <string name="error_play_drm">This device does not support the required DRM scheme</string>
+    <string name="error_play_url">Unable to load url</string>
+    <string name="error_play_mpv_hls_unsupported">MPV failed to play this HLS stream. Switch player manually or choose another line.</string>
+    <string name="error_play_mpv_load_failed">MPV failed to load media. Check the network or choose another line.</string>
+    <string name="error_play_mpv_network_failed">MPV network loading failed. Check the network, headers, or choose another line.</string>
+    <string name="error_play_mpv_drm_unsupported">MPV does not support this DRM protected media. Switch player manually or choose another line.</string>
+    <string name="error_play_mpv_unexpected_image">MPV loaded an image instead of video. Choose another line.</string>
+    <string name="error_play_mpv_no_av">MPV did not find playable audio or video data.</string>
+    <string name="error_play_mpv_invalid_data">MPV found invalid media data. Choose another line or switch player manually.</string>
+    <string name="error_play_mpv_decode_failed">MPV failed to decode this media. Try switching soft/hard decode or choose another line.</string>
+    <string name="error_play_mpv_video_output">MPV failed to initialize video output. Try switching decode mode or reopen playback.</string>
+    <string name="error_play_stage_app_local">The app playback service could not be reached. Reopen playback or restart the app.</string>
+    <string name="error_play_stage_external_local">The local proxy port could not be reached. Restart the proxy or choose another line.</string>
+    <string name="error_play_stage_external_supply">An external or unknown local proxy could not provide a continuous data stream. The app cannot inspect its CDN, authorization, or cache state. Check the proxy or choose another line.</string>
+    <string name="error_play_stage_network">Network reading failed. Check the network and request headers, or choose another line.</string>
+    <string name="error_play_stage_media">Media parsing failed or no playable audio/video track was found. Choose another line or player.</string>
+    <string name="error_play_stage_decoder">Audio/video decoding failed. Try another decode mode or player.</string>
+    <string name="error_play_stage_output">Audio/video output failed. Reopen playback or try another decode mode.</string>
+    <string name="error_play_stage_drm">DRM authorization or protected-media handling failed. Choose another line or player.</string>
+    <string name="error_play_stage_unknown">Playback failed. Retry or switch player.</string>
+    <string name="error_play_flag">No flag data</string>
+    <string name="error_play_timeout">Timed out</string>
+    <string name="error_play_fallback">%1$s playback failed, switched to %2$s</string>
+    <string name="error_play_ijk_unavailable">IJK is unavailable on this device</string>
+    <string name="error_play_ijk_unavailable_switch">IJK is unavailable on this device, switched to %1$s</string>
+    <string name="error_play_tvbus">Error code: <xliff:g name="name">%s</xliff:g></string>
+    <string name="error_detail">No play data</string>
+    <string name="error_empty">Nothing here 👀</string>
+
+    <!-- Update -->
+    <string name="update_version">New version <xliff:g name="name">%s</xliff:g></string>
+    <string name="update_title">Version update</string>
+    <string name="update_hint">Choose a version to view release notes and update.</string>
+    <string name="update_check">Checking for updates…</string>
+    <string name="update_latest">Already on the latest version</string>
+    <string name="update_failed">Update check failed</string>
+    <string name="update_downloading">Downloading %1$d%%</string>
+    <string name="update_downloading_unknown">Downloading…</string>
+    <string name="update_downloading_detail">Downloading %1$d%% · %2$s/s · %3$s elapsed</string>
+    <string name="update_downloading_detail_remaining">Downloading %1$d%% · %2$s/s · %3$s left · %4$s elapsed</string>
+    <string name="update_downloading_detail_unknown">Downloading · %1$s/s · %2$s elapsed</string>
+    <string name="update_download_incomplete">The update package was not fully downloaded. Please try again.</string>
+    <string name="update_download_checksum">The update package failed verification. Please try again.</string>
+    <string name="update_download_invalid">The update package is invalid. Please try again.</string>
+    <string name="update_confirm">Update</string>
+    <string name="update_confirm_channel">Update %1$s</string>
+    <string name="update_cancel">Cancel update</string>
+    <string name="update_canceled">Update canceled</string>
+    <string name="update_channel_stable">Stable</string>
+    <string name="update_channel_beta">Beta</string>
+    <string name="update_channel_latest">This channel is already up to date.</string>
+    <string name="update_channel_unavailable">No update manifest is available for this channel.</string>
+    <string name="update_no_notes">No release notes.</string>
+    <string name="update_status_available">Available</string>
+    <string name="update_status_latest">Latest</string>
+    <string name="update_status_unavailable">Unavailable</string>
+    <string name="update_expand">Expand</string>
+    <string name="update_collapse">Collapse</string>
+    <string name="update_backup_title">Backup Before Update</string>
+    <string name="update_backup_message">It is recommended to backup your current configuration before updating. Would you like to backup first?</string>
+    <string name="update_backup_positive">Backup &amp; Update</string>
+    <string name="update_backup_negative">Update Directly</string>
+    <string name="update_backup_running">Backing up…</string>
+    <string name="update_backup_done">Backup completed, starting update</string>
+    <string name="update_backup_failed">Backup failed, will continue update anyway</string>
+    <string name="update_backup_permission_denied">Storage permission denied, cannot backup, will continue update anyway</string>
+
+    <!-- Crash -->
+    <string name="crash_info">An unexpected error occurred.\nSorry for the inconvenience.</string>
+    <string name="crash_restart">Restart app</string>
+    <string name="crash_details">Error details</string>
+    <string name="crash_details_title">Error details</string>
+    <string name="crash_details_message">App version: %1$s\n\n%2$s</string>
+    <string name="crash_details_close">Close</string>
+
+    <!-- Hint -->
+    <string name="copied">Copied</string>
+    <string name="debug_log_dialog_message">Debug log service is running.\n\nLAN URL:\n%1$s\n\nLocal URL:\n%2$s\n\nIf this TV has no browser, open the LAN URL from a computer or phone on the same network.</string>
+    <string name="debug_log_open_browser">Open browser</string>
+    <string name="debug_log_copy_url">Copy URL</string>
+    <string name="debug_log_no_browser">No browser app found. Use the LAN URL from another device.</string>
+    <string name="debug_log_url_copied">Debug log URL copied</string>
+    <string name="manage_page_web">Web page</string>
+    <string name="manage_page_dialog_message">Management page is running.\n\nLAN URL:\n%1$s\n\nLocal URL:\n%2$s\n\nKeep this page open while managing files or settings. The service stops automatically after the browser page is closed for a while, or you can stop it manually.</string>
+    <string name="manage_page_open_browser">Open browser</string>
+    <string name="manage_page_copy_url">Copy URL</string>
+    <string name="manage_page_stop">Stop page</string>
+    <string name="manage_page_notification_title">Management page running</string>
+    <string name="manage_page_no_browser">No browser app found. Use the LAN URL from another device.</string>
+    <string name="manage_page_url_copied">Management page URL copied</string>
+    <string name="manage_page_battery_title">Background access</string>
+    <string name="manage_page_battery_message">This device may restrict network access after the app moves to the background, which can make the browser management page unreachable. Open settings only tries known background running or battery management pages for this device brand. If the system does not allow a direct page, use this manual path:\n\n%1$s</string>
+    <string name="manage_page_battery_allow">Open settings</string>
+    <string name="manage_page_open_anyway">Open anyway</string>
+    <string name="manage_page_battery_open_failed">No direct background settings page was found. Use the manual path shown in the dialog.</string>
+    <string name="manage_page_battery_guide_vivo">vivo/iQOO: Settings > Battery > Background power consumption management / High background power consumption > find this app > set it to allow high background power usage. If the direct page fails, search system Settings for Background power consumption management.</string>
+    <string name="manage_page_battery_guide_xiaomi">Xiaomi/Redmi/POCO: Settings > Apps > Permissions > Autostart > allow this app. Then set this app battery usage to unrestricted.</string>
+    <string name="manage_page_battery_guide_oppo">OPPO/realme/OnePlus: Settings > Apps > Autostart or associated launch > allow this app. Then allow background running in Battery > App battery management.</string>
+    <string name="manage_page_battery_guide_huawei">Huawei/Honor: Phone Manager or Settings > App launch > this app > disable automatic management, then allow autostart, secondary launch, and background running.</string>
+    <string name="manage_page_battery_guide_samsung">Samsung: Settings > Apps > this app > Battery > Unrestricted. Also make sure this app is not in sleeping/deep sleeping apps.</string>
+    <string name="manage_page_battery_guide_meizu">Meizu: Phone Manager > Permission/background management > this app > allow background running. Then set this app to unrestricted in power management.</string>
+    <string name="manage_page_battery_guide_default">Settings > Apps > this app > Battery > choose unrestricted or not optimized. If autostart/background running options exist, allow them for this app.</string>
+
+    <!-- UNIT -->
+    <string name="all">All</string>
+    <string name="yes">Yes</string>
+    <string name="none">None</string>
+    <string name="times">times</string>
+    <string name="lines">lines</string>
+
+    <!-- SEARCH -->
+    <string name="search_scope_all">All</string>
+    <string name="search_scope_current">Current site</string>
+    <string name="search_scope_current_hint">Current site: %1$s</string>
+    <string name="search_scope_group_hint">Group: %1$s</string>
+    <string name="search_result_all">Search results for %1$s</string>
+    <string name="search_result_current">Current site search: %1$s</string>
+    <string name="search_result_group">%1$s search: %2$s</string>
+    <string name="search_filter_similarity">Similarity</string>
+    <string name="search_filter_similarity_unlimited">No filter</string>
+    <string name="search_filter_similarity_value">Similarity %d%%</string>
+    <string name="search_filter_similarity_exact">Exact</string>
+    <string name="search_filter_similarity_hint">Adjust search strictness: 100 = exact, 0 = no filter</string>
+    <string name="search_filter_similarity_description">%1$s. %2$s</string>
+    <string name="search_filter_empty">No results reached %1$d%% similarity. Lower the similarity to see more.</string>
+    <string name="search_filter_empty_exact">No exact matches. Lower the similarity to see more.</string>
+    <string name="detail_site_not_searchable">Current site does not support search</string>
+
+    <string-array name="select_player">
+        <item>EXO</item>
+        <item>IJK</item>
+        <item>System</item>
+        <item>MPV</item>
+    </string-array>
+
+    <string-array name="select_decode">
+        <item>Soft</item>
+        <item>Hard</item>
+    </string-array>
+
+    <string-array name="select_player_failure_fallback">
+        <item>Decoder, then core</item>
+        <item>Decoder only</item>
+        <item>Core only</item>
+        <item>Off</item>
+    </string-array>
+
+    <string-array name="select_render">
+        <item>Surface</item>
+        <item>Texture</item>
+    </string-array>
+
+    <string-array name="select_player_kernel">
+        <item>EXO</item>
+        <item>IJK</item>
+        <item>System</item>
+        <item>MPV</item>
+    </string-array>
+    <string-array name="select_mpv_render">
+        <item>OpenGL</item>
+        <item>Vulkan</item>
+    </string-array>
+    <string-array name="select_buffer_bytes">
+        <item>Auto</item>
+        <item>64MB</item>
+        <item>128MB</item>
+        <item>256MB</item>
+    </string-array>
+    <string-array name="select_back_buffer">
+        <item>Off</item>
+        <item>15s</item>
+        <item>30s</item>
+        <item>60s</item>
+    </string-array>
+    <string-array name="select_play_cache">
+        <item>128MB</item>
+        <item>256MB</item>
+        <item>512MB</item>
+        <item>1GB</item>
+        <item>2GB</item>
+    </string-array>
+
+    <string-array name="select_size">
+        <item>Small</item>
+        <item>Medium</item>
+        <item>Large</item>
+        <item>Extra</item>
+    </string-array>
+
+    <string-array name="select_fullscreen_menu_key">
+        <item>Control</item>
+        <item>Episodes</item>
+    </string-array>
+
+    <string-array name="select_home_menu_key">
+        <item>Select dialog</item>
+        <item>Change site</item>
+        <item>Change config</item>
+        <item>Live page</item>
+        <item>History page</item>
+        <item>Search page</item>
+        <item>Push page</item>
+        <item>Cast page</item>
+        <item>Keep page</item>
+        <item>Setting page</item>
+    </string-array>
+
+    <string-array name="select_search_ui">
+        <item>Landscape</item>
+        <item>Portrait</item>
+    </string-array>
+
+    <string-array name="select_search_column">
+        <item>Auto</item>
+        <item>1 item</item>
+        <item>2 items</item>
+    </string-array>
+
+    <string-array name="select_tmdb_match_mode">
+        <item>Strict</item>
+        <item>Smart</item>
+        <item>Strict + dialog</item>
+        <item>Smart + dialog</item>
+    </string-array>
+
+    <string-array name="select_global_history_mode">
+        <item>Off</item>
+        <item>Auto-match source</item>
+        <item>Choose source from search</item>
+    </string-array>
+
+    <string-array name="select_auto_skip_intro_outro">
+        <item>Off</item>
+        <item>Auto skip</item>
+        <item>Ask to confirm</item>
+    </string-array>
+
+    <string-array name="select_site_column">
+        <item>Single row</item>
+        <item>Double row</item>
+    </string-array>
+
+    <string-array name="select_search_result_sort">
+        <item>Dynamic (first returned first)</item>
+        <item>Fixed (by source order)</item>
+    </string-array>
+
+    <string-array name="select_ui_scale">
+        <item>Follow system</item>
+        <item>Standard</item>
+        <item>Mild compact</item>
+        <item>Compact</item>
+        <item>More compact</item>
+        <item>Smaller</item>
+    </string-array>
+
+    <string-array name="select_language">
+        <item>Follow system</item>
+        <item>Simplified Chinese</item>
+        <item>Traditional Chinese</item>
+    </string-array>
+
+    <string name="aspect_ratio_title">Custom aspect ratio</string>
+    <string name="aspect_ratio_width">Width</string>
+    <string name="aspect_ratio_height">Height</string>
+    <string name="aspect_ratio_hint">Enter a ratio such as 2560:1080 or 64:27</string>
+    <string name="aspect_ratio_invalid">Enter a valid ratio</string>
+    <string-array name="select_scale">
+        <item>Default</item>
+        <item>16:9</item>
+        <item>4:3</item>
+        <item>Fill</item>
+        <item>Zoom</item>
+        <item>21:9</item>
+        <item>Adaptive</item>
+        <item>Custom</item>
+    </string-array>
+
+    <string-array name="select_reset">
+        <item>Reset</item>
+        <item>Replay</item>
+    </string-array>
+
+    <string-array name="select_caption">
+        <item>Default</item>
+        <item>System</item>
+    </string-array>
+
+    <string-array name="select_realtime_subtitle_model">
+        <item>Mandarin (about 31 MB)</item>
+        <item>Cantonese (about 135 MB)</item>
+        <item>English (about 45 MB)</item>
+        <item>German (about 71 MB)</item>
+        <item>French (about 71 MB)</item>
+        <item>Spanish (about 156 MB)</item>
+        <item>Japanese (about 73 MB)</item>
+        <item>Chinese + English (about 199 MB)</item>
+    </string-array>
+    <string-array name="select_realtime_subtitle_model_value">
+        <item>zh</item>
+        <item>yue</item>
+        <item>en</item>
+        <item>de</item>
+        <item>fr</item>
+        <item>es</item>
+        <item>ja</item>
+        <item>zh-en</item>
+    </string-array>
+    <string-array name="select_subtitle_language">
+        <item>Chinese first</item>
+        <item>Simplified Chinese</item>
+        <item>Traditional Chinese</item>
+        <item>English</item>
+        <item>Japanese</item>
+        <item>Korean</item>
+        <item>No preference</item>
+    </string-array>
+
+    <string-array name="select_subtitle_language_value">
+        <item>zh</item>
+        <item>zh-Hans</item>
+        <item>zh-Hant</item>
+        <item>en</item>
+        <item>ja</item>
+        <item>ko</item>
+        <item>any</item>
+    </string-array>
+
+    <string-array name="select_player_osd">
+        <item>@string/display_time</item>
+        <item>@string/display_traffic</item>
+        <item>@string/display_size</item>
+        <item>@string/display_progress</item>
+        <item>@string/display_mini</item>
+        <item>@string/display_title</item>
+        <item>Playback params</item>
+    </string-array>
+
+    <string-array name="select_live_player_osd">
+        <item>@string/display_time</item>
+        <item>@string/display_traffic</item>
+        <item>@string/display_size</item>
+        <item>@string/display_title</item>
+        <item>@string/play_params</item>
+    </string-array>
+
+    <string-array name="select_track">
+        <item>Select audio track</item>
+        <item>Select video track</item>
+        <item>Select subtitle track</item>
+    </string-array>
+    <string name="select_secondary_subtitle_track">Select secondary subtitle</string>
+
+    <string name="setting_tmdb_source">TMDB data config</string>
+    <string name="setting_ai_recommendation">AI configuration</string>
+    <string name="setting_tmdb_model">TMDB interaction model</string>
+    <string name="setting_tmdb_model_native">Native enhancement</string>
+    <string name="setting_tmdb_match_mode">TMDB match mode</string>
+    <string name="setting_detail_open_mode">Detail page mode</string>
+    <string name="setting_detail_open_original">Original detail</string>
+    <string name="setting_detail_open_native">TMDB embedded enhancement</string>
+    <string name="setting_detail_open_original_enhanced">Native enhancement</string>
+    <string name="setting_detail_open_fusion">Immersive fusion</string>
+    <string name="setting_detail_open_enhanced">Colorful detail</string>
+    <string name="setting_detail_open_player">Detail direct play</string>
+    <string name="setting_detail_open_direct">Native playback</string>
+    <string name="setting_detail_open_cinema">Cinema stage</string>
+    <string name="setting_detail_theme_mode">Detail page theme</string>
+    <string name="setting_detail_theme_current">Current theme</string>
+    <string name="setting_detail_theme_native">Native dark</string>
+    <string name="setting_detail_theme_profile">Luminous color</string>
+    <string name="setting_detail_theme_cinema">Cinema stage</string>
+    <string name="setting_configured">Configured</string>
+    <string name="setting_unconfigured">Unconfigured</string>
+    <string name="detail_tmdb_need_key">Configure TMDB data first</string>
+    <string name="detail_tmdb_empty">No TMDB data</string>
+    <string name="detail_tmdb_match_title">Match TMDB title</string>
+    <string name="detail_tmdb_rematch">TMDB match</string>
+    <string name="detail_tmdb_match_saved">TMDB match saved</string>
+    <string name="detail_tmdb_current_match">Current match</string>
+    <string name="detail_tmdb_searching">Searching TMDB...</string>
+    <string name="detail_tmdb_search_hint">Search title</string>
+    <string name="detail_tmdb_search_action">Search</string>
+    <string name="detail_tmdb_result_count">%1$d results</string>
+    <string name="detail_tmdb_skip">Skip</string>
+    <string name="detail_tmdb_site_disabled">TMDB matching is disabled for this source</string>
+    <string name="dialog_tmdb_api_key_label">TMDB API Key or Access Token</string>
+    <string name="dialog_tmdb_api_key_hint">Enter API Key or v4 Access Token</string>
+    <string name="dialog_tmdb_api_key_tip">Get your free API key at: https://www.themoviedb.org/settings/api</string>
+    <string name="dialog_tmdb_language_label">TMDB language</string>
+    <string name="dialog_tmdb_language_hint">For example zh-CN</string>
+    <string name="dialog_tmdb_api_host_label">API host</string>
+    <string name="dialog_tmdb_api_host_hint">For example https://api.tmdb.org</string>
+    <string name="dialog_tmdb_image_host_label">Image host</string>
+    <string name="dialog_tmdb_image_host_hint">For example https://images.tmdb.org</string>
+    <string name="dialog_tmdb_section_data">Data source</string>
+    <string name="dialog_tmdb_section_ratings">Ratings</string>
+    <string name="dialog_tmdb_section_rules">Source rules</string>
+    <string name="dialog_omdb_api_key_label">OMDb API Key (Optional, for IMDB ratings)</string>
+    <string name="dialog_omdb_api_key_hint">Enter OMDb API Key</string>
+    <string name="dialog_omdb_api_key_tip">Get free API Key (1000/day): https://www.omdbapi.com/apikey.aspx</string>
+    <string name="dialog_tmdb_enable_label">Enable TMDB metadata</string>
+    <string name="dialog_tmdb_enable_tip">This dialog only configures TMDB data, language, image host, and source rules. Detail page mode controls whether TMDB is used.</string>
+    <string name="dialog_tmdb_enabled_sites_label">Enabled sources</string>
+    <string name="dialog_tmdb_disabled_sites_label">Exclude rules</string>
+    <string name="dialog_tmdb_add_rule_hint">Add keyword or source…</string>
+    <string name="dialog_tmdb_add_disabled_rule_hint">Add excluded keyword or source…</string>
+    <string name="dialog_tmdb_add">Add</string>
+    <string name="dialog_tmdb_all_sites">All sources</string>
+    <string name="dialog_tmdb_site_manage">Select sources</string>
+    <string name="dialog_tmdb_reset_default">Reset to default</string>
+    <string name="tmdb_cast_label">Cast</string>
+    <string name="tmdb_loading_detail">Loading details…</string>
+    <string name="tmdb_loading_episodes">Loading episodes...</string>
+    <string name="tmdb_powered_by">Powered by TMDB</string>
+    <string name="tmdb_photos_label">Backdrops</string>
+    <string name="tmdb_crew_label">Crew</string>
+    <string name="tmdb_recommendations_label">You May Like</string>
+    <string name="tmdb_personal_recommendations_tmdb_label">Personal Picks - TMDB</string>
+    <string name="tmdb_personal_recommendations_douban_label">Personal Picks - Douban</string>
+    <string name="tmdb_personal_recommendations_ai_label">Personal Picks - Smart</string>
+    <string name="dialog_ai_enable">Enable AI service</string>
+    <string name="dialog_ai_title_extraction">AI real title recognition</string>
+    <string name="dialog_ai_section_service">Service</string>
+    <string name="dialog_ai_section_connection">Connection</string>
+    <string name="dialog_ai_section_model">Model settings</string>
+    <string name="dialog_ai_protocol_label">Protocol type</string>
+    <string-array name="dialog_ai_protocol_labels">
+        <item>OpenAI Responses API</item>
+        <item>OpenAI Chat Completions</item>
+        <item>Anthropic Messages</item>
+        <item>Gemini Native generateContent</item>
+    </string-array>
+    <string name="dialog_ai_endpoint_label">API endpoint / base URL</string>
+    <string name="dialog_ai_endpoint_hint">https://api.openai.com/v1/responses</string>
+    <string name="dialog_ai_api_key_label">API key</string>
+    <string name="dialog_ai_api_key_hint">sk-...</string>
+    <string name="dialog_ai_model_label">Model</string>
+    <string name="dialog_ai_model_hint">gpt-4.1-mini</string>
+    <string name="dialog_ai_fetch_models">Fetch</string>
+    <string name="dialog_ai_fetch_models_running">Fetching model list...</string>
+    <string name="dialog_ai_fetch_models_success">Fetched %1$d model(s)</string>
+    <string name="dialog_ai_fetch_models_empty">No available models found</string>
+    <string name="dialog_ai_fetch_models_failed">Failed to fetch models: %1$s</string>
+    <string name="dialog_ai_user_agent_label">Custom User-Agent</string>
+    <string name="dialog_ai_user_agent_hint">Optional, for UA-restricted providers</string>
+    <string name="dialog_ai_prompt_config">AI prompt configuration</string>
+    <string name="dialog_ai_recommend_prompt_label">Recommendation prompt</string>
+    <string name="dialog_ai_title_extraction_prompt_label">Title extraction prompt</string>
+    <string name="dialog_ai_viewing_report_prompt_label">Viewing report prompt</string>
+    <string name="dialog_ai_ad_detection_prompt_label">Ad detection prompt</string>
+    <string name="dialog_ai_group_rule_prompt_label">Group rule prompt</string>
+    <string name="dialog_ai_prompt_reset">Reset default</string>
+    <string name="dialog_ai_test">Test configuration</string>
+    <string name="dialog_ai_test_running">Testing AI configuration...</string>
+    <string name="dialog_ai_test_success">AI test passed: %1$s (time %2$s)</string>
+    <string name="dialog_ai_test_failed">AI test failed: %1$s (time %2$s)</string>
+    <string name="ai_recommendation_info_title">Recommendation details</string>
+    <string name="ai_recommendation_reason_label">Recommendation reason</string>
+    <string name="recommendation_not_interested">Not interested</string>
+    <string name="recommendation_feedback_title">Not interested management</string>
+    <string name="recommendation_feedback_summary">These titles are temporarily excluded from personal recommendations and automatically restored after 90 days. Select a title to restore it now.</string>
+    <string name="recommendation_feedback_empty">No hidden titles</string>
+    <string name="recommendation_feedback_remaining_days">About %1$d days remaining</string>
+    <string name="recommendation_feedback_restore_hint">Select to restore</string>
+    <string name="recommendation_feedback_restore_all">Restore all</string>
+    <string name="recommendation_feedback_restored">Restored to recommendations</string>
+    <string name="recommendation_feedback_restored_all">All titles restored</string>
+    <string name="recommendation_not_interested_recorded">Hidden for 90 days; restore anytime in Personal settings</string>
+    <string name="recommendation_overview_label">Overview</string>
+    <string name="recommendation_overview_unavailable">No synopsis is available in the current cache.</string>
+    <string name="recommendation_source_ai">Smart recommendation</string>
+    <string name="recommendation_source_tmdb">Personalized · TMDB</string>
+    <string name="recommendation_source_douban">Personalized · Douban</string>
+    <string name="recommendation_source_related">You may also like</string>
+    <string name="recommendation_data_tmdb">TMDB #%1$d</string>
+    <string name="recommendation_data_douban_matched">Douban rating matched</string>
+    <string name="recommendation_data_douban_unavailable">No Douban rating match</string>
+    <string name="recommendation_data_douban_only">Douban item matched</string>
+    <string name="recommendation_data_metadata_only">Basic recommendation metadata only</string>
+    <string name="recommendation_data_no_poster">No usable poster</string>
+    <string name="ai_recommendation_reason_preview">Reason: %1$s</string>
+    <string name="detail_work_searching">Searching current source for %1$s...</string>
+    <string name="detail_work_global_searching">No current-source result. Searching all sites for %1$s...</string>
+    <string name="detail_image_save">Save</string>
+    <string name="detail_image_saving">Saving image...</string>
+    <string name="detail_image_save_success">Saved to: %1$s</string>
+    <string name="detail_image_save_failed">Image save failed</string>
+    <string name="detail_external_open_failed">Unable to open external link</string>
+    <string name="detail_image_permission_denied">Storage permission denied</string>
+
+    <string name="detail_tmdb_photos">剧照</string>
+    <string name="detail_no_overview">暂无简介</string>
+    <string name="detail_image_rotate">旋转</string>
+    <string name="tmdb_external_links_label">外部链接</string>
+    <string name="tmdb_ratings_label">Ratings</string>
+    <string name="tmdb_ratings_votes">Votes</string>
+    <string name="control_display">Display</string>
+    <string name="display_time">Time</string>
+    <string name="display_traffic">Speed</string>
+    <string name="display_size">Resolution</string>
+    <string name="display_progress">Progress</string>
+    <string name="display_mini">Mini</string>
+    <string name="display_title">Title</string>
+    <string name="play_decode_idle">Decode</string>
+    <string name="detail_close">Close</string>
+    <string name="detail_expand">Read more</string>
+    <string name="detail_collapse">Collapse</string>
+    <string name="detail_flag">Line</string>
+    <string name="detail_quality">Quality</string>
+    <string name="detail_play_now">Play now</string>
+    <string name="detail_play_resume">Resume - %1$s</string>
+    <string name="detail_score">Score %1$s</string>
+    <string name="detail_runtime_format">%1$d min</string>
+    <string name="detail_season_format">Season %1$d</string>
+    <string name="detail_media_movie">Movie</string>
+    <string name="detail_media_tv">Series</string>
+    <string name="detail_media_unknown">Detail</string>
+    <string name="tmdb_episode_complete">All %1$d episodes</string>
+    <string name="tmdb_episode_total">%1$d episodes</string>
+    <string name="tmdb_episode_ongoing">Aired through episode %1$d</string>
+    <string name="tmdb_episode_ongoing_total">Aired %1$d of %2$d episodes</string>
+    <string name="tmdb_episode_series_ongoing">Aired through S%1$dE%2$d</string>
+    <string name="tmdb_episode_series_ongoing_total">Aired through S%1$dE%2$d · %3$d episodes</string>
+    <string name="tmdb_episode_season_complete">Season %1$d · all %2$d episodes</string>
+    <string name="tmdb_episode_season_total">Season %1$d · %2$d episodes</string>
+    <string name="tmdb_episode_season_ongoing">Season %1$d · episode %2$d</string>
+    <string name="tmdb_episode_season_ongoing_total">Season %1$d · %2$d of %3$d episodes</string>
+    <string name="tmdb_episode_planned">Upcoming</string>
+    <string name="tmdb_episode_planned_total">Upcoming · %1$d episodes planned</string>
+    <string name="tmdb_episode_canceled">Canceled · %1$d episodes</string>
+    <string name="tmdb_episode_compact_total">TMDB %1$d eps</string>
+    <string name="tmdb_episode_compact_progress">TMDB %1$d/%2$d eps</string>
+    <string name="tmdb_episode_compact_episode">TMDB E%1$d</string>
+    <string name="tmdb_episode_compact_series">TMDB S%1$dE%2$d</string>
+    <string name="tmdb_episode_compact_series_total">TMDB S%1$dE%2$d · %3$d eps</string>
+    <string name="tmdb_episode_compact_season">TMDB S%1$d · %2$d eps</string>
+    <string name="tmdb_episode_compact_season_progress">TMDB S%1$d %2$d/%3$d eps</string>
+    <string name="tmdb_episode_compact_planned">TMDB upcoming</string>
+    <string name="detail_source_current">Current source: %1$s</string>
+    <string name="detail_source_empty">No available source</string>
+    <string name="detail_source_episode_empty">No available episodes or source</string>
+    <string name="detail_source_searching">Searching sources...</string>
+    <string name="detail_theme_dark">Dark</string>
+    <string name="detail_theme_light">Light</string>
+    <string name="detail_tmdb_cast">Cast</string>
+    <string name="detail_tmdb_creators">Creators</string>
+    <string name="detail_tmdb_works">You Might Like</string>
+    <string name="detail_tmdb_loading_detail">Loading TMDB details...</string>
+    <string name="detail_episode_detail_title">Episode %1$d · %2$s</string>
+    <string name="detail_episode_guests">Guest Cast</string>
+    <string name="detail_episode_crew">Crew</string>
+    <string name="detail_episode_original_name">Original: %1$s</string>
+    <string name="detail_person_biography">Biography</string>
+    <string name="detail_person_empty">No person information</string>
+    <string name="detail_person_info">Personal Info</string>
+    <string name="detail_person_photos">Photos</string>
+    <string name="detail_person_works">Works</string>
+    <string name="detail_person_work_count">%1$d works</string>
+    <string name="detail_person_score_title">Overall Score</string>
+    <string name="detail_person_score_value">%1$d</string>
+    <string name="detail_person_score_meta">Focus: %1$s\nCast %2$d · Director %3$d · Crew %4$d\nWork avg %5$s</string>
+    <string name="detail_filter_all">All</string>
+    <string name="detail_filter_cast">Cast</string>
+    <string name="detail_filter_crew">Crew</string>
+    <string name="detail_filter_director">Director</string>
+    <string name="detail_filter_movie">Movies</string>
+    <string name="detail_filter_tv">TV</string>
+    <string name="detail_image_previous">Previous</string>
+    <string name="detail_image_next">Next</string>
+    <string name="detail_image_close">Close</string>
+
+    <!-- Viewing Report -->
+    <string name="menu_viewing_report">Viewing Report</string>
+    <string name="viewing_report_title">🎬 Your Viewing Report</string>
+    <string name="viewing_report_select_range">Select Report Range</string>
+    <string name="viewing_report_generate">Generate Report</string>
+    <string name="viewing_report_refresh">Refresh</string>
+    <string name="viewing_report_refreshing">Refreshing report...</string>
+    <string name="viewing_report_loading_local">Loading cached report...</string>
+    <string name="viewing_report_generating">Generating report...</string>
+    <string name="viewing_report_ai_analyzing">AI analyzing...</string>
+    <string name="viewing_report_empty">No viewing records in this time range</string>
+    <string name="viewing_report_unit_hours">hours</string>
+    <string name="viewing_report_unit_vods">titles</string>
+    <string name="viewing_report_unit_episodes">episodes</string>
+    <string name="viewing_report_unit_minutes">minutes</string>
+    <string name="viewing_report_unit_times">times</string>
+    <string name="viewing_report_watched">Watched</string>
+    <string name="viewing_report_completion_rate">Completion Rate</string>
+    <string name="viewing_report_overview_watch">Total Watch Time</string>
+    <string name="viewing_report_time_pattern">⏰ Time Pattern</string>
+    <string name="viewing_report_top_time_slot">Favorite Time</string>
+    <string name="viewing_report_weekend_ratio">Weekend Ratio</string>
+    <string name="viewing_report_avg_watch">Avg. Session</string>
+    <string name="viewing_report_late_night">Late Night</string>
+    <string name="viewing_report_content_preference">🎭 Content Preference</string>
+    <string name="viewing_report_tv_movie_ratio">TV / Movie</string>
+    <string name="viewing_report_people_preference">👤 People Preference</string>
+    <string name="viewing_report_top_actors">Top Actors</string>
+    <string name="viewing_report_top_directors">Top Directors</string>
+    <string name="viewing_report_ai_persona">✨ Your Viewing Persona</string>
+    <string name="viewing_report_badges">🏆 Achievements</string>
+
+    <!-- AI 智能去广 -->
+    <string name="setting_ai_ad_detection">AI 智能去广</string>
+    <string name="setting_ad_rule_manage">规则管理</string>
+    <string name="ad_rule_add_manual">手动添加规则</string>
+    <string name="ad_rule_import_candidates">待审核接口规则（%d）</string>
+    <string name="ad_rule_import_title">导入接口去广规则</string>
+    <string name="ad_rule_import_action">导入（默认停用）</string>
+    <string name="ad_rule_ignore_all">忽略全部</string>
+    <string name="ad_rule_import_empty">暂无待审核接口规则</string>
+    <string name="ad_rule_section_custom">自定义规则</string>
+    <string name="ad_rule_section_server">接口配置规则</string>
+    <string name="ad_rule_empty">暂无规则</string>
+    <string name="ad_rule_delete_confirm">删除规则</string>
+    <string name="ad_rule_delete_message">确定删除“%1$s”吗？接口导入规则删除后可在待审核规则中重新导入。</string>
+    <string name="ad_rule_server_empty">来自配置 · 暂无</string>
+    <string name="ad_rule_server_summary">来自配置 · 共 %d 条（只读）</string>
+    <string name="ad_rule_edit_title">编辑规则</string>
+    <string name="ad_rule_field_name">规则名称（可选）</string>
+    <string name="ad_rule_field_hosts">域名列表（每行一个）</string>
+    <string name="ad_rule_field_hosts_hint">仅对这些域名生效，留空表示全局</string>
+    <string name="ad_rule_field_regex">广告规则（每行一个正则）</string>
+    <string name="ad_rule_field_regex_hint">匹配的 URL 会被屏蔽</string>
+    <string name="ad_rule_field_exclude">白名单（每行一个正则）</string>
+    <string name="ad_rule_field_exclude_hint">匹配的 URL 不会被屏蔽</string>
+    <string name="ad_rule_empty_input">至少填写一项</string>
+    <string name="ad_rule_invalid_regex">正则表达式无效：%s</string>
+    <string name="ad_rule_count">%d 条规则</string>
+    <string name="ad_rule_count_with_pending">%1$d 条规则 · %2$d 条待审核</string>
+    <string name="play_ad_feedback">有广告</string>
+    <string name="ad_feedback_analyzing">AI 正在分析广告特征…</string>
+    <string name="ad_feedback_no_url">当前没有可分析的播放地址</string>
+    <string name="ad_feedback_ai_disabled">请先在增强设置中开启 AI 与智能去广</string>
+    <string name="ad_feedback_failed">分析失败：%s</string>
+    <string name="ad_feedback_empty_result">AI 未识别到明显的广告特征</string>
+    <string name="ad_feedback_preview_title">AI 广告分析结果</string>
+    <string name="ad_feedback_confidence">置信度 %d%%</string>
+    <string name="ad_feedback_reasoning">分析说明</string>
+    <string name="ad_feedback_apply">应用并屏蔽</string>
+    <string name="ad_feedback_applied">已添加去广规则</string>
+    <string name="ad_feedback_low_confidence">置信度较低，建议人工核对后再应用</string>
+    <string name="ad_feedback_no_ad">AI 未识别到明显的广告特征</string>
+    <string name="ad_feedback_saved">已添加去广规则</string>
+    <string name="ad_rule_preview_title">AI 广告分析结果</string>
+    <string name="ad_rule_confidence_value">置信度：%d%%</string>
+    <string name="ad_rule_low_confidence_warning">置信度较低，证据不足，建议人工核对后再应用</string>
+    <string name="ad_rule_preview_hosts">屏蔽域名</string>
+    <string name="ad_rule_preview_regex">广告规则（正则）</string>
+    <string name="ad_block_stats">广告拦截统计</string>
+    <string name="ad_block_total">总拦截次数</string>
+    <string name="ad_feedback_count">AI 反馈次数</string>
+    <string name="ad_ai_success_rate">AI 分析成功率</string>
+    <string name="ad_site_rank">站点拦截排行</string>
+    <string name="ad_rule_rank">规则命中排行</string>
+    <string name="ad_stats_reset">重置统计</string>
+    <string name="ad_stats_reset_confirm">确定重置所有统计数据吗？</string>
+    <string name="ad_stats_empty">暂无统计数据</string>
+    <string name="ad_stats_overview">统计概览</string>
+    <string name="ad_stats_times">次</string>
+    <string name="ad_stats_percent">%.1f%%</string>
+    <string name="ad_stats_site_name">站点</string>
+    <string name="ad_stats_rule_name">规则</string>
+    <string name="ad_stats_count">次数</string>
+    <string name="ad_stats_source">来源</string>
+    <string name="ad_stats_source_default">默认</string>
+    <string name="ad_stats_source_ai">AI</string>
+    <string name="ad_stats_source_manual">手动</string>
+    <string name="ad_stats_source_unknown">未知</string>
+    <string name="ad_rule_preview_exclude">白名单（正则）</string>
+    <string name="ad_rule_preview_none">（无）</string>
+    <string name="ad_rule_preview_confirm">应用并屏蔽</string>
+    <string name="ad_rule_section_summary">AI/自定义 %1$d 条 · 接口配置 %2$d 条 · 内置 HLS %3$d 条</string>
+    <string name="ad_rule_hls_builtin_summary">内置 HLS · v%1$d · %2$s</string>
+    <string name="ad_rule_hls_enabled">已启用</string>
+    <string name="ad_rule_hls_disabled">默认关闭</string>
+    <string name="ad_rule_hls_invalid">规则异常：%1$s</string>
+    <string name="ad_rule_detail_hint">查看完整规则</string>
+    <string name="ad_rule_detail_hosts">适用域名</string>
+    <string name="ad_rule_detail_regex">匹配规则</string>
+    <string name="ad_rule_detail_script">自动化脚本</string>
+    <string name="ad_rule_detail_exclude">白名单 / 正片保护</string>
+    <string name="ad_rule_detail_json">完整规则（JSON）</string>
+    <string name="ad_rule_detail_id">规则 ID：%1$s</string>
+    <string name="ad_rule_detail_source">来源：%1$s</string>
+    <string name="ad_rule_default_disable_confirm">临时停用此接口配置规则？\n可能导致部分广告无法过滤，可随时重新启用。</string>
+    <string name="ad_rule_imported_disable_confirm">临时停用此接口导入规则？\n可随时重新启用，删除后也可从待审核规则重新导入。</string>
+    <string name="ad_rule_ai_disable_confirm">临时停用此 AI 识别规则？\n可随时重新启用。</string>
+    <string name="ad_rule_manual_disable_confirm">临时停用此手动规则？\n可随时重新启用。</string>
+    <string name="ad_rule_default_enable_confirm">重新启用此默认规则？</string>
+
+<string name="player_karaoke_status_free">Karaoke · Free sing</string>
+
+<string name="player_karaoke_status_free_score_grade">Karaoke · Fun %1$d · %2$s</string>
+
+<string name="player_karaoke_status_score">Karaoke · %1$d</string>
+
+<string name="player_karaoke_status_score_grade">Karaoke · %1$d · %2$s</string>
+
+<string name="player_karaoke_status_rhythm_score">Karaoke · Rhythm %1$d</string>
+
+<string name="player_karaoke_status_rhythm_score_grade">Karaoke · Rhythm %1$d · %2$s</string>
+
+<string name="player_karaoke_need_permission">Microphone permission required</string>
+
+<string name="player_karaoke_mic_unavailable">Microphone unavailable</string>
+
+<string name="player_karaoke_no_voice">Sing closer to the microphone</string>
+
+<string name="player_karaoke_pitch">Pitch %1$s</string>
+
+<string name="player_karaoke_pitch_score">Pitch %1$s · %2$s</string>
+
+<string name="player_karaoke_pitch_hit">Hit</string>
+
+<string name="player_karaoke_pitch_perfect">Perfect</string>
+
+<string name="player_karaoke_pitch_vibrato">Vibrato</string>
+
+<string name="player_karaoke_pitch_miss">Off %1$.1f st</string>
+
+<string name="player_karaoke_free_detail">Pitch %1$s · Participation %2$d%%</string>
+
+<string name="player_karaoke_rhythm_detail">Rhythm hit %1$d%%</string>
+
+<string name="player_karaoke_combo">Combo %1$d sec</string>
+
+<string name="player_karaoke_line_score">Line %1$d%%</string>
+
+<string name="player_karaoke_result_title">Karaoke result</string>
+
+<string name="player_karaoke_result_scoring">Pitch scoring</string>
+
+<string name="player_karaoke_result_rhythm">Rhythm scoring</string>
+
+<string name="player_karaoke_result_free">Free sing</string>
+
+<string name="player_karaoke_result_track">Track: %1$s</string>
+
+<string name="player_karaoke_result_no_track">No scoring track bound. This is a free-sing estimate.</string>
+
+<string name="player_karaoke_result_rhythm_note">Generated from lyric timing. Pitch is not judged.</string>
+
+<string name="player_karaoke_result_metric_hit">Hit rate</string>
+
+<string name="player_karaoke_result_metric_rhythm">Rhythm hit</string>
+
+<string name="player_karaoke_result_metric_participation">Participation</string>
+
+<string name="player_karaoke_result_score_value">%1$d · %2$s</string>
+
+<string name="player_karaoke_result_voice_coverage">Voice coverage</string>
+
+<string name="player_karaoke_result_bonus">Performance bonus</string>
+
+<string name="player_karaoke_result_perfect">Perfect hits</string>
+
+<string name="player_karaoke_result_vibrato">Vibrato bonus</string>
+
+<string name="player_karaoke_result_active_time">Active %1$d sec</string>
+
+<string name="player_karaoke_result_best_combo">Combo %1$d sec</string>
+
+<string name="player_karaoke_result_line_average">Line average</string>
+
+<string name="player_karaoke_result_line_summary">Lines %1$d · Best %2$d%%</string>
+
+<string name="player_karaoke_result_pitch_headline_high">Strong pitch control and steady delivery.</string>
+
+<string name="player_karaoke_result_pitch_headline_mid">Good take. Keep the pitch centered for a higher score.</string>
+
+<string name="player_karaoke_result_pitch_headline_low">Warm up the first notes and keep singing through each line.</string>
+
+<string name="player_karaoke_result_no_track_short">Free-sing estimate</string>
+
+<string name="player_karaoke_result_rhythm_note_short">Lyric rhythm scoring</string>
+
+<string name="player_karaoke_result_pitch_headline_high_short">Strong take</string>
+
+<string name="player_karaoke_result_pitch_headline_mid_short">Center the pitch</string>
+
+<string name="player_karaoke_result_pitch_headline_low_short">Start steady, sing through</string>
+
+<string name="player_karaoke_result_fun_note">Entertainment scoring includes pitch hits, perfect holds, combo, and vibrato bonuses.</string>
+
+<string name="player_lyrics_offset">Lyric offset</string>
+
+<string name="player_lyrics_rows">Lyric rows</string>
+
+<string name="player_lyrics_size">Lyric size</string>
+
+<string name="player_lyrics_source">Lyric source</string>
+
+<string name="player_karaoke_mode">Karaoke mode</string>
+
+<string name="player_audio_options">Playback options</string>
+
+<string name="player_karaoke_mode_enabled">Currently enabled</string>
+
+<string name="player_karaoke_mode_disabled">Currently disabled</string>
+
+<string name="player_karaoke_difficulty">Karaoke difficulty</string>
+
+<string name="player_karaoke_mic_delay">Mic delay</string>
+
+<string name="player_karaoke_track">Scoring track</string>
+
+<string name="player_karaoke_track_generate_pitch">Generate track</string>
+
+<string name="player_karaoke_track_search">Search online</string>
+
+<string name="player_karaoke_track_keyword">Scoring track keyword</string>
+
+<string name="player_karaoke_track_import_file">Import file</string>
+
+<string name="player_karaoke_track_import_url">Import URL</string>
+
+<string name="player_karaoke_track_sources">Track sources</string>
+
+<string name="player_karaoke_track_advanced">Advanced options</string>
+
+<string name="player_karaoke_track_back">Back</string>
+
+<string name="player_karaoke_track_basic_pitch_tflite">Basic Pitch: %1$s</string>
+
+<string name="player_karaoke_track_option_enabled">Enabled</string>
+
+<string name="player_karaoke_track_option_disabled">Disabled</string>
+
+<string name="player_karaoke_track_sources_hint">One repo per line: owner/repo@branch or https://github.com/owner/repo/tree/branch</string>
+
+<string name="player_karaoke_track_sources_saved">Scoring track sources saved</string>
+
+<string name="player_karaoke_track_url_hint">UltraStar .txt URL, USDB ID, USDB detail URL, or append @Cookie=...</string>
+
+<string name="player_karaoke_track_clear">Clear binding</string>
+
+<string name="player_karaoke_track_searching">Searching scoring tracks...</string>
+
+<string name="player_karaoke_track_not_found">No scoring track found</string>
+
+<string name="player_karaoke_track_select">Select scoring track</string>
+
+<string name="player_karaoke_track_source_login"> · login</string>
+
+<string name="player_karaoke_track_result_item">%1$s\n%2$s - %3$s\n%4$s</string>
+
+<string name="player_karaoke_track_imported">Scoring track imported</string>
+
+<string name="player_karaoke_track_import_failed">Scoring track import failed</string>
+
+<string name="player_karaoke_track_generated">Lightweight rhythm track generated</string>
+
+<string name="player_karaoke_track_generating_pitch">Generating pitch scoring track...</string>
+
+<string name="player_karaoke_track_generating_pitch_message">Analyzing the current audio locally and generating a pitch scoring track. Keep the player open until it finishes.</string>
+
+<string name="player_karaoke_track_generating_pitch_progress">%1$d%% · %2$s · %3$s</string>
+
+<string name="player_karaoke_track_generation_stop">Stop</string>
+
+<string name="player_karaoke_track_generation_stopped">Scoring track generation stopped</string>
+
+<string name="player_karaoke_track_pitch_stage_prepare">Preparing</string>
+
+<string name="player_karaoke_track_pitch_stage_decode">Decoding audio</string>
+
+<string name="player_karaoke_track_pitch_stage_analyze">Analyzing pitch</string>
+
+<string name="player_karaoke_track_pitch_stage_write">Writing scoring track</string>
+
+<string name="player_karaoke_track_pitch_stage_finish">Finishing</string>
+
+<string name="player_karaoke_track_pitch_remaining_unknown">Remaining time estimating</string>
+
+<string name="player_karaoke_track_pitch_remaining_seconds">About %1$d s left</string>
+
+<string name="player_karaoke_track_pitch_remaining_minutes">About %1$d min %2$d s left</string>
+
+<string name="player_karaoke_track_generated_pitch">Pitch scoring track generated</string>
+
+<string name="player_karaoke_track_generated_pitch_message">Applied to the current song and karaoke mode is enabled.</string>
+
+<string name="player_karaoke_track_generate_pitch_failed">Failed to generate pitch scoring track</string>
+
+<string name="player_karaoke_track_generate_pitch_failed_message">No scoring track was generated: %1$s</string>
+
+<string name="player_karaoke_track_generate_pitch_unsupported_source">The current media source cannot be analyzed directly. Try another line or quality, or use online search/import.</string>
+
+<string name="player_karaoke_track_generate_failed">Failed to generate rhythm track</string>
+
+<string name="player_karaoke_track_generate_no_lyrics">No timed lyrics available</string>
+
+<string name="player_karaoke_track_cleared">Scoring track binding cleared</string>
+
+<string name="player_karaoke_track_none">No scoring track binding</string>
+
+<string name="player_desktop_lyrics">Desktop lyrics</string>
+
+<string name="player_desktop_lyrics_permission">Allow display over other apps to show desktop lyrics</string>
+
+<string name="player_lyrics_cache">Lyric cache</string>
+
+<string name="player_lyrics_cache_value">%1$d items</string>
+
+<string name="player_lyrics_cache_cleared">Lyric cache cleared</string>
+
+<string name="player_lyrics_search">Search lyrics</string>
+
+<string name="player_lyrics_reload">Search lyrics again</string>
+
+<string name="player_lyrics_keyword">Lyric keyword</string>
+
+<string name="player_lyrics_keyword_required">Enter a lyric keyword</string>
+
+<string name="player_lyrics_searching">Searching lyrics...</string>
+
+<string name="player_lyrics_not_found">No lyrics found</string>
+
+<string name="player_lyrics_loaded">Lyrics loaded: %1$s</string>
+
+<string name="player_lyrics_select">Select lyrics</string>
+
+<string name="player_lyrics_word">Word</string>
+
+<string name="player_lyrics_synced">Synced</string>
+
+<string name="player_lyrics_plain">Plain</string>
+
+<string name="player_audio_badge_audio">Audio</string>
+
+<string name="player_audio_badge_lyrics">Lyrics</string>
+
+<string name="player_audio_playlist">Playlist</string>
+
+<string name="player_audio_playlist_results">Search results</string>
+
+<string name="player_audio_playlist_search_hint">Search current source</string>
+
+<string name="player_audio_playlist_search_required">Enter a search keyword</string>
+
+<string name="player_audio_playlist_search_failed">Search failed</string>
+
+<string name="player_audio_playlist_no_results">No results found</string>
+
+<string name="player_audio_playlist_result_count">%1$d results found</string>
+
+<string name="player_audio_playlist_adding">Adding %1$s...</string>
+
+<string name="player_audio_playlist_add_failed">Add failed</string>
+
+<string name="player_audio_playlist_add_empty">No playable item found</string>
+
+<string name="player_audio_playlist_added">Added %1$d item(s)</string>
+
+<string name="player_audio_playlist_exists">Already in playlist</string>
+
+<string name="player_audio_playlist_empty">No songs in playlist</string>
+
+<string name="player_audio_playlist_removed">Removed %1$s</string>
+
+<string name="player_audio_playlist_keep_one">Keep at least one song in playlist</string>
+
+<string name="player_audio_playlist_switch">Switch</string>
+
+<string name="player_audio_playlist_create">New</string>
+
+<string name="player_audio_playlist_name_hint">Playlist name</string>
+
+<string name="player_audio_more">More</string>
+
+<string name="player_audio_background">Background</string>
+
+<string name="player_audio_background_decorated_on">Details on</string>
+
+<string name="player_audio_background_decorated_off">Details off</string>
+
+<string name="player_audio_background_light_effect_on">Light effect on</string>
+
+<string name="player_audio_background_light_effect_off">Light effect off</string>
+
+<string name="player_audio_background_decorated_turn_on">Show details</string>
+
+<string name="player_audio_background_decorated_turn_off">Hide details</string>
+
+<string name="player_audio_background_random_plain">New background</string>
+
+<string name="player_audio_background_random_decoration">New details</string>
+
+<string name="player_audio_background_random_plain_done">Plain background generated</string>
+
+<string name="player_audio_background_random_decoration_done">Background details generated</string>
+
+<string name="player_audio_background_random_mix_done">Background mix generated</string>
+
+<string name="player_lyrics_unknown">Unknown</string>
+
+<string name="player_lyrics_result_item">%1$s · %2$s · %3$d\n%4$s - %5$s</string>
+
+<string name="player_lyrics_rows_value">%1$d rows</string>
+
+<string-array name="select_lyrics_size">
+        <item>Small</item>
+        <item>Default</item>
+        <item>Large</item>
+        <item>Extra large</item>
+    </string-array>
+
+<string-array name="select_lyrics_source">
+        <item>Auto</item>
+        <item>Local</item>
+        <item>AMLL TTML</item>
+        <item>QQMusic QRC</item>
+        <item>Netease YRC</item>
+        <item>Kuwo</item>
+        <item>LRCLIB</item>
+        <item>Kugou</item>
+        <item>Migu</item>
+    </string-array>
+
+<string-array name="select_karaoke_difficulty">
+        <item>Easy</item>
+        <item>Standard</item>
+        <item>Strict</item>
+    </string-array>
+
+<string name="player_audio_badge_queue">Queue</string>
+
+<string name="player_audio_repeat">Repeat</string>
+
+    <string name="web_theme_detail_loading">正在加载详情页…</string>
+</resources>

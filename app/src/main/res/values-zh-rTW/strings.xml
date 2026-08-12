@@ -1,0 +1,2381 @@
+<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
+
+    <!-- App -->
+    <string name="app_name">湯影視</string>
+    <string name="app_exit_confirm">再按一次退出應用</string>
+
+    <!-- Live -->
+    <string name="live_pass">密碼</string>
+    <string name="live_refresh">刷新</string>
+    <string name="live_line">來源 <xliff:g name="name">%s</xliff:g></string>
+    <string name="live_control_source">直播源</string>
+
+    <!-- Detail -->
+    <string name="detail_title"><xliff:g name="name">%s</xliff:g>：<xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_site">站源：<xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_year">年份：<xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_area">地區：<xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_type">類型：<xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_director">導演：<xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_actor">演員：<xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_content">簡介：<xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_desc">簡介</string>
+    <string name="detail_episode">選集</string>
+    <string name="detail_episode_season_context">選集 · 第 %1$d 季</string>
+    <string name="detail_episode_reverse">倒序</string>
+    <string name="detail_episode_forward">正序</string>
+    <string name="detail_episode_view_grid">網格</string>
+    <string name="detail_episode_view_list">列表</string>
+    <string name="detail_episode_view_grid_action">切換到網格</string>
+    <string name="detail_episode_view_list_action">切換到列表</string>
+    <string name="detail_episode_file_name_original">原文件名</string>
+    <string name="detail_episode_file_name_scraped">刮削文件名</string>
+    <string name="detail_episode_file_name_original_action">切換到原文件名</string>
+    <string name="detail_episode_file_name_scraped_action">切換到刮削文件名</string>
+
+    <!-- Keep -->
+    <string name="keep">收藏</string>
+    <string name="keep_add">已收藏</string>
+    <string name="keep_del">已取消收藏</string>
+    <string name="exit_confirm_title">退出應用</string>
+    <string name="exit_confirm_message">應用將關閉，播放和後台服務也會停止。</string>
+    <string name="exit_confirm_playing_message">目前正在播放；後台播放會繼續播放，完全退出會停止播放和後台服務。</string>
+    <string name="exit_confirm_background">後台播放</string>
+    <string name="exit_confirm_positive">完全退出</string>
+
+    <!-- Play -->
+    <string name="play">播放</string>
+    <string name="pause">暫停</string>
+    <string name="play_op">片頭</string>
+    <string name="play_ed">片尾</string>
+    <string name="play_exo">EXO</string>
+    <string name="play_next">下集</string>
+    <string name="play_prev">上集</string>
+    <string name="play_stop">停止</string>
+    <string name="play_repeat">循環</string>
+    <string name="play_forward">→</string>
+    <string name="play_backward">←</string>
+    <string name="play_speed">1.00</string>
+    <string name="play_reset">刷新</string>
+    <string name="play_decode">硬解</string>
+    <string name="play_params">播放參數</string>
+    <string name="codec_capability_short">硬解能力</string>
+    <string name="codec_capability_title">硬解能力</string>
+    <string name="codec_capability_search">搜尋 codec、mime、decoder、解析度、音訊...</string>
+    <string name="codec_capability_current">目前媒體</string>
+    <string name="codec_capability_all">全部</string>
+    <string name="codec_capability_video">影片</string>
+    <string name="codec_capability_audio">音訊</string>
+    <string name="codec_capability_copy">複製</string>
+    <string name="play_timer">定時</string>
+    <string name="play_title">章節</string>
+    <string name="play_scale">原始</string>
+    <string name="play_lut">LUT</string>
+    <string name="play_config">配置</string>
+    <string name="play_cast">投屏</string>
+    <string name="play_change">換源</string>
+    <string name="play_short_display">短顯</string>
+    <string name="play_search">搜尋</string>
+    <string name="play_fullscreen">全螢幕</string>
+    <string name="play_exit_fullscreen">退出全螢幕</string>
+    <string name="play_invert">反轉</string>
+    <string name="play_across">跨類</string>
+    <string name="play_reverse">倒序</string>
+    <string name="play_track_text">字幕</string>
+    <string name="play_track_audio">音軌</string>
+    <string name="play_track_video">視軌</string>
+    <string name="play_track_disable_subtitle">關閉字幕</string>
+    <string name="play_track_disable_secondary_subtitle">關閉第二字幕</string>
+    <string name="play_track_secondary_subtitle">第二字幕</string>
+    <string name="play_track_primary_subtitle">主字幕</string>
+    <string name="offset_text">字幕偏移</string>
+    <string name="offset_audio">音軌偏移</string>
+    <string name="offset_setting">偏移設定</string>
+    <string name="play_forward_hint">已切換正序播放</string>
+    <string name="play_backward_hint">已切換倒序播放</string>
+    <string name="play_ready">準備播放：<xliff:g name="name">%s</xliff:g></string>
+    <string name="play_switch_flag">正在切換線路至「<xliff:g name="name">%s</xliff:g>」</string>
+    <string name="play_switch_site">正在切換站源至「<xliff:g name="name">%s</xliff:g>」</string>
+    <string name="play_switch_parse">正在切换解析至「<xliff:g name="name">%s</xliff:g>」</string>
+    <string name="play_night_mode">夜間護眼</string>
+    <string name="night_mode_off">護眼關閉</string>
+    <string name="night_mode_low">輕度護眼</string>
+    <string name="night_mode_medium">中度護眼</string>
+    <string name="night_mode_high">重度護眼</string>
+
+    <!-- Danmaku Setting -->
+    <string name="danmaku">彈幕</string>
+    <string name="danmaku_show_on">彈幕已開啟</string>
+    <string name="danmaku_show_off">彈幕已關閉</string>
+    <string name="danmaku_select">選擇彈幕</string>
+    <string name="danmaku_setting">彈幕設定</string>
+    <string name="danmaku_text_size">字體縮放</string>
+    <string name="danmaku_transparency">透明度</string>
+    <string name="danmaku_text_bold">粗體</string>
+    <string name="danmaku_style_mode">字體效果</string>
+    <string name="danmaku_style_none">無</string>
+    <string name="danmaku_style_shadow">陰影</string>
+    <string name="danmaku_style_stroke">描邊</string>
+    <string name="danmaku_style_projection">投影</string>
+    <string name="danmaku_shadow_transparency">陰影透明度</string>
+    <string name="danmaku_stroke_width">描邊寬度</string>
+    <string name="danmaku_projection_offset_x">投影水平偏移</string>
+    <string name="danmaku_projection_offset_y">投影垂直偏移</string>
+    <string name="danmaku_projection_transparency">投影透明度</string>
+    <string name="danmaku_color_mode">顏色模式</string>
+    <string name="danmaku_color_default">原色</string>
+    <string name="danmaku_color_colorful">彩色</string>
+    <string name="danmaku_color_gradient">漸層</string>
+    <string name="danmaku_color_override_hint">彈幕原始顏色將被忽略</string>
+    <string name="danmaku_auto">自動</string>
+    <string name="danmaku_duration">滾動時間</string>
+    <string name="danmaku_fixed_duration">固定顯示時間</string>
+    <string name="danmaku_time_offset">時間偏移</string>
+    <string name="danmaku_max_on_screen">最多同時顯示</string>
+    <string name="danmaku_scroll_area_ratio">滾動區域</string>
+    <string name="danmaku_max_scroll_lines">最大滾動行數</string>
+    <string name="danmaku_max_top_lines">最大頂部行數</string>
+    <string name="danmaku_max_bottom_lines">最大底部行數</string>
+    <string name="danmaku_top_rows">頂部行數</string>
+    <string name="danmaku_bottom_rows">底部行數</string>
+    <string name="danmaku_display_rows">顯示行數</string>
+    <string name="danmaku_rows_1">1行</string>
+    <string name="danmaku_rows_2">2行</string>
+    <string name="danmaku_rows_3">3行</string>
+    <string name="danmaku_rows_4">4行</string>
+    <string name="danmaku_rows_5">5行</string>
+    <string name="danmaku_line_spacing">垂直間距</string>
+    <string name="danmaku_scroll_gap_ratio">水平間距</string>
+    <string name="danmaku_show_scroll">滾動彈幕</string>
+    <string name="danmaku_show_top">頂部固定</string>
+    <string name="danmaku_show_bottom">底部固定</string>
+    <string name="danmaku_show_reverse">反向滾動</string>
+    <string name="danmaku_show_positioned">定位彈幕</string>
+    <string name="danmaku_show_subtitle">字幕型</string>
+    <string name="danmaku_show_special">特效型</string>
+    <string name="danmaku_section_appearance">外觀</string>
+    <string name="danmaku_section_display">顯示</string>
+    <string name="danmaku_section_timing">時間</string>
+    <string name="danmaku_section_density">密度</string>
+    <string name="danmaku_reset">重設</string>
+
+    <!-- Parse -->
+    <string name="parse">解析</string>
+    <string name="parse_god">超級解析</string>
+    <string name="parse_from">解析來自：<xliff:g name="name">%s</xliff:g></string>
+
+    <!-- Push -->
+    <string name="push">推送</string>
+
+    <!-- Setting -->
+    <string name="setting_vod">點播</string>
+    <string name="setting_live">直播</string>
+    <string name="setting_wall">壁紙</string>
+    <string name="setting_config_dialog_title">%1$s%2$s</string>
+    <string name="setting_builtin_wall">內置壁紙</string>
+    <string name="setting_player">播放設定</string>
+    <string name="setting_danmaku">彈幕設定</string>
+    <string name="setting_subtitle">字幕設定</string>
+    <string name="setting_enhance">增強功能</string>
+    <string name="setting_search_thread">搜尋線程</string>
+    <string name="setting_personal">個性設定</string>
+    <string name="setting_group_rule">分組規則</string>
+    <string name="setting_group_rule_summary">已啟用 %1$d / %2$d</string>
+    <string name="group_rule_add">新增規則</string>
+    <string name="group_rule_edit">編輯規則</string>
+    <string name="group_rule_manage">管理</string>
+    <string name="group_rule_delete">刪除</string>
+    <string name="group_rule_name">規則名稱</string>
+    <string name="group_rule_regex">正則表達式</string>
+    <string name="group_rule_regex_hint">第 1 個捕獲組作為分組名。多個已啟用規則為或關係，命中即獨立分組。</string>
+    <string name="group_rule_regex_required">請填寫正則表達式</string>
+    <string name="group_rule_regex_invalid">正則表達式無效</string>
+    <string name="group_rule_empty_custom">暫無自訂或介面規則</string>
+    <string name="group_rule_edit_item">編輯 · %1$s\n%2$s</string>
+    <string name="group_rule_interface_item">介面 · %1$s\n%2$s</string>
+    <string name="group_rule_ai_identify">AI 識別</string>
+    <string name="group_rule_ai_reidentify">AI 重新識別</string>
+    <string name="group_rule_ai_privacy_title">使用 AI 識別分組</string>
+    <string name="group_rule_ai_privacy_message">將把目前點播介面中可見的來源名稱傳送到你設定的 AI 服務；來源較多時可能自動拆分為多次請求（最多 8 次）。介面位址、來源 API、擴充設定、播放記錄和 AI 金鑰不會寫入分析內容。</string>
+    <string name="group_rule_ai_start">開始識別</string>
+    <string name="group_rule_ai_config_incomplete">AI 服務設定不完整，請先到「增強功能 → AI 通用配置」補齊端點、API key 和模型。</string>
+    <string name="group_rule_ai_no_sources">目前點播介面沒有可分析的可見來源名稱。</string>
+    <string name="group_rule_ai_analyzing_title">AI 正在識別分組</string>
+    <string name="group_rule_ai_analyzing_message">正在分析 %1$d 個來源名稱…候選規則會先在本機驗證，再進入預覽。</string>
+    <string name="group_rule_ai_preview_title">AI 分組預覽</string>
+    <string name="group_rule_ai_preview_summary">%1$d 個來源 · %2$d 條候選規則 · 最終覆蓋 %3$d/%4$d（%5$d%%）</string>
+    <string name="group_rule_ai_groups_title">提取後的分組</string>
+    <string name="group_rule_ai_rules_title">產生的規則</string>
+    <string name="group_rule_ai_rule_summary">%1$s\n%2$s\n命中 %3$d 個來源 · %4$d 個分組 · 新增覆蓋 %5$d 個 · 穩定覆蓋 %6$d 個</string>
+    <string name="group_rule_ai_unmatched">未分組 · %1$d 個來源</string>
+    <string name="group_rule_ai_more_groups">……還有 %1$d 個分組</string>
+    <string name="group_rule_ai_preview_note">套用後只取代目前點播介面的 AI 規則，內建規則、介面規則和手動規則不會改變。</string>
+    <string name="group_rule_ai_retry">重試</string>
+    <string name="group_rule_ai_apply">套用規則</string>
+    <string name="group_rule_ai_select_required">請至少保留一條候選規則後再套用。</string>
+    <string name="group_rule_ai_saved">已為「%2$s」儲存 %1$d 條 AI 分組規則</string>
+    <string name="group_rule_ai_failed_title">AI 識別失敗</string>
+    <string name="group_rule_ai_error_http">AI 服務回傳 HTTP %1$s。</string>
+    <string name="group_rule_ai_error_invalid_response">AI 回傳的規則內容無效，可以點擊重試。</string>
+    <string name="group_rule_ai_error_no_valid_rules">AI 沒有產生安全且有效的分組規則。</string>
+    <string name="group_rule_ai_error_timeout">AI 識別請求逾時。</string>
+    <string name="group_rule_ai_error_network">無法連線 AI 服務。</string>
+    <string name="group_rule_ai_error_too_many_sources">來源名稱數量過多，無法在安全請求範圍內完成分析，請精簡目前介面後重試。</string>
+    <string name="group_rule_ai_error_prompt_too_large">自訂分組規則提示詞過長，請在 AI 提示詞設定中精簡。</string>
+    <string name="group_rule_ai_error_generic">AI 識別失敗。</string>
+    <string name="group_rule_ai_config_changed">識別期間點播介面已切換，請重新識別。</string>
+    <string name="group_rule_ai_label">AI · %1$s\n%2$s</string>
+    <string name="group_rule_ai_current_interface">目前點播介面</string>
+
+    <string name="setting_personal_recommendation">個性推薦</string>
+    <string name="setting_tmdb_episode_file_size">TMDB 劇集保留檔案大小</string>
+    <string name="setting_auto_skip_intro_outro">自動跳過片頭片尾</string>
+    <string name="intro_skip_confirm_title">跳過片頭/片尾？</string>
+    <string name="intro_skip_confirm_intro">跳過片頭</string>
+    <string name="intro_skip_confirm_recap">跳過前情提要</string>
+    <string name="intro_skip_confirm_outro">跳過片尾</string>
+    <string name="personal_recommendation_confirm_title">啟用個性推薦</string>
+    <string name="personal_recommendation_confirm_message">個性推薦會讀取本機觀看歷史中的影片名稱，並可能將當前影片名和歷史影片名作為搜尋關鍵詞發送到 TMDB 或豆瓣，用於生成相關作品列表。\n\n不會發送播放地址、帳號資訊、站源配置或播放進度。你可以隨時關閉此功能。</string>
+    <string name="setting_search_ui">搜尋佈局</string>
+    <string name="setting_search_column">搜尋結果列數</string>
+    <string name="setting_site_column">站點展示模式</string>
+    <string name="setting_search_result_sort">搜尋結果模式</string>
+    <string name="repo_github">GitHub 倉庫</string>
+    <string name="repo_cnb">CNB 倉庫</string>
+    <string name="setting_debug_log">調試日誌</string>
+    <string name="setting_manage_page">管理頁面</string>
+    <string name="setting_remote_trust">遠程託管</string>
+    <string name="setting_git_cloud">Git 雲盤</string>
+    <string name="git_cloud_account_count">帳號 %1$d</string>
+    <string name="dialog_cancel">取消</string>
+    <string name="dialog_confirm">確認</string>
+    <string name="remote_trust_server_url">中轉服務 URL</string>
+    <string name="remote_trust_enable">啟用此服務</string>
+    <string name="remote_trust_keep_online">保持遠程託管在線</string>
+    <string name="remote_trust_save_register">儲存/註冊</string>
+    <string name="remote_trust_create_bind_code">產生綁定碼</string>
+    <string name="remote_trust_file_permission">檔案權限</string>
+    <string name="remote_trust_clear">清空託管</string>
+    <string name="remote_trust_clear_message">清空本機所有遠程託管服務、設備令牌、設備組和待綁定碼？</string>
+    <string name="remote_trust_no_bind_code">暫無綁定碼</string>
+    <string name="remote_trust_dialog_hint">填寫中轉服務 URL 後儲存/註冊本機。需要把本機加入控制端時，再產生綁定碼。</string>
+    <string name="remote_trust_bind_code_hint">點擊綁定碼可複製。綁定碼短時間有效，可在 Web 控制台或另一台 WebHTV 裡使用。</string>
+    <string name="remote_trust_file_permission_hint">建議授予檔案權限，卸載重裝後也能恢復託管關係。</string>
+    <string name="remote_trust_server_required">請輸入有效的中轉服務 URL</string>
+    <string name="remote_trust_register_done">遠程託管已註冊</string>
+    <string name="remote_trust_bind_code_done">綁定碼已產生</string>
+    <string name="remote_trust_bind_code_copied">綁定碼已複製</string>
+    <string name="remote_trust_bind_code_expired">綁定碼不存在或已過期。請確認兩台設備使用同一個中轉服務，再輸入目標設備最新綁定碼。</string>
+    <string name="remote_trust_status_unbound">未綁定</string>
+    <string name="remote_trust_status_enabled">已啟用</string>
+    <string name="remote_trust_status_online">在線</string>
+    <string name="remote_trust_current_status_summary">%1$s · 組 %2$d · 設備 %3$d</string>
+    <string name="remote_trust_notification_title">遠程託管在線</string>
+    <string name="remote_trust_section_local">本機接入</string>
+    <string name="remote_trust_section_local_hint">把目前 WebHTV 註冊到中轉服務。需要讓其他設備管理本機時，在這裡產生綁定碼。</string>
+    <string name="remote_trust_section_manage">管理設備</string>
+    <string name="remote_trust_section_manage_hint">輸入另一台 WebHTV 顯示的綁定碼，把它加入本機管理列表後即可下發基礎操作。</string>
+    <string name="remote_trust_bind_code">綁定碼</string>
+    <string name="remote_trust_device_alias">設備備註</string>
+    <string name="remote_trust_add_device">加入設備</string>
+    <string name="remote_trust_add_short">加入</string>
+    <string name="remote_trust_no_devices">暫無管理設備。請先在目標設備產生綁定碼，再在這裡加入。</string>
+    <string name="remote_trust_wait_devices">設備組已加入，正在等待目標設備同步並上線。</string>
+    <string name="remote_trust_device_online">在線</string>
+    <string name="remote_trust_device_offline">離線</string>
+    <string name="remote_trust_selected_device">已選：%1$s</string>
+    <string name="remote_trust_action_status">狀態</string>
+    <string name="remote_trust_action_search">搜尋播放</string>
+    <string name="remote_trust_action_push">推送</string>
+    <string name="remote_trust_action_log">日誌</string>
+    <string name="remote_trust_action_config">接口</string>
+    <string name="remote_trust_action_sync">一鍵同步</string>
+    <string name="remote_trust_search_keyword">搜尋關鍵詞</string>
+    <string name="remote_trust_push_url">推送播放地址</string>
+    <string name="remote_trust_add_done">設備已加入</string>
+    <string name="remote_trust_no_self_add">不能加入本機</string>
+    <string name="remote_trust_no_profile">請先儲存/註冊中轉服務</string>
+    <string name="remote_trust_no_group">暫無可信設備組</string>
+    <string name="remote_trust_no_device_selected">請先選擇設備</string>
+    <string name="remote_trust_code_required">請輸入綁定碼</string>
+    <string name="remote_trust_group_title">設備組 %1$s</string>
+    <string name="remote_trust_self_device">本機</string>
+    <string name="remote_trust_controlled_device">可控設備</string>
+    <string name="remote_trust_command_result">命令 %1$s · %2$s</string>
+    <string name="remote_trust_command_success">執行成功</string>
+    <string name="remote_trust_command_failed">執行失敗</string>
+    <string name="remote_trust_command_waiting">等待目標設備執行。目標離線時，重連後會繼續處理。</string>
+    <string name="remote_trust_empty_result">命令已發送，暫無結果</string>
+    <string name="remote_trust_tab_devices">設備</string>
+    <string name="remote_trust_tab_settings">設定</string>
+    <string name="remote_trust_local_status">本機狀態</string>
+    <string name="remote_trust_device_list">管理設備</string>
+    <string name="remote_trust_bind_local">綁定本機</string>
+    <string name="remote_trust_go_settings">去設定</string>
+    <string name="remote_trust_service_entry">服務</string>
+    <string name="remote_trust_done">完成</string>
+    <string name="remote_trust_bind_code_inline">碼 %1$s</string>
+    <string name="remote_trust_bind_code_empty">綁定碼 --</string>
+    <string name="remote_trust_bind_code_loading">產生中...</string>
+    <string name="remote_trust_bind_code_unavailable">未設定</string>
+    <string name="remote_trust_command_result_title">執行結果</string>
+    <string name="remote_trust_command_log_title">日誌</string>
+    <string name="remote_trust_result_action">操作</string>
+    <string name="remote_trust_result_status">狀態</string>
+    <string name="remote_trust_result_state">結果</string>
+    <string name="remote_trust_result_log_lines">最近日誌：%1$d 行</string>
+    <string name="remote_trust_result_copied">結果已複製</string>
+    <string name="remote_trust_settings_title">中轉服務</string>
+    <string name="remote_trust_edit_server">編輯中轉地址</string>
+    <string name="remote_trust_detect_service">檢測服務</string>
+    <string name="remote_trust_copy_diagnostics">複製診斷資訊</string>
+    <string name="remote_trust_diagnostics_copied">診斷資訊已複製</string>
+    <string name="remote_trust_service_unchecked">服務未檢測</string>
+    <string name="remote_trust_service_ok">服務可用</string>
+    <string name="remote_trust_service_error">服務不可用</string>
+    <string name="remote_trust_service_failed_with_reason">原因：%1$s</string>
+    <string name="remote_trust_service_connect_failed">連線失敗，請檢查服務地址、網路或部署狀態。</string>
+    <string name="remote_trust_service_request_failed">檢測失敗，可複製診斷資訊查看詳情。</string>
+    <string name="remote_trust_service_memory_warning">目前是記憶體中轉模式，跨設備綁定碼可能失效。正式使用前請更新 Cloudflare Worker Durable Object 配置。</string>
+    <string name="remote_trust_bind_local_title">本機綁定碼</string>
+    <string name="remote_trust_refresh_bind_code">刷新</string>
+    <string name="remote_trust_refresh_short">刷新</string>
+    <string name="remote_trust_copy">複製</string>
+    <string name="remote_trust_add_device_title">加入設備</string>
+    <string name="remote_trust_back_devices">返回</string>
+    <string name="remote_trust_send_search">發送搜尋</string>
+    <string name="remote_trust_send_push">推送播放</string>
+    <string name="remote_trust_config_hint">選擇本機接口，或手動輸入接口 URL。</string>
+    <string name="remote_trust_config_type">類型</string>
+    <string name="remote_trust_config_type_vod">點播</string>
+    <string name="remote_trust_config_type_live">直播</string>
+    <string name="remote_trust_config_type_wall">壁紙</string>
+    <string name="remote_trust_config_mode_local">本機配置</string>
+    <string name="remote_trust_config_mode_manual">手動輸入</string>
+    <string name="remote_trust_config_url">接口 URL</string>
+    <string name="remote_trust_config_name">接口名稱，可選</string>
+    <string name="remote_trust_config_list">查看列表</string>
+    <string name="remote_trust_config_add">新增</string>
+    <string name="remote_trust_config_edit">編輯</string>
+    <string name="remote_trust_config_active">目前</string>
+    <string name="remote_trust_config_loading">正在讀取遠端接口…</string>
+    <string name="remote_trust_config_load_failed">接口讀取失敗</string>
+    <string name="remote_trust_config_remote_empty">遠端設備暫無接口</string>
+    <string name="remote_trust_config_manage_hint">遠端已有接口</string>
+    <string name="remote_trust_config_summary">%1$s · %2$d 個接口</string>
+    <string name="remote_trust_config_add_local_summary">本機%1$s接口</string>
+    <string name="remote_trust_config_add_manual_summary">手動%1$s接口</string>
+    <string name="remote_trust_config_edit_summary">編輯%1$s接口</string>
+    <string name="remote_trust_config_save">繼續</string>
+    <string name="remote_trust_config_save_remote">保存到遠端</string>
+    <string name="remote_trust_config_upsert">保存接口</string>
+    <string name="remote_trust_config_use">切換接口</string>
+    <string name="remote_trust_config_home">主頁站點</string>
+    <string name="remote_trust_config_delete">刪除接口</string>
+    <string name="remote_trust_config_upsert_short">保存</string>
+    <string name="remote_trust_config_use_short">使用</string>
+    <string name="remote_trust_config_use_setting">設定中…</string>
+    <string name="remote_trust_config_current">目前</string>
+    <string name="remote_trust_config_use_status_setting">接口切換中</string>
+    <string name="remote_trust_config_use_status_success">接口已切換</string>
+    <string name="remote_trust_config_use_status_failed">接口切換失敗</string>
+    <string name="remote_trust_config_home_short">切換主頁</string>
+    <string name="remote_trust_config_home_label">目前主頁：%1$s</string>
+    <string name="remote_trust_config_home_loading">正在讀取站點…</string>
+    <string name="remote_trust_config_home_setting">設定中…</string>
+    <string name="remote_trust_config_home_status_setting">主頁設定中：%1$s</string>
+    <string name="remote_trust_config_home_status_success">主頁已設定：%1$s</string>
+    <string name="remote_trust_config_home_status_failed">主頁設定失敗：%1$s</string>
+    <string name="remote_trust_config_delete_short">刪除</string>
+    <string name="remote_trust_config_url_required">請輸入接口 URL</string>
+    <string name="remote_trust_config_delete_message">刪除遠端設備上的接口？\n%1$s</string>
+    <string name="remote_trust_config_local_empty">沒有該類型的本機配置</string>
+    <string name="remote_trust_config_select">選擇</string>
+    <string name="remote_trust_result_config_count">接口：%1$d 個</string>
+    <string name="remote_trust_result_site_count">站點：%1$d 個</string>
+    <string name="remote_trust_config_home_empty">解析接口後沒有找到站點</string>
+    <string name="remote_trust_sync_confirm">將本機預設同步資料發送到 %1$s，並覆蓋目標設備相關資料？</string>
+    <string name="remote_trust_sync_started">同步任務已建立。來源設備會先上傳資料，目標設備隨後恢復。</string>
+    <string name="remote_trust_sync_self_forbidden">不能把本機同步到本機</string>
+    <string name="remote_trust_sync_missing_id">同步任務建立失敗：缺少任務 ID</string>
+    <string name="remote_trust_sync_device">設備</string>
+    <string name="remote_trust_sync_task">任務</string>
+    <string name="remote_trust_sync_uploaded">已上傳</string>
+    <string name="remote_trust_sync_message">信息</string>
+    <string name="remote_trust_sync_running">同步中</string>
+    <string name="remote_trust_sync_progress">進度：%1$d/%2$d</string>
+    <string name="remote_trust_sync_background_hint">可關閉視窗，背景會繼續處理；重新打開可查看最近進度。</string>
+    <string name="remote_trust_sync_step_line">%1$d. %2$s：%3$s</string>
+    <string name="remote_trust_sync_step_create">建立任務</string>
+    <string name="remote_trust_sync_step_export">導出本機資料</string>
+    <string name="remote_trust_sync_step_upload">上傳同步資料</string>
+    <string name="remote_trust_sync_step_restore">恢復到對方設備</string>
+    <string name="remote_trust_sync_step_finish">完成同步</string>
+    <string name="remote_trust_sync_step_done">已完成</string>
+    <string name="remote_trust_sync_step_current">進行中</string>
+    <string name="remote_trust_sync_step_pending">待執行</string>
+    <string name="remote_trust_sync_step_failed">失敗</string>
+    <string name="remote_trust_sync_state_creating">正在建立同步任務...</string>
+    <string name="remote_trust_sync_state_created">等待本機導出資料...</string>
+    <string name="remote_trust_sync_state_exporting">正在上傳同步資料...</string>
+    <string name="remote_trust_sync_state_exported">等待對方恢復資料...</string>
+    <string name="remote_trust_sync_state_done">同步完成</string>
+    <string name="remote_trust_sync_state_failed">同步失敗</string>
+    <string name="remote_trust_sync_state_timeout">仍在等待回執，目標設備離線或未開啟遠程托管時會超時</string>
+    <string name="remote_trust_sync_part_backup">接口備份</string>
+    <string name="remote_trust_sync_part_remote_relay">中轉服務</string>
+    <string name="remote_trust_sync_part_sync_files">文件包</string>
+    <string name="remote_trust_sync_part_login_state">登入狀態</string>
+    <string name="remote_trust_sync_result_counts">恢復文件：%1$s，登入狀態：%2$s</string>
+    <string name="remote_trust_device_id">設備</string>
+    <string name="remote_trust_app_version">版本</string>
+    <string name="remote_trust_service_info">模式：%1$s\n中轉：%2$s\n支援：%3$s\n最大分片：%4$s</string>
+    <string name="remote_trust_support_none">無</string>
+    <string name="remote_trust_cap_device">設備託管</string>
+    <string name="remote_trust_cap_config">接口管理</string>
+    <string name="remote_trust_cap_sync">遠端同步</string>
+    <string name="remote_trust_cap_push">推送</string>
+    <string name="remote_trust_cap_log">最近日誌</string>
+    <string name="remote_trust_advanced">進階</string>
+    <string name="remote_trust_advanced_hide">收起進階</string>
+    <string name="remote_trust_added_devices">已加入設備</string>
+    <string name="remote_trust_delete_device">刪除設備</string>
+    <string name="remote_trust_delete_device_message">刪除 %1$s 的本機託管資料？</string>
+    <string name="remote_trust_delete_device_done">設備託管資料已刪除</string>
+    <string name="remote_trust_reset_local">重置本機託管資料</string>
+    <string name="remote_trust_scan_server">掃碼</string>
+    <string name="remote_trust_scan_unavailable">目前設備不支援掃碼</string>
+    <string name="remote_trust_server_qr">中轉服務 QR Code</string>
+    <string name="remote_trust_scan_filled">已填入掃碼 URL，點擊完成後保存。</string>
+    <string name="remote_trust_send_server_title">發送中轉 URL</string>
+    <string name="remote_trust_send_server_hint">保存後會直接寫入剛才掃碼的那台設備。</string>
+    <string name="remote_trust_send_server_save">保存到對方</string>
+    <string name="remote_trust_send_server_done">已保存到對方設備</string>
+    <string name="remote_trust_send_server_failed">保存到對方設備失敗：%1$s</string>
+    <string name="setting_login_state">登入狀態學習</string>
+    <string name="setting_site_health_sort">站點健康排序</string>
+    <string name="setting_site_health_enable">啟用站點健康排序</string>
+    <string name="setting_site_health_dialog_sort">站點彈窗排序</string>
+    <string name="site_health_clear_done">站點健康記錄已清空</string>
+    <string name="site_health_report_view">查看報表</string>
+    <string name="site_health_report_title">播放鏈路健康報表</string>
+    <string name="site_health_report_empty">暫無站點健康樣本</string>
+    <string name="site_health_report_filter_empty">目前篩選暫無站點樣本</string>
+    <string name="site_health_filter_all">全部</string>
+    <string name="site_health_filter_bad">異常</string>
+    <string name="site_health_filter_warn">降級</string>
+    <string name="site_health_sort_failures">失敗</string>
+    <string name="site_health_sort_recent">最近</string>
+    <string name="site_health_sort_rate">成功率</string>
+    <string name="site_health_sort_samples">樣本</string>
+    <string name="site_health_report_summary">%1$d 個站點 · %2$d 筆樣本 · %3$d 次失敗 · %4$d 個降級</string>
+    <string name="site_health_report_summary_reason">%1$d 個站點 · %2$d 筆樣本 · %3$d 次失敗 · %4$d 個降級 · 主要原因 %5$s x%6$d</string>
+    <string name="site_health_report_setting_summary">%1$d 個站點 · %2$d 筆樣本</string>
+    <string name="site_health_report_row_meta">%1$d 筆樣本 · %2$d 次失敗</string>
+    <string name="site_health_report_stage">%1$s · %2$s · %3$d/%4$d</string>
+    <string name="site_health_report_rate">%1$d%%</string>
+    <string name="site_health_report_no_data">暫無資料</string>
+    <string name="site_health_report_empty_count">空結果 %1$d</string>
+    <string name="site_health_report_cost">%1$dms</string>
+    <string name="site_health_report_reason">原因：%1$s x%2$d</string>
+    <string name="site_health_report_reason_tag">%1$s x%2$d</string>
+    <string name="site_health_report_recent_errors">最近錯誤</string>
+    <string name="site_health_report_recent_error">%1$s：%2$s</string>
+    <string name="site_health_report_recent_error_time">%1$s · %2$s · %3$s</string>
+    <string name="site_health_clear_site">清空本站</string>
+    <string name="site_health_clear_site_title">清空站點統計？</string>
+    <string name="site_health_clear_site_message">清空「%1$s」的健康樣本？</string>
+    <string name="site_health_stage_search">搜尋</string>
+    <string name="site_health_stage_detail">詳情</string>
+    <string name="site_health_stage_parse">解析</string>
+    <string name="site_health_stage_play">播放</string>
+    <string name="site_health_status_good">健康</string>
+    <string name="site_health_status_warn">降級</string>
+    <string name="site_health_status_bad">異常</string>
+    <string name="site_health_status_unknown">未知</string>
+    <string name="site_health_reason_empty_result">搜尋無結果</string>
+    <string name="site_health_reason_timeout">請求逾時</string>
+    <string name="site_health_reason_http_403">HTTP 403</string>
+    <string name="site_health_reason_http_404">HTTP 404</string>
+    <string name="site_health_reason_http_429">HTTP 429</string>
+    <string name="site_health_reason_http_5xx">HTTP 5xx</string>
+    <string name="site_health_reason_network">網路錯誤</string>
+    <string name="site_health_reason_parse_failed">解析失敗</string>
+    <string name="site_health_reason_vip_required">需要會員</string>
+    <string name="site_health_reason_geo_blocked">地區限制</string>
+    <string name="site_health_reason_drm_or_encrypted">加密或 DRM</string>
+    <string name="site_health_reason_manifest_failed">播放清單異常</string>
+    <string name="site_health_reason_codec_unsupported">解碼不支援</string>
+    <string name="site_health_reason_cors_blocked">CORS 攔截</string>
+    <string name="site_health_reason_search_failed">搜尋失敗</string>
+    <string name="site_health_reason_detail_failed">詳情失敗</string>
+    <string name="site_health_reason_play_failed">播放失敗</string>
+    <string name="setting_web_home_extension">WebHome 擴展</string>
+    <string name="setting_web_home_theme">全域 WebHome 主題</string>
+    <string name="setting_web_home_theme_eclipse">Eclipse（內建）</string>
+    <string name="setting_web_home_theme_custom">自訂網址</string>
+    <string name="setting_web_home_theme_url_hint">https://example.com/webhome.html</string>
+    <string name="setting_web_home_theme_invalid_url">請輸入 HTTPS WebHome 網址</string>
+    <string name="setting_web_home_theme_remote_warning_title">信任這個遠端主題嗎？</string>
+    <string name="setting_web_home_theme_remote_warning_message">來自 %1$s 的遠端主題會執行網站程式碼，並可要求媒體庫資料或觸發獲准的應用程式操作。僅在信任提供者時繼續。</string>
+    <string name="setting_web_home_theme_recovery">版本復原</string>
+    <string name="setting_web_home_theme_recovery_unavailable">目前沒有可復原的主題版本</string>
+    <string name="setting_web_home_theme_rollback_message">回退到上一個已驗證的主題版本？目前版本會保留，之後仍可重試。</string>
+    <string name="setting_web_home_theme_retry_message">重試已回退的主題版本？若首次載入再次失敗，將自動復原穩定版本。</string>
+    <string name="setting_web_home_theme_recovery_success">主題版本已更新</string>
+    <string name="setting_web_home_theme_recovery_failed">無法更新主題版本</string>
+    <string name="setting_web_home_fullscreen">WebHome 主頁全屏</string>
+    <string name="setting_csp_warmup">CSP預熱</string>
+    <string name="setting_csp_warmup_default">預設</string>
+    <string name="setting_csp_warmup_custom">自訂</string>
+    <string name="setting_csp_warmup_custom_count">自訂 · %1$d 個</string>
+    <string name="setting_csp_warmup_select_site">選擇 CSP 站點</string>
+    <string name="setting_csp_warmup_no_site">沒有可用的 Jar CSP 站點</string>
+    <string name="setting_csp_warmup_select_required">請至少選擇一個 CSP 站點</string>
+    <string name="setting_playback_artwork_wall">播放介面劇照</string>
+    <string name="setting_viewing_record_sync">觀影記錄同步</string>
+    <string name="viewing_record_sync_entry_summary">%1$s · 遠端 %2$d/%3$d · Webhook %4$d/%5$d</string>
+    <string name="viewing_record_sync_switches">開關</string>
+    <string name="viewing_record_sync_master_desc">控制遠端同步和 Webhook 上報。</string>
+    <string name="viewing_record_sync_local_write">允許本機 API 修改</string>
+    <string name="viewing_record_sync_local_write_desc">允許爬蟲透過本機 HTTP API 寫入或清理本機觀影進度。關閉後仍可讀取目前播放記錄。</string>
+    <string name="playback_remote_sync">遠端同步</string>
+    <string name="playback_remote_sync_manage">管理</string>
+    <string name="playback_remote_sync_edit">編輯遠端同步</string>
+    <string name="playback_remote_sync_empty">暫無遠端同步源</string>
+    <string name="playback_remote_sync_summary">啟用 %1$d · 總數 %2$d</string>
+    <string name="playback_remote_sync_name">名稱</string>
+    <string name="playback_remote_sync_url">遠端 API URL</string>
+    <string name="playback_remote_sync_token_optional">服務端 Token，可選</string>
+    <string name="playback_remote_sync_interval">間隔分鐘</string>
+    <string name="playback_remote_sync_max_items">最大筆數</string>
+    <string name="playback_remote_sync_startup">啟動時同步</string>
+    <string name="playback_remote_sync_now">同步</string>
+    <string name="playback_remote_sync_saved">遠端同步已儲存</string>
+    <string name="playback_remote_sync_done">處理 %1$d · 刪除 %2$d · 跳過 %3$d · 失敗 %4$d</string>
+    <string name="playback_remote_sync_result">拉取 %1$d · 處理 %2$d · 刪除 %3$d · 跳過 %4$d · 失敗 %5$d</string>
+    <string name="playback_remote_sync_last_at">最近 %1$s</string>
+    <string name="playback_remote_sync_last_error">錯誤：%1$s</string>
+    <string name="playback_remote_sync_never">從未同步</string>
+    <string name="playback_remote_sync_delete_title">刪除遠端同步</string>
+    <string name="playback_remote_sync_delete_message">刪除 %1$s？</string>
+    <string name="playback_webhook_manage">管理</string>
+    <string name="playback_webhook">Webhook 上報</string>
+    <string name="playback_webhook_edit">編輯 Webhook</string>
+    <string name="playback_webhook_empty">暫無 Webhook 端點</string>
+    <string name="playback_webhook_summary">啟用 %1$d · 總數 %2$d</string>
+    <string name="playback_webhook_name">名稱</string>
+    <string name="playback_webhook_url">端點 URL</string>
+    <string name="playback_webhook_token">服務端 Token</string>
+    <string name="playback_webhook_token_optional">服務端 Token，可選</string>
+    <string name="playback_webhook_site_keys">站點 key，留空為全部</string>
+    <string name="playback_webhook_preset">欄位預設</string>
+    <string name="playback_webhook_preset_safe">基礎</string>
+    <string name="playback_webhook_preset_standard">標準</string>
+    <string name="playback_webhook_preset_full">完整</string>
+    <string name="playback_webhook_preset_anonymous">匿名</string>
+    <string name="playback_webhook_preset_custom">自訂</string>
+    <string name="playback_webhook_fields">自訂欄位</string>
+    <string name="playback_webhook_fields_summary">欄位：%1$s</string>
+    <string name="playback_webhook_select_fields">選擇欄位</string>
+    <string name="playback_webhook_interval">進度間隔</string>
+    <string name="playback_webhook_retries">重試</string>
+    <string name="playback_webhook_advanced">進階</string>
+    <string name="playback_webhook_advanced_hide">收合進階</string>
+    <string name="playback_webhook_back">返回</string>
+    <string name="playback_webhook_save">儲存</string>
+    <string name="playback_webhook_active">運行中</string>
+    <string name="playback_webhook_incomplete">未完成</string>
+    <string name="playback_webhook_suspended">已暫停</string>
+    <string name="playback_webhook_token_set">已設服務端 Token</string>
+    <string name="playback_webhook_token_empty">無服務端 Token</string>
+    <string name="playback_webhook_all_sites">全部站點</string>
+    <string name="playback_webhook_sites">站點 %1$s</string>
+    <string name="playback_webhook_row_meta">%1$s · %2$s · %3$s</string>
+    <string name="playback_webhook_last_error">最近錯誤：%1$s</string>
+    <string name="playback_webhook_saved">Webhook 上報已儲存</string>
+    <string name="playback_webhook_delete_title">刪除端點</string>
+    <string name="playback_webhook_delete_message">刪除 %1$s？</string>
+    <string name="playback_webhook_url_invalid">端點 URL 必須以 http 開頭</string>
+    <string name="playback_webhook_privacy_title">觀影記錄同步隱私聲明</string>
+    <string name="playback_webhook_privacy_message">Webhook 上報會把您的觀影記錄（包括影片名稱、播放進度和歷史刪除操作）傳送到您配置的伺服器。\n\nApp 不會收集或轉發給第三方；您可以隨時停用或刪除端點。填寫服務端 Token 後會透過 X-WebHTV-Token 請求頭傳送，方便您的伺服器分組和校驗上報。</string>
+    <string-array name="playback_webhook_field_descriptions">
+        <item>本地點播配置 id，跨設備不穩定。</item>
+        <item>點播接口穩定 key，用於區分不同接口。</item>
+        <item>點播接口顯示名稱。</item>
+        <item>App 歷史主鍵，通常由 siteKey 和 vodId 組成。</item>
+        <item>來源站點 key。</item>
+        <item>來源站點顯示名稱。</item>
+        <item>影片 id。</item>
+        <item>影片名稱。</item>
+        <item>封面 URL。</item>
+        <item>播放線路或來源名稱。</item>
+        <item>目前集名稱或備註。</item>
+        <item>播放器狀態，如 playing、paused、ended。</item>
+        <item>目前進度，單位毫秒。</item>
+        <item>總時長，單位毫秒。</item>
+        <item>進度比例，範圍 0 到 1。</item>
+        <item>播放倍速。</item>
+        <item>播放倍速是否明確覆蓋個人預設值。</item>
+        <item>是否視為完播。</item>
+        <item>目前集原始 URL，可能包含源站參數。</item>
+        <item>目前集序號，可識別時返回。</item>
+        <item>App 版本名。</item>
+        <item>客戶端類型，例如 mobile 或 leanback。</item>
+        <item>設備標識雜湊，只建議可信服務使用。</item>
+    </string-array>
+    <string name="web_home_extension_clear_done">WebHome 擴展快取已清空</string>
+    <string name="web_home_extension_empty">暫無擴展。點選新增建立本地代碼或加入外部源。</string>
+    <string name="web_home_extension_add_source">新增</string>
+    <string name="web_home_extension_debug">調試</string>
+    <string name="web_home_extension_refresh">重新整理</string>
+    <string name="web_home_extension_clear_cache">清快取</string>
+    <string name="web_home_extension_user_sources">使用者擴展源</string>
+    <string name="web_home_extension_loaded_extensions">已載入擴展</string>
+    <string name="web_home_extension_user_source_status">使用者源 · %1$s</string>
+    <string name="web_home_extension_site_scope">站點：%1$s</string>
+    <string name="web_home_extension_add_file">檔案</string>
+    <string name="web_home_extension_add_link">連結</string>
+    <string name="web_home_extension_add_code">代碼</string>
+    <string name="web_home_extension_add_form">表單</string>
+    <string name="web_home_extension_form_mode">表單</string>
+    <string name="web_home_extension_text_mode">文字(JSON)</string>
+    <string name="web_home_extension_source_type">來源方式</string>
+    <string name="web_home_extension_choose_file">選擇檔案</string>
+    <string name="web_home_extension_edit_source">編輯擴展源</string>
+    <string name="web_home_extension_edit_code">編輯本地代碼</string>
+    <string name="web_home_extension_edit_form">編輯表單</string>
+    <string name="web_home_extension_link_hint">擴展連結</string>
+    <string name="web_home_extension_json_hint">使用者擴展源 JSON</string>
+    <string name="web_home_extension_name_hint">名稱</string>
+    <string name="web_home_extension_run_at_hint">注入時機</string>
+    <string name="web_home_extension_run_at_start_short">開始</string>
+    <string name="web_home_extension_run_at_end_short">結束</string>
+    <string name="web_home_extension_run_at_idle_short">空閒</string>
+    <string name="web_home_extension_match_mode">匹配方式</string>
+    <string name="web_home_extension_match_sites">選擇</string>
+    <string name="web_home_extension_match_regex">正則</string>
+    <string name="web_home_extension_choose_sites">選擇站點</string>
+    <string name="web_home_extension_no_webhome_sites">目前點播配置沒有 WebHome 站點</string>
+    <string name="web_home_extension_match_hint">站點 key 或正則</string>
+    <string name="web_home_extension_code_hint">JavaScript / CSS 注入代碼</string>
+    <string name="web_home_extension_local_code_default">本地擴展 %1$d</string>
+    <string name="web_home_extension_delete_source_title">刪除擴展源</string>
+    <string name="web_home_extension_delete_source_message">刪除 %1$s？</string>
+    <string name="web_home_extension_source_saved">擴展源已儲存</string>
+    <string name="web_home_extension_source_empty">擴展源或代碼不能為空</string>
+    <string name="web_home_extension_source_invalid">擴展源 JSON 格式無效</string>
+    <string name="web_home_extension_summary">訂閱 %1$d · 已安裝 %2$d · 已匹配 %3$d · 可注入 %4$d · 站點 %5$s</string>
+    <string name="web_home_extension_source">來源：%1$s</string>
+    <string name="web_home_extension_inline_source">內聯配置</string>
+    <string name="web_home_extension_unknown_site">無</string>
+    <string name="web_home_extension_match">匹配：%1$s</string>
+    <string name="web_home_extension_exclude">排除：%1$s</string>
+    <string name="web_home_extension_depends">依賴：%1$s</string>
+    <string name="web_home_extension_last_log">最近日誌：%1$s</string>
+    <string name="web_home_extension_enable_confirm_title">啟用擴展</string>
+    <string name="web_home_extension_enable_confirm_message">啟用後該擴展可以調用 WebHome 已開放的 SDK。\n\n名稱：%1$s\n來源：%2$s\n匹配：%3$s</string>
+    <string name="web_home_extension_status_ready">待注入</string>
+    <string name="web_home_extension_status_injected">已注入</string>
+    <string name="web_home_extension_status_disabled">已禁用</string>
+    <string name="web_home_extension_status_unmatched">未匹配</string>
+    <string name="web_home_extension_status_skipped">已跳過</string>
+    <string name="web_home_extension_status_matched">已匹配</string>
+    <string name="web_home_extension_debug_title">WebHome 調試工作台</string>
+    <string name="web_home_extension_tab_web">Web</string>
+    <string name="web_home_extension_tab_console">控制台</string>
+    <string name="web_home_extension_tab_elements">元素</string>
+    <string name="web_home_extension_tab_network">網路</string>
+    <string name="web_home_extension_tab_code">代碼</string>
+    <string name="web_home_extension_inspect_element">檢查元素</string>
+    <string name="web_home_extension_inspect_hint">點擊 Web 頁裡的元素進行檢查</string>
+    <string name="web_home_extension_clear_panel">清空</string>
+    <string name="web_home_extension_select_script">選擇腳本</string>
+    <string name="web_home_extension_save_preview">儲存</string>
+    <string name="web_home_extension_network_all">全部</string>
+    <string name="web_home_extension_network_web">頁面資源</string>
+    <string name="web_home_extension_network_fetch">Fetch</string>
+    <string name="web_home_extension_network_xhr">XHR</string>
+    <string name="web_home_extension_network_script">腳本請求</string>
+    <string name="web_home_extension_network_error">錯誤</string>
+    <string name="web_home_extension_network_native">原生</string>
+    <string name="web_home_extension_network_detail">請求詳情</string>
+    <string name="web_home_extension_network_detail_smaller">-</string>
+    <string name="web_home_extension_network_detail_bigger">+</string>
+    <string name="web_home_extension_network_filter">過濾 URL / 狀態 / 詳情</string>
+    <string name="web_home_extension_network_empty">目前過濾條件下沒有請求</string>
+    <string name="web_home_extension_network_select">選擇一個請求查看詳情。</string>
+    <string name="web_home_extension_network_clear">清空請求</string>
+    <string name="setting_shell_proxy">Proxy</string>
+    <string name="setting_shell_proxy_config">Proxy</string>
+    <string name="setting_custom_csp">站點注入</string>
+    <string name="setting_custom_csp_add">新增</string>
+    <string name="setting_custom_csp_insert_short">位置</string>
+    <string name="setting_custom_csp_recognize">識別</string>
+    <string name="setting_custom_csp_recognize_title">自動識別</string>
+    <string name="setting_custom_csp_recognize_hint">貼上站點 JSON 片段</string>
+    <string name="setting_custom_csp_recognize_empty">請先貼上站點 JSON</string>
+    <string name="setting_custom_csp_recognize_invalid">未識別到有效站點 JSON</string>
+    <string name="setting_custom_csp_recognize_done">已加入 %1$d 個條目</string>
+    <string name="setting_custom_csp_count">%1$d/%2$d 可用</string>
+    <string name="setting_custom_csp_api">api</string>
+    <string name="setting_custom_csp_code">代碼</string>
+    <string name="setting_custom_csp_down">下移</string>
+    <string name="setting_custom_csp_ext">ext</string>
+    <string name="setting_custom_csp_home">首頁</string>
+    <string name="setting_custom_csp_home_page">homePage</string>
+    <string name="setting_custom_csp_home_page_optional">homePage</string>
+    <string name="setting_custom_csp_extensions_toggle">擴展</string>
+    <string name="setting_custom_csp_extensions">擴展 URL / JSON</string>
+    <string name="setting_custom_csp_extensions_file">檔案</string>
+    <string name="setting_custom_csp_files">檔案</string>
+    <string name="setting_custom_csp_extensions_example">https://example.com/site.js</string>
+    <string name="setting_custom_csp_extensions_invalid">extensions JSON 格式無效</string>
+    <string name="setting_custom_csp_permission_required">站點注入需要檔案存取權限。</string>
+    <string name="setting_custom_csp_save_failed">站點注入保存失敗：%1$s</string>
+    <string name="setting_custom_csp_webhome">WebHome</string>
+    <string name="setting_custom_csp_common">通用 CSP</string>
+    <string name="setting_custom_csp_live">直播</string>
+    <string name="setting_custom_csp_other">其他</string>
+    <string name="setting_custom_csp_webhome_name">WebHome %1$d</string>
+    <string name="setting_custom_csp_common_name">通用 CSP %1$d</string>
+    <string name="setting_custom_csp_live_name">直播 %1$d</string>
+    <string name="setting_custom_csp_other_name">其他 %1$d</string>
+    <string name="setting_custom_csp_other_fields">field</string>
+    <string name="setting_custom_csp_other_json">value JSON</string>
+    <string name="setting_custom_csp_key">key</string>
+    <string name="setting_custom_csp_type">type</string>
+    <string name="setting_custom_csp_player_type">playerType</string>
+    <string name="setting_custom_csp_unset">不寫</string>
+    <string name="setting_custom_csp_player_system">0 系統</string>
+    <string name="setting_custom_csp_player_ijk">1 IJK</string>
+    <string name="setting_custom_csp_player_exo">2 EXO</string>
+    <string name="setting_custom_csp_live_url">url</string>
+    <string name="setting_custom_csp_logo">logo</string>
+    <string name="setting_custom_csp_epg">epg</string>
+    <string name="setting_custom_csp_ua">ua</string>
+    <string name="setting_custom_csp_origin">Origin</string>
+    <string name="setting_custom_csp_referer">Referer</string>
+    <string name="setting_custom_csp_time_zone">timeZone</string>
+    <string name="setting_custom_csp_timeout">timeout</string>
+    <string name="setting_custom_csp_click">click</string>
+    <string name="setting_custom_csp_play_url">playUrl</string>
+    <string name="setting_custom_csp_hide">hide</string>
+    <string name="setting_custom_csp_searchable">searchable</string>
+    <string name="setting_custom_csp_changeable">changeable</string>
+    <string name="setting_custom_csp_quick_search">quickSearch</string>
+    <string name="setting_custom_csp_insert">插入位置</string>
+    <string name="setting_custom_csp_insert_decrease">減少插入位置</string>
+    <string name="setting_custom_csp_insert_increase">增加插入位置</string>
+    <string name="setting_custom_csp_import">檔案</string>
+    <string name="setting_custom_csp_json_hint">Raw JSON：完整配置、sites/lives 陣列或單個站點/直播物件</string>
+    <string name="setting_custom_csp_json_invalid">站點注入 JSON 格式無效</string>
+    <string name="setting_custom_csp_jar">Jar</string>
+    <string name="setting_custom_csp_link">連結</string>
+    <string name="setting_custom_csp_up">上移</string>
+    <string name="setting_proxy_url">socks5://127.0.0.1:9978</string>
+    <string name="setting_proxy_hosts">匹配網域</string>
+    <string name="setting_proxy_rules">Proxy 規則</string>
+    <string name="setting_proxy_rules_raw">Raw 規則</string>
+    <string name="setting_proxy_rules_hint">Raw JSON：{&quot;proxy&quot;:[{&quot;hosts&quot;:[&quot;example.com&quot;],&quot;urls&quot;:[&quot;socks5://127.0.0.1:1080&quot;]}]}</string>
+    <string name="setting_proxy_default_url">預設代理位址</string>
+    <string name="setting_proxy_rule_url">代理位址</string>
+    <string name="setting_proxy_edit_rule">編輯規則 %1$d</string>
+    <string name="setting_proxy_rule_use_default">預設代理 · %1$s</string>
+    <string name="setting_proxy_rule_use_default_empty">使用預設代理（未設定）</string>
+    <string name="setting_proxy_text_mode">文字</string>
+    <string name="setting_proxy_ui_mode">編輯</string>
+    <string name="setting_proxy_add_rule">新增規則</string>
+    <string name="setting_proxy_rule_count">%1$d 條規則</string>
+    <string name="setting_proxy_invalid">代理地址無效</string>
+    <string name="setting_proxy_suggest">自動建議</string>
+    <string name="setting_proxy_test">測試代理</string>
+    <string name="setting_proxy_select_site">選擇站點</string>
+    <string name="setting_proxy_no_site">暫無可選站點</string>
+    <string name="setting_proxy_no_suggest">未發現可代理網域</string>
+    <string name="setting_proxy_suggest_added">已新增 %1$d 個網域，共 %2$d 個</string>
+    <string name="setting_proxy_test_no_rule">沒有命中的代理規則</string>
+    <string name="setting_proxy_test_running">正在測試代理...</string>
+    <string name="setting_proxy_test_success">代理測試通過：%1$s</string>
+    <string name="setting_proxy_test_failed">代理測試失敗：%1$s</string>
+    <string name="setting_one_key_sync">一鍵同步</string>
+    <string name="setting_incognito">無痕模式</string>
+    <string name="setting_drive_check">網盤檢測</string>
+    <string name="setting_audio_source">音訊源配置</string>
+    <string name="setting_site_name">站源名稱與分組</string>
+    <string name="setting_site_name_summary">已自訂 %1$d 個</string>
+    <string name="site_name_custom">自訂名稱</string>
+    <string name="site_name_original">原始名稱：%1$s</string>
+    <string name="site_name_key">站源 Key：%1$s</string>
+    <string name="site_name_group_hint">在自訂名稱中使用 [標籤] 建立分組，也可在個性設定中配置正則分組規則</string>
+    <string name="site_name_empty">目前介面暫無可用站源</string>
+    <string name="site_name_reset_title">重設自訂站源名稱？</string>
+    <string name="site_name_reset_message">將清除目前介面的全部自訂名稱和分組。</string>
+    <string name="setting_short_drama_source">短劇源配置</string>
+    <string name="setting_theme_color">主題色彩</string>
+    <string name="setting_appearance">外觀與語言</string>
+    <string name="setting_appearance_summary">4 項</string>
+    <string name="setting_auto">自動</string>
+    <string name="setting_custom">自訂</string>
+    <string name="setting_language">語言</string>
+    <string name="setting_size">圖片尺寸</string>
+    <string name="setting_ui_scale">介面大小</string>
+    <string name="dialog_close">關閉</string>
+    <string name="setting_doh">DoH</string>
+    <string name="setting_proxy">Proxy</string>
+    <string name="setting_cache">暫存</string>
+    <string name="setting_backup">備份</string>
+    <string name="setting_restore">還原</string>
+    <string name="setting_about">關於</string>
+    <string name="setting_version">版本</string>
+    <string name="setting_choose">選擇</string>
+    <string name="setting_reset">重置</string>
+    <string name="setting_delete">刪除</string>
+    <string name="setting_disable">禁用</string>
+    <string name="setting_enable">啟用</string>
+    <string name="setting_order_normal">正序</string>
+    <string name="setting_order_reverse">倒序</string>
+    <string name="setting_off">關</string>
+    <string name="setting_on">開</string>
+
+    <!-- About -->
+    <string name="about_title">關於 WebHomeTV</string>
+    <string name="about_free_badge">完全免費</string>
+    <string name="about_version">版本 %1$s · %2$s/%3$s</string>
+    <string name="about_disclaimer">WebHomeTV 是基於開源生態二次開發的技術學習與研究項目，軟體本體完全免費，不提供任何付費服務、影視內容、直播源、接口源、資源儲存或內容分發能力。\n\n本軟體僅供技術學習、研究和個人測試使用，請在下載、安裝或試用後 24 小時內自行解除安裝。繼續使用本軟體所產生的一切行為及後果，由使用者自行承擔。\n\n本軟體不內置、不售賣、不傳播任何影視資源，不對使用者自行添加的接口、站源、插件、腳本、連結、網盤資源或第三方服務內容負責。使用者應遵守所在地法律法規，尊重版權方和內容提供方的合法權益，不得將本軟體用於任何侵權、盜版、傳播非法內容或其他違法違規用途。\n\n嚴禁任何個人或組織以本軟體名義進行售賣、引流、收費維護、會員服務、廣告變現、盒子預裝、電視盒子捆綁銷售或其他任何形式的獲益行為。對於將本軟體內置於電視盒子、機頂盒、付費套餐或商業服務中進行銷售、推廣的行為，項目方明確反對並予以譴責。\n\n如你不同意以上聲明，請立即停止使用並解除安裝本軟體。</string>
+    <string name="about_check_update">檢查更新</string>
+    <string name="about_acknowledge">我已知悉</string>
+    <string name="setting_github_proxy">GitHub 加速源</string>
+    <string name="setting_github_proxy_short">加速源</string>
+    <string name="setting_github_proxy_hint">輸入加速源 URL</string>
+    <string name="setting_github_proxy_message">點選列表中的源作為目前加速源，可在下方新增自訂源。關閉加速後 GitHub Raw/Release 使用直連。</string>
+    <string name="setting_github_proxy_enabled">使用 GitHub 加速</string>
+    <string name="setting_github_proxy_add">新增</string>
+    <string name="setting_github_proxy_remove">移除</string>
+    <string name="setting_github_proxy_reset">重設預設</string>
+    <string name="setting_github_proxy_invalid">請輸入有效的 http/https 地址</string>
+
+    <!-- Backup & Restore -->
+    <string name="restore_select">選擇備份</string>
+    <string name="restore_success">還原成功</string>
+    <string name="restore_fail">還原失敗</string>
+    <string name="backup_success">備份成功</string>
+    <string name="backup_fail">備份失敗</string>
+    <string name="backup_permission_denied">需要儲存權限才能備份或恢復資料</string>
+
+    <!-- Device Sync -->
+    <string name="device_select">選擇設備</string>
+    <string name="device_offline">設備已離線</string>
+    <string name="cast_not_ready">播放資訊尚未就緒，請稍後重試</string>
+    <string name="sync_success">同步完成</string>
+    <string name="sync_progress">正在同步...</string>
+    <string name="sync_failed">同步失敗</string>
+    <string name="sync_mode_to_remote">本機 -> 選中設備</string>
+    <string name="sync_mode_from_remote">選中設備 -> 本機</string>
+    <string name="sync_local_device">本機</string>
+    <string name="sync_remote_device">選中設備</string>
+    <string name="sync_sender">發送</string>
+    <string name="sync_receiver">接收</string>
+    <string name="sync_direction_change">切換同步方向</string>
+    <string name="sync_change_device">選擇設備</string>
+    <string name="sync_switch_short">切換</string>
+    <string name="sync_push">推送</string>
+    <string name="sync_pull">拉取</string>
+    <string name="sync_select_all">全選</string>
+    <string name="sync_select_none">取消全選</string>
+    <string name="sync_item_config">接口與站源列表</string>
+    <string name="sync_item_spider">Jar/腳本保存資料</string>
+    <string name="sync_item_login_state">登入狀態</string>
+    <string name="sync_item_webhome">WebHome 主頁資料</string>
+    <string name="sync_item_search">搜尋記錄</string>
+    <string name="sync_item_history">觀看記錄</string>
+    <string name="sync_item_keep">收藏資料</string>
+    <string name="sync_item_settings">應用設定</string>
+    <string name="sync_item_remote_relay">中轉服務配置</string>
+    <string name="sync_paths_title">同步目錄</string>
+    <string name="sync_paths_edit">編輯</string>
+    <string name="sync_paths_desc">每行一個外置儲存相對路徑，預設同步 TV、TVBox、TVData。可加入本地包目錄；目錄內容會隨 Jar/腳本保存資料一起同步。</string>
+    <string name="sync_paths_hint">TV&#10;TVBox&#10;TVData</string>
+    <string name="sync_paths_up">收起</string>
+    <string name="sync_paths_refresh">刷新</string>
+    <string name="sync_paths_enter">打開目錄</string>
+    <string name="sync_paths_empty">目前目錄沒有可選資料夾</string>
+    <string name="sync_paths_selected">已選：%1$s</string>
+    <string name="sync_paths_selected_empty">未選擇目錄</string>
+    <string name="login_state_message">學習 Cookie 和登入狀態檔案路徑，供一鍵同步使用。目前已選 %1$d 條，可在管理路徑中查看候選和檔案內容。</string>
+    <string name="login_state_learning_message">學習中。請去完成網盤登入，返回這裡後點擊完成學習。目前已選 %1$d 條路徑。</string>
+    <string name="login_state_start">開始學習</string>
+    <string name="login_state_finish">完成學習</string>
+    <string name="login_state_started">已開始登入狀態學習</string>
+    <string name="login_state_finished">登入狀態學習完成：已選 %1$d 條，待確認 %2$d 條</string>
+    <string name="login_state_count">已選 %1$d · 待確認 %2$d</string>
+    <string name="login_state_learning_count">學習中 · 已選 %1$d · 待確認 %2$d</string>
+    <string name="login_state_learned_title">已選路徑</string>
+    <string name="login_state_pending_title">待確認候選</string>
+    <string name="login_state_findings_title">最近學習結果</string>
+    <string name="login_state_reset_results">重置候選和結果</string>
+    <string name="login_state_reset_results_done">已清空待確認候選和最近學習結果</string>
+    <string name="login_state_more_count">還有 %1$d 條</string>
+    <string name="login_state_empty">未發現登入狀態檔案</string>
+    <string name="login_state_edit">查看/編輯登入狀態檔案</string>
+    <string name="login_state_saved">登入狀態檔案已保存</string>
+    <string name="login_state_preview_readonly">唯讀預覽</string>
+    <string name="login_state_preview_truncated">唯讀預覽，內容已截斷</string>
+    <string name="login_state_paths_title">登入狀態路徑</string>
+    <string name="login_state_manage_paths">管理路徑</string>
+    <string name="login_state_paths_empty_selected">未選擇登入狀態路徑</string>
+    <string name="login_state_paths_selected_count">已選 %1$d 條，可同步 %2$d 條，缺失 %3$d 條</string>
+    <string name="login_state_paths_empty_selected_with_pending">未選擇登入狀態路徑 · 待確認 %1$d 條</string>
+    <string name="login_state_paths_selected_count_with_pending">已選 %1$d 條，可同步 %2$d 條，缺失 %3$d 條 · 待確認 %4$d 條</string>
+    <string name="login_state_confirm_pending">勾選待確認</string>
+    <string name="login_state_confirm_pending_count">勾選待確認 %1$d</string>
+    <string name="login_state_confirm_empty">沒有待確認項</string>
+    <string name="login_state_confirm_done">已勾選 %1$d 個待確認項</string>
+    <string name="login_state_reveal_pending">顯示待確認</string>
+    <string name="login_state_reveal_pending_count">顯示待確認 %1$d</string>
+    <string name="login_state_pending_revealed">已在目錄樹中顯示 %1$d 個待確認項</string>
+    <string name="login_state_pending_detail">%1$s · %2$s · %3$s</string>
+    <string name="login_state_tree_app">App 私有目錄</string>
+    <string name="login_state_tree_sdcard">共享儲存</string>
+    <string name="login_state_tree_title_count">%1$s · 已確認 %2$d · 待確認 %3$d</string>
+    <string name="login_state_tree_expand">展開資料夾</string>
+    <string name="login_state_tree_collapse">收起資料夾</string>
+    <string name="login_state_tree_truncated">目錄項目過多已限量，請直接選擇資料夾或縮小路徑</string>
+    <string name="login_state_state_selected">已選</string>
+    <string name="login_state_state_pending">待確認</string>
+    <string name="login_state_state_has_pending">含待確認</string>
+    <string name="login_state_state_partial">部分已選</string>
+    <string name="login_state_state_missing">缺失</string>
+    <string name="sync_device_mobile">手機</string>
+    <string name="sync_device_tv">電視</string>
+    <string name="sync_discovering">正在發現設備...</string>
+    <string name="sync_no_device">未發現設備，請確認兩台設備在同一局域網並已打開 WebHTV，然後刷新。</string>
+    <string name="sync_selected">已選擇：%1$s · %2$s</string>
+    <string name="sync_start">開始同步</string>
+    <string name="sync_cancel">取消同步</string>
+    <string name="sync_prepare_files">正在準備同步文件...</string>
+    <string name="sync_prepare_progress">正在壓縮：%1$d 個文件，%2$s，%3$s/s</string>
+    <string name="sync_wait_remote">正在等待選中設備發送資料...</string>
+    <string name="sync_upload_prepare">準備上傳：%1$d 個文件，%2$s，壓縮後 %3$s</string>
+    <string name="sync_upload_progress">%1$d%% · %2$s / %3$s · %4$s/s · %5$d 個文件</string>
+    <string name="sync_canceled">同步已取消</string>
+    <string name="sync_select_device_first">請先選擇設備</string>
+    <string name="sync_failed_with_reason">同步失敗：%1$s</string>
+    <string name="sync_receive_success">已接收同步資料</string>
+
+    <!-- Player -->
+    <string name="player">播放核心</string>
+    <string name="player_default">預設播放核心</string>
+    <string name="player_render">渲染方式</string>
+    <string name="player_button_config">播放器按鈕</string>
+    <string name="player_button_config_summary">全域啟用 %1$d/%2$d，各模式依支援與可用狀態顯示</string>
+    <string name="player_pad_live">平板直播</string>
+    <string name="player_button_up">上移</string>
+    <string name="player_button_down">下移</string>
+    <string name="play_episodes">選集</string>
+    <string name="player_exo_4k_compat">播放效能</string>
+    <string name="player_immersive_audio_mode">沉浸音訊模式</string>
+    <string name="player_performance">播放效能</string>
+    <string name="player_performance_recommended">均衡</string>
+    <string name="player_performance_auto">自動</string>
+    <string name="player_performance_compatible">相容</string>
+    <string name="player_performance_lightweight">輕量</string>
+    <string name="player_performance_original">原版</string>
+    <string name="player_performance_help">說明</string>
+    <string name="player_performance_help_title">播放效能參數說明</string>
+    <string name="player_performance_help_close">關閉</string>
+    <string name="player_performance_help_intro">目前播放器內核：%1$s。一般使用者保持「自動」即可；「輕量」面向低階裝置，整合原相容檔的穩定性取向並降低固定資源預算，取代原本獨立的相容檔。遇到特殊硬解、輸出或協定問題仍可直接調整下方參數形成「自訂」。目前內核可用參數均直接顯示並按用途分組，多數底層參數需重新播放或重建播放器後生效。</string>
+    <string name="player_performance_common_section">常用參數</string>
+    <string name="player_performance_profile_merge">均衡檔合併</string>
+    <string name="player_performance_profile_merge_enabled">已合併到自動 · 可回退</string>
+    <string name="player_performance_profile_merge_rolled_back">已恢復舊均衡檔</string>
+    <string name="player_performance_profile_merge_help">均衡檔預設合併到自動檔。舊均衡選擇會分別遷移 EXO、MPV、IJK，相容、輕量和自訂選擇保持不變。本機回退只恢復遷移過且目前仍是自動檔的內核，不覆蓋遷移後新選的檔位。歷史 A/B 報告繼續保留，但建置和 JVM 測試不能證明真實裝置已完成驗收。</string>
+    <string name="player_performance_profile_merge_rollback_title">恢復舊均衡檔？</string>
+    <string name="player_performance_profile_merge_rollback_message">將重新顯示均衡標籤。曾從均衡遷移且目前仍為自動的內核會恢復均衡；遷移後改選的相容、輕量或自訂不會被覆蓋。A/B 採集仍保持關閉，需要時必須重新明確加入。</string>
+    <string name="player_performance_profile_merge_rollback_confirm">恢復均衡檔</string>
+    <string name="player_performance_profile_merge_enable_title">重新把均衡檔合併到自動？</string>
+    <string name="player_performance_profile_merge_enable_message">各內核的舊均衡選擇會遷移到自動並隱藏均衡標籤；已有 A/B 樣本保留，新增採集停止。相容、輕量和自訂選擇保持不變。</string>
+    <string name="player_performance_profile_merge_enable_confirm">合併到自動檔</string>
+    <string name="player_performance_lightweight_assessment_collection">自動/輕量檔評估採集</string>
+    <string name="player_performance_lightweight_assessment_help">這是 V-06A 的本機內部觀察性評估，預設關閉、沒有使用者加入入口，也不會隨機切檔。它只觀察實際選擇的自動檔或輕量檔，並且只接納低記憶體裝置的硬解會話或實際軟解會話；內部實驗授權和目前內核分域必須同時開啟。即使評估通過也只表示可以進一步討論，不會自動隱藏或刪除輕量檔。</string>
+    <string name="player_performance_lightweight_assessment_enable_title">加入自動/輕量檔評估？</string>
+    <string name="player_performance_lightweight_assessment_enable_message">採集僅保存在本機，不上傳、不備份，也不會自動切換檔位。只有低記憶體硬解或實際軟解會話會進入報告；每個有效分組的自動檔和輕量檔都至少需要 20 條可用樣本。暫停、Seek、改速、檔位變化和實驗干預會作廢目前樣本。</string>
+    <string name="player_performance_lightweight_assessment_enable_confirm">加入評估</string>
+    <string name="player_performance_lightweight_assessment_report">自動/輕量檔評估報告</string>
+    <string name="player_performance_lightweight_assessment_report_value">自動 %1$d · 輕量 %2$d · %3$s</string>
+    <string name="player_performance_lightweight_assessment_report_title">自動/輕量檔本機評估報告</string>
+    <string name="player_performance_lightweight_assessment_report_summary">狀態：%1$s\n自動檔樣本：%2$d\n輕量檔樣本：%3$d\n分組數：%4$d\n可評估分組：%5$d\n通過：%6$d\n失敗：%7$d\n不足或指標缺失：%8$d\n關鍵覆蓋：%9$d / %10$d\n\n只有 EXO、MPV、IJK 的低記憶體硬解與軟解六個單元全部覆蓋且所有分組通過，才具備進一步去留複核條件。本報告不會自動刪除輕量檔。</string>
+    <string name="player_performance_lightweight_assessment_coverage_missing">覆蓋單元不足</string>
+    <string name="player_performance_lightweight_assessment_missing_coverage">缺少覆蓋</string>
+    <string name="player_performance_lightweight_assessment_coverage_low_ram_hardware">低記憶體硬解</string>
+    <string name="player_performance_lightweight_assessment_coverage_software">軟解</string>
+    <string name="player_performance_lightweight_assessment_clear">清除輕量檔評估</string>
+    <string name="player_performance_lightweight_assessment_clear_title">清除自動/輕量檔樣本？</string>
+    <string name="player_performance_lightweight_assessment_clear_message">將刪除本機全部自動/輕量檔評估樣本；加入狀態會保留，之後符合條件的播放仍可重新採集。歷史自動/均衡檔 A/B 報告不受影響。</string>
+    <string name="player_performance_lightweight_assessment_clear_confirm">清除樣本</string>
+    <string name="player_performance_compatibility_assessment">相容檔去留評估</string>
+    <string name="player_performance_compatibility_assessment_help">V-06B 以失敗關閉方式稽核相容檔是否具備進一步去留複核條件。它分別檢查 EXO、MPV、IJK 對 codec 錯誤、硬解能力虛報、輸出模式異常及協定/Range 異常的覆蓋，並要求能夠識別畫面正確性和具備問題裝置長期證據。現有自動回退都有範圍限制，依賴明確錯誤或可觀察指標；decoder 不報錯時的綠屏、錯色或錯誤畫面目前無法可靠識別，因此目前結論是繼續保留相容檔。本報告不會隱藏、遷移或刪除任何檔位。</string>
+    <string name="player_performance_compatibility_assessment_value">%1$s · 可靠覆蓋 %2$d / %3$d</string>
+    <string name="player_performance_compatibility_assessment_title">相容檔去留評估報告</string>
+    <string name="player_performance_compatibility_assessment_summary">目前結論：%1$s\n可靠覆蓋：%2$d / %3$d\n受限：%4$d\n未驗證：%5$d\n不可觀察：%6$d\n缺失：%7$d\n\n只有全部要求都具備可靠自動回退和問題裝置長期證據，才允許再次進行產品決策；即使全部滿足，本報告也不會自動刪除相容檔。</string>
+    <string name="player_performance_compatibility_assessment_blockers">目前阻塞項</string>
+    <string name="player_performance_compatibility_assessment_retain">必須保留相容檔</string>
+    <string name="player_performance_compatibility_assessment_review">可進一步複核</string>
+    <string name="player_performance_compatibility_coverage_reliable">可靠</string>
+    <string name="player_performance_compatibility_coverage_limited">受限</string>
+    <string name="player_performance_compatibility_coverage_unverified">未驗證</string>
+    <string name="player_performance_compatibility_coverage_unobservable">不可觀察</string>
+    <string name="player_performance_compatibility_coverage_missing">缺失</string>
+    <string name="player_performance_compatibility_area_codec">codec 初始化/執行錯誤自動回退</string>
+    <string name="player_performance_compatibility_area_hardware_misreport">硬解能力虛報自動回退</string>
+    <string name="player_performance_compatibility_area_output">輸出模式異常自動回退</string>
+    <string name="player_performance_compatibility_area_protocol">協定與 Range 異常自動回退</string>
+    <string name="player_performance_compatibility_area_visual">綠屏、錯色和錯誤畫面自動識別</string>
+    <string name="player_performance_compatibility_area_device_evidence">問題裝置長期證據</string>
+    <string name="player_performance_experiment_profile_ab_collection">自動/均衡檔 A/B 採集</string>
+    <string name="player_performance_experiment_profile_ab_invalid">加入狀態損壞或已過期</string>
+    <string name="player_performance_experiment_profile_ab_enable_title">加入自動/均衡檔驗收？</string>
+    <string name="player_performance_experiment_profile_ab_enable_message">這是預設關閉且不提供使用者加入入口的內部採集，資料只保留在本機。它只觀察實際選擇的自動檔或均衡檔，不會隨機分檔或自動改檔；只有內部實驗授權和目前內核分域同時啟用時才接納樣本。持久化內容只包含有界數值、列舉和摘要分組，不保存 URL、host、路徑、header、原始 fingerprint 或 decoder 名稱。報告不會自動合併檔位或遷移使用者。</string>
+    <string name="player_performance_experiment_profile_ab_enable_confirm">加入驗收</string>
+    <string name="player_performance_experiment_profile_ab_help">這是本機明確加入的驗收基礎設施，只在相同裝置、內核、decoder、協定、直播/點播、MIME/HDR 和路徑分組內比較自動檔與均衡檔。成功樣本至少需要 30 秒有效播放；可歸因播放錯誤可單獨保留，避免只統計成功工作階段。資料 30 天過期且容量有界；每個分組每檔至少 20 個可用樣本才可驗收，報告絕不會修改檔位。</string>
+    <string name="player_performance_experiment_profile_ab_report">自動/均衡檔 A/B 報告</string>
+    <string name="player_performance_experiment_profile_ab_report_value">自動 %1$d · 均衡 %2$d · %3$s</string>
+    <string name="player_performance_experiment_profile_ab_report_title">自動/均衡檔本機驗收報告</string>
+    <string name="player_performance_experiment_profile_ab_report_summary">狀態：%1$s\n自動檔樣本：%2$d\n均衡檔樣本：%3$d\n分組數：%4$d\n可驗收分組：%5$d\n通過：%6$d\n失敗：%7$d\n不足或指標缺失：%8$d\n\n本機報告只提供證據，不會自行改變目前檔位合併狀態。</string>
+    <string name="player_performance_experiment_profile_ab_no_data">無資料</string>
+    <string name="player_performance_experiment_profile_ab_insufficient">樣本不足</string>
+    <string name="player_performance_experiment_profile_ab_metrics_missing">指標缺失</string>
+    <string name="player_performance_experiment_profile_ab_passed">通過</string>
+    <string name="player_performance_experiment_profile_ab_failed">失敗</string>
+    <string name="player_performance_experiment_profile_ab_failed_metrics">退化指標</string>
+    <string name="player_performance_experiment_profile_ab_missing_metrics">缺失指標</string>
+    <string name="player_performance_experiment_profile_ab_metric_first_frame">首幀</string>
+    <string name="player_performance_experiment_profile_ab_metric_rebuffer_ratio">重新緩衝占比</string>
+    <string name="player_performance_experiment_profile_ab_metric_rebuffer_count">重新緩衝次數</string>
+    <string name="player_performance_experiment_profile_ab_metric_peak_pss">峰值 PSS</string>
+    <string name="player_performance_experiment_profile_ab_metric_dropped">掉幀率</string>
+    <string name="player_performance_experiment_profile_ab_metric_live_lag">直播延遲</string>
+    <string name="player_performance_experiment_profile_ab_metric_error_rate">播放錯誤率</string>
+    <string name="player_performance_experiment_profile_ab_clear">清除本機報告</string>
+    <string name="player_performance_experiment_profile_ab_clear_title">清除自動/均衡檔樣本？</string>
+    <string name="player_performance_experiment_profile_ab_clear_message">將刪除本機全部自動/均衡檔驗收樣本；如恢復舊均衡檔，之後仍可重新明確加入採集。</string>
+    <string name="player_performance_experiment_profile_ab_clear_confirm">清除樣本</string>
+    <string name="pan_diagnostic_section">診斷工具</string>
+    <string name="pan_diagnostic_entry">鏈路診斷</string>
+    <string name="pan_diagnostic_title">播放鏈路診斷</string>
+    <string name="player_kernel">播放器內核</string>
+    <string name="player_scale">縮放比例</string>
+    <string name="player_lut">LUT 調色</string>
+    <string name="player_mpv_config">MPV 設定管理</string>
+    <string name="player_mpv_render">MPV 渲染後端</string>
+    <string name="mpv_render_native_unavailable">目前不可用</string>
+    <string name="mpv_config_target">%1$s · %2$s</string>
+    <string name="mpv_config_default">預設</string>
+    <string name="mpv_config_local">本機 mpv.conf</string>
+    <string name="mpv_config_url">URL mpv.conf</string>
+    <string name="mpv_config_name_hint">名稱（可選）</string>
+    <string name="mpv_config_history">歷史</string>
+    <string name="mpv_config_history_empty">暫無 MPV 設定歷史</string>
+    <string name="mpv_config_script_hint">腳本 URL 或選擇本機腳本</string>
+    <string name="mpv_config_scripts_count">%1$d 個腳本</string>
+    <string name="mpv_config_saved">MPV 設定已儲存，重新進入播放後生效</string>
+    <string name="mpv_config_empty">MPV 設定為空</string>
+    <string name="mpv_config_file_invalid">mpv.conf 檔案無效</string>
+    <string name="mpv_config_url_invalid">mpv.conf URL 無效</string>
+    <string name="mpv_config_download_empty">下載到的 mpv.conf 為空</string>
+    <string name="mpv_config_new">新增</string>
+    <string name="mpv_config_in_use">使用中</string>
+    <string name="mpv_config_more">更多操作</string>
+    <string name="mpv_config_edit">編輯</string>
+    <string name="mpv_config_rename">重新命名</string>
+    <string name="mpv_config_rename_title">重新命名設定</string>
+    <string name="mpv_config_new_name">新名稱</string>
+    <string name="mpv_config_renamed">設定已重新命名</string>
+    <string name="mpv_config_delete">刪除</string>
+    <string name="mpv_config_delete_title">刪除設定</string>
+    <string name="mpv_config_delete_message">確定刪除「%1$s」嗎？此操作無法復原。</string>
+    <string name="mpv_config_create_title">新增設定</string>
+    <string name="mpv_config_create_desc">選擇一種方式開始；名稱可以留空，系統會自動產生。</string>
+    <string name="mpv_config_done">完成</string>
+    <string name="mpv_config_name">名稱</string>
+    <string name="mpv_config_name_optional">名稱（選填）</string>
+    <string name="mpv_config_name_example">例如：4K 播放最佳化</string>
+    <string name="mpv_config_name_required">請輸入設定名稱</string>
+    <string name="mpv_config_method">設定方式</string>
+    <string name="mpv_config_choose_action">選擇建立方式</string>
+    <string name="mpv_config_text_edit">新增文字設定</string>
+    <string name="mpv_config_text_edit_desc">開啟編輯器，輸入並儲存設定內容</string>
+    <string name="mpv_config_import_file">匯入設定檔</string>
+    <string name="mpv_config_import_file_desc">從本機選擇已有設定檔</string>
+    <string name="mpv_config_import_url">透過 URL 匯入</string>
+    <string name="mpv_config_import_url_desc">下載遠端設定並儲存為新設定</string>
+    <string name="mpv_config_url_hint">https://example.com/mpv.conf</string>
+    <string name="mpv_config_import">匯入</string>
+    <string name="mpv_config_editor_new">新增設定</string>
+    <string name="mpv_config_editor_edit">編輯設定</string>
+    <string name="mpv_config_save">儲存</string>
+    <string name="mpv_config_encoding">編碼  UTF-8</string>
+    <string name="mpv_config_stats">行數：%1$d    字元數：%2$d</string>
+    <string name="mpv_config_no_profiles">暫無設定，點選「新增」建立或匯入設定。</string>
+    <string name="mpv_config_profile_missing">設定檔已不存在</string>
+    <string name="mpv_config_profile_saved">設定已儲存</string>
+    <string name="mpv_config_switched">已切換為「%1$s」，重新進入播放後生效</string>
+    <string name="mpv_config_text">文字設定</string>
+    <string name="mpv_config_untitled">未命名設定</string>
+    <string name="mpv_config_too_large">設定文字不能超過 1 MB</string>
+    <string name="mpv_config_write_failed">無法寫入 MPV 設定檔</string>
+    <string name="mpv_config_script_exists">同名腳本已存在</string>
+    <string name="mpv_config_default_copy">預設設定副本</string>
+    <string name="mpv_config_current">目前使用：%1$s</string>
+    <string name="mpv_config_apply_selected">套用所選</string>
+    <string name="mpv_config_close">關閉</string>
+    <string name="player_libass">字幕渲染</string>
+    <string name="player_caption">字幕樣式</string>
+    <string name="player_background">背景播放</string>
+    <string name="player_audio_decode">音訊軟解</string>
+    <string name="player_audio_passthrough">音訊直通</string>
+    <string name="player_video_decode">視訊軟解</string>
+    <string name="player_ffmpeg_mode">FFmpeg模式</string>
+    <string name="player_aac_track">AAC優先</string>
+    <string name="player_music_notification">音樂背景通知</string>
+    <string name="player_audio_book_notification">有聲書背景通知</string>
+    <string name="player_adblock">智慧去廣</string>
+    <string name="player_tunnel">隧道模式</string>
+    <string name="player_buffer">前向緩衝目標</string>
+    <string name="player_buffer_bytes">記憶體緩衝上限</string>
+    <string name="player_back_buffer">已播放資料保留</string>
+    <string name="player_cache">HLS 磁碟快取上限</string>
+    <string name="player_preload">磁碟預載</string>
+    <string name="player_preload_threads">預載並行數</string>
+    <string name="player_preload_threads_value">%1$d 條</string>
+    <string name="player_preload_size">磁碟預載配額</string>
+    <string name="player_preload_time">單次預載時長</string>
+    <string name="player_preload_time_value">%1$d 秒</string>
+    <string name="player_preload_ahead">向前預載目標</string>
+    <string name="player_preload_ahead_value">%1$d 分鐘</string>
+    <string name="player_preload_ahead_whole">整部影片</string>
+    <string name="player_preload_pause">暫停時繼續預載</string>
+    <string name="player_preload_pause_wifi">僅 WiFi</string>
+    <string name="player_preload_pause_always">始終</string>
+    <string name="player_auto_play">自動播放</string>
+    <string name="player_auto_change">自動換源</string>
+    <string name="player_failure_fallback">播放失敗回退</string>
+    <string name="player_speed">長按倍速</string>
+    <string name="player_ua">User-Agent</string>
+    <string name="player_osd">屏顯設定</string>
+    <string name="player_subtitle_auto_match">自動匹配字幕</string>
+    <string name="player_subtitle_language">字幕偏好語言</string>
+    <string name="player_subtitle_assrt_token">射手網 Token</string>
+    <string name="player_subtitle_ai_max_concurrency">AI字幕最大並發數</string>
+    <string name="player_subtitle_ai_chunk_count">AI字幕分塊數量</string>
+    <string name="subtitle_auto_match_hit">已自動匹配字幕：%1$s</string>
+    <string name="subtitle_auto_match_hit_not_applied">已找到字幕但未套用：%1$s</string>
+    <string name="subtitle_auto_match_empty">未找到匹配字幕</string>
+    <string name="subtitle_auto_match_provider_unavailable">請先配置字幕源</string>
+    <string name="subtitle_auto_match_failed">字幕匹配失敗：%1$s</string>
+    <string name="subtitle_auto_match_unknown_reason">未知錯誤</string>
+    <string name="subtitle_manual_search">搜尋字幕</string>
+    <string name="subtitle_manual_searching">正在搜尋字幕...</string>
+    <string name="subtitle_manual_select_title">選擇字幕（%1$d）</string>
+    <string name="subtitle_manual_search_empty">未搜尋到字幕</string>
+    <string name="subtitle_manual_search_failed">字幕搜尋失敗</string>
+    <string name="subtitle_manual_resolving">正在載入字幕...</string>
+    <string name="subtitle_manual_applied">已套用字幕：%1$s</string>
+    <string name="subtitle_manual_apply_failed">已找到字幕但無法套用</string>
+    <string name="subtitle_manual_inactive">請先開始播放再搜尋字幕</string>
+    <string name="player_subtitle_realtime_model">即時識別語言</string>
+    <string name="subtitle_realtime_model_status">%1$s · %2$s</string>
+    <string name="subtitle_realtime_model_select_title">選擇音訊原語言</string>
+    <string name="subtitle_realtime_model_delete_action">刪除模型</string>
+    <string name="subtitle_realtime_model_missing">未下載（點擊下載）</string>
+    <string name="subtitle_realtime_model_ready">已下載（點擊刪除）</string>
+    <string name="subtitle_realtime_model_downloading">下載中...</string>
+    <string name="subtitle_realtime_model_downloading_progress">正在下載 %1$d%%</string>
+    <string name="subtitle_realtime_model_deleting">刪除中...</string>
+    <string name="subtitle_realtime_model_download_success">即時字幕模型下載完成</string>
+    <string name="subtitle_realtime_model_download_failed">模型下載失敗：%1$s</string>
+    <string name="subtitle_realtime_model_delete_title">刪除即時字幕模型</string>
+    <string name="subtitle_realtime_model_delete_message">刪除已下載的模型並關閉即時 AI 字幕？</string>
+    <string name="subtitle_realtime_model_delete_success">即時字幕模型已刪除</string>
+    <string name="subtitle_realtime_model_delete_failed">模型刪除失敗：%1$s</string>
+    <string name="subtitle_realtime_action">即時 AI 字幕</string>
+    <string name="subtitle_realtime_preparing">正在準備所選即時字幕模型...</string>
+    <string name="subtitle_realtime_preparing_progress">正在準備字幕模型 %1$d%%</string>
+    <string name="subtitle_realtime_on">即時 AI 字幕已開啟</string>
+    <string name="subtitle_realtime_off">即時 AI 字幕已關閉</string>
+    <string name="subtitle_realtime_failed">即時字幕失敗：%1$s</string>
+    <string name="subtitle_realtime_pcm_title">關閉衝突的音訊模式</string>
+    <string name="subtitle_realtime_pcm_required">即時 AI 字幕需要取得 PCM 音訊，因此必須關閉音訊直通和隧道模式。是否立即關閉並繼續開啟？</string>
+    <string name="subtitle_realtime_speed_title">恢復正常播放速度</string>
+    <string name="subtitle_realtime_speed_required">同步即時字幕目前需要 1 倍速播放。是否恢復為 1 倍速後繼續？</string>
+    <string name="subtitle_realtime_speed_disabled">播放速度已變更，即時字幕已關閉</string>
+    <string name="subtitle_realtime_model_delete_error">無法刪除字幕模型</string>
+    <string name="subtitle_realtime_model_directory_error">無法建立字幕模型目錄</string>
+    <string name="subtitle_realtime_model_partial_error">無法取代未完成的模型檔案</string>
+    <string name="subtitle_realtime_model_incomplete">模型檔案不完整：%1$s</string>
+    <string name="subtitle_realtime_model_checksum_error">模型檔案校驗失敗：%1$s</string>
+    <string name="subtitle_realtime_model_install_error">無法安裝模型檔案：%1$s</string>
+    <string name="subtitle_realtime_model_memory_low">此模型至少需要 %1$d MB 裝置記憶體</string>
+    <string name="subtitle_realtime_model_memory_available_low">目前可用記憶體不足，請關閉背景應用程式後重試</string>
+    <string name="subtitle_realtime_model_storage_low">至少需要 %1$d MB 可用儲存空間</string>
+    <string name="subtitle_ai_translate_title">AI 字幕翻譯</string>
+    <string name="subtitle_ai_translate_message">使用目前 AI 配置將該字幕翻譯為中文字幕？</string>
+    <string name="subtitle_ai_translate_action">AI 翻譯為中文</string>
+    <string name="subtitle_ai_regenerate_action">重新產生 AI 字幕</string>
+    <string name="subtitle_ai_translating">正在翻譯字幕...</string>
+    <string name="subtitle_ai_preparing">正在準備 AI 字幕翻譯...</string>
+    <string name="subtitle_ai_regenerating">正在重新產生 AI 字幕...</string>
+    <string name="subtitle_ai_progress">AI 正在翻譯：%1$d/%2$d 分塊</string>
+    <string name="subtitle_ai_progress_eta">AI 正在翻譯：%1$d/%2$d 分塊，約剩 %3$s</string>
+    <string name="subtitle_ai_cache_hit">已命中 AI 字幕快取，正在套用...</string>
+    <string name="subtitle_ai_applied">已套用 AI 中文字幕：%1$s</string>
+    <string name="subtitle_ai_apply_failed">已產生 AI 字幕但無法套用</string>
+    <string name="subtitle_ai_failed">AI 字幕翻譯失敗：%1$s</string>
+    <string name="subtitle_ai_config_required">請先啟用並配置 AI</string>
+    <string name="subtitle_ai_no_selected_subtitle">請先選擇一個字幕</string>
+    <string name="subtitle_ai_local_srt_required">請先選擇一個本地 SRT 字幕</string>
+    <string name="subtitle_ai_unsupported_format">AI 字幕翻譯暫時僅支援 SRT</string>
+    <string name="subtitle_ai_stale_result">播放內容已切換，已忽略本次 AI 字幕結果</string>
+    <string name="subtitle_ai_unknown_reason">未知錯誤</string>
+    <string name="lut_original">原色</string>
+    <string name="lut_missing">預設不存在</string>
+    <string name="lut_summary">%1$s · %2$d%%</string>
+    <string name="lut_title_value">%1$s · %2$s</string>
+    <string name="lut_strength_value">強度 %1$d%%</string>
+    <string name="lut_preview_delay_value">%1$d秒</string>
+    <string name="lut_import">導入</string>
+    <string name="lut_local">本地</string>
+    <string name="lut_reset">重置</string>
+    <string name="lut_all">全部</string>
+    <string name="lut_favorite">收藏</string>
+    <string name="lut_directory">目錄</string>
+    <string name="lut_select_current_dir">選擇目前目錄</string>
+    <string name="lut_close">關閉</string>
+    <string name="lut_imported">LUT 預設已導入</string>
+    <string name="lut_directory_selected">LUT 目錄已選擇</string>
+    <string name="lut_import_failed">LUT 導入失敗</string>
+    <string name="lut_favorited">已收藏</string>
+    <string name="lut_unfavorited">已取消收藏</string>
+    <string name="lut_empty_presets">暫無 LUT 預設</string>
+    <string name="lut_empty_favorites">暫無收藏 LUT</string>
+    <string name="lut_apply_failed">LUT 調色已臨時關閉</string>
+    <string name="lut_unavailable_player">當前播放器內核不支援 LUT 調色</string>
+    <string name="lut_unavailable_drm">DRM 保護影片不支援 LUT 調色</string>
+    <string name="lut_unavailable_tunnel">隧道模式不支援 LUT 調色</string>
+    <string name="lut_unavailable_soft_decode">軟解不支援 LUT 調色</string>
+    <string name="lut_unavailable_video_prefer">擴展視訊解碼不支援 LUT 調色</string>
+    <string name="lut_unavailable_hdr">HDR/Dolby Vision 內容暫不支援 LUT 調色</string>
+    <string name="lut_unavailable_no_video">當前內容沒有視訊畫面</string>
+
+    <!-- Danmaku -->
+    <string name="danmaku_load">彈幕載入</string>
+    <string name="danmaku_api">搜尋接口</string>
+    <string name="danmaku_api_invalid">彈幕接口地址無效</string>
+    <string name="danmaku_auto_load">自動搜尋</string>
+    <string name="danmaku_spider_first">爬蟲優先</string>
+    <string name="danmaku_search_title">彈幕搜尋</string>
+    <string name="danmaku_search_empty">沒有找到匹配的彈幕</string>
+    <string name="danmaku_source_default">彈幕</string>
+    <string name="danmaku_source_count">%1$d 筆</string>
+
+    <!-- Search -->
+    <string name="search_keyword">關鍵字…</string>
+    <string name="site_search_hint">搜尋站點…</string>
+    <string name="site_group_all">全部</string>
+    <string name="site_group_sort_desc">%1$s，長按拖動排序</string>
+    <string name="site_group_sort_tv_desc">%1$s，長按確定鍵排序</string>
+    <string name="site_group_sort_tv_hint">在分組上長按確定鍵可調整順序</string>
+    <string name="site_group_sort_tv_active">排序中：左右移動，確定儲存，返回取消</string>
+    <string name="site_group_sort_tv_active_desc">%1$s，正在排序。左右移動，確定儲存，返回取消</string>
+    <string name="site_group_sort_saved">分組順序已儲存</string>
+    <string name="site_group_sort_cancelled">已取消分組排序</string>
+    <string name="search_record">歷史</string>
+    <string name="search_suggest">建議</string>
+    <string name="search_hot">熱搜</string>
+    <string name="search_hot_tv">電視榜</string>
+    <string name="search_hot_movie">電影榜</string>
+    <string name="search_hot_variety">綜藝榜</string>
+    <string name="search_loading">搜尋中...</string>
+    <string name="search_progress">(%1$d/%2$d)</string>
+    <string name="search_no_result">沒有搜到</string>
+
+    <!-- Dialog -->
+    <string name="dialog_edit">修改</string>
+    <string name="dialog_positive">確定</string>
+    <string name="dialog_negative">取消</string>
+    <string name="dialog_audio_site_rules">音訊源規則:關聯站源或關鍵詞,用 ; 分隔。預設:[音];[听]</string>
+    <string name="dialog_audio_site_manage">選擇音訊源</string>
+    <string name="dialog_audio_site_default">預設 [音]/[听]</string>
+    <string name="dialog_audio_playback_style">音訊播放風格</string>
+    <string name="dialog_audio_playback_style_immersive">沉浸音訊（上游合併版）</string>
+    <string name="dialog_audio_playback_style_built_in">標準音訊（自研版）</string>
+    <string name="dialog_short_drama_site_rules">短劇源規則:關聯站源或關鍵詞,用 ; 分隔。預設:[短];短劇</string>
+    <string name="dialog_short_drama_site_manage">選擇短劇源</string>
+    <string name="dialog_short_drama_site_default">預設 [短]/短劇</string>
+    <string name="dialog_reset">重置</string>
+    <string name="setting_show">顯示</string>
+    <string name="setting_hide">隱藏</string>
+    <string name="dialog_select_title">選擇章節</string>
+    <string name="dialog_config_hint">請輸入配置…</string>
+    <string name="dialog_config_name">請輸入名稱…</string>
+    <string name="dialog_config_url">請輸入網址…</string>
+
+    <!-- Error -->
+    <string name="error_config_get">配置取得失敗</string>
+    <string name="error_play_next">已經是最後一集了！</string>
+    <string name="error_play_prev">已經是第一集了！</string>
+    <string name="error_play_parse">播放網址解析失敗</string>
+    <string name="error_play_drm">本設備不支援所需的 DRM scheme</string>
+    <string name="error_play_url">播放網址載入失敗</string>
+    <string name="error_play_mpv_hls_unsupported">MPV 播放此 HLS 失敗，請手動切換播放器或更換線路</string>
+    <string name="error_play_mpv_load_failed">MPV 載入媒體失敗，請檢查網路或更換線路</string>
+    <string name="error_play_mpv_network_failed">MPV 網路載入失敗，請檢查網路、請求頭或更換線路</string>
+    <string name="error_play_mpv_drm_unsupported">MPV 不支援此 DRM 保護媒體，請手動切換播放器或更換線路</string>
+    <string name="error_play_mpv_unexpected_image">MPV 載入到了圖片而不是影片，請更換線路</string>
+    <string name="error_play_mpv_no_av">MPV 沒有讀取到可播放的音視訊資料</string>
+    <string name="error_play_mpv_invalid_data">MPV 識別到異常媒體資料，請更換線路或手動切換播放器</string>
+    <string name="error_play_mpv_decode_failed">MPV 解碼失敗，請嘗試切換軟硬解或更換線路</string>
+    <string name="error_play_mpv_video_output">MPV 視訊輸出初始化失敗，請嘗試切換解碼或重新進入播放</string>
+    <string name="error_play_stage_app_local">App 本地播放服務連線失敗，請重新進入播放或重啟應用程式</string>
+    <string name="error_play_stage_external_local">本地代理連接埠連線失敗，請重啟代理或更換線路</string>
+    <string name="error_play_stage_external_supply">外部或未知本地代理未能持續提供資料，App 無法判斷其內部 CDN、驗證或快取狀態，請檢查代理或更換線路</string>
+    <string name="error_play_stage_network">網路讀取失敗，請檢查網路、請求標頭或更換線路</string>
+    <string name="error_play_stage_media">媒體解析失敗或沒有有效音視訊軌道，請更換線路或播放器</string>
+    <string name="error_play_stage_decoder">音視訊解碼失敗，請嘗試切換軟硬解或播放器</string>
+    <string name="error_play_stage_output">音視訊輸出失敗，請重新進入播放或切換解碼方式</string>
+    <string name="error_play_stage_drm">DRM 驗證或受保護媒體處理失敗，請更換線路或播放器</string>
+    <string name="error_play_stage_unknown">播放失敗，請重試或切換播放器</string>
+    <string name="error_play_flag">暫無線路資料</string>
+    <string name="error_play_timeout">連線逾時</string>
+    <string name="error_play_fallback">%1$s 播放失敗，已切換到 %2$s</string>
+    <string name="error_play_ijk_unavailable">目前裝置不可用 IJK 內核</string>
+    <string name="error_play_ijk_unavailable_switch">目前裝置不可用 IJK 內核，已切換到 %1$s</string>
+    <string name="error_play_tvbus">錯誤代碼：<xliff:g name="name">%s</xliff:g></string>
+    <string name="error_detail">暫無播放資料</string>
+    <string name="error_empty">這裡什麼都沒有 👀</string>
+
+    <!-- Update -->
+    <string name="update_version">發現新版本 <xliff:g name="name">%s</xliff:g></string>
+    <string name="update_title">版本更新</string>
+    <string name="update_hint">選擇版本查看更新內容並安裝。</string>
+    <string name="update_check">正在檢查更新…</string>
+    <string name="update_latest">已是最新版本</string>
+    <string name="update_failed">檢查更新失敗</string>
+    <string name="update_downloading">正在下載 %1$d%%</string>
+    <string name="update_downloading_unknown">正在下載…</string>
+    <string name="update_downloading_detail">正在下載 %1$d%% · %2$s/s · 已用 %3$s</string>
+    <string name="update_downloading_detail_remaining">正在下載 %1$d%% · %2$s/s · 剩餘 %3$s · 已用 %4$s</string>
+    <string name="update_downloading_detail_unknown">正在下載 · %1$s/s · 已用 %2$s</string>
+    <string name="update_download_incomplete">更新包下載不完整，請重試。</string>
+    <string name="update_download_checksum">更新包校驗失敗，請重試。</string>
+    <string name="update_download_invalid">更新包無效，請重試。</string>
+    <string name="update_confirm">更新</string>
+    <string name="update_confirm_channel">更新%1$s</string>
+    <string name="update_cancel">取消更新</string>
+    <string name="update_canceled">更新已取消</string>
+    <string name="update_channel_stable">穩定版</string>
+    <string name="update_channel_beta">測試版</string>
+    <string name="update_channel_latest">目前通道已是最新版本。</string>
+    <string name="update_channel_unavailable">目前通道暫無可用更新清單。</string>
+    <string name="update_no_notes">暫無更新日誌。</string>
+    <string name="update_status_available">可更新</string>
+    <string name="update_status_latest">已最新</string>
+    <string name="update_status_unavailable">暫無</string>
+    <string name="update_expand">展開</string>
+    <string name="update_collapse">收起</string>
+    <string name="update_backup_title">更新前備份</string>
+    <string name="update_backup_message">建議在更新前備份當前配置，以便更新後出現問題時可以恢復。是否先備份？</string>
+    <string name="update_backup_positive">備份並更新</string>
+    <string name="update_backup_negative">直接更新</string>
+    <string name="update_backup_running">正在備份…</string>
+    <string name="update_backup_done">備份完成，開始更新</string>
+    <string name="update_backup_failed">備份失敗，仍將繼續更新</string>
+    <string name="update_backup_permission_denied">未授予儲存權限，無法備份，仍將繼續更新</string>
+
+    <!-- Crash -->
+    <string name="crash_info">發生意外錯誤\n抱歉給您帶來不便</string>
+    <string name="crash_restart">重新啟動</string>
+    <string name="crash_details">錯誤訊息</string>
+    <string name="crash_details_title">錯誤訊息</string>
+    <string name="crash_details_message">應用版本：%1$s\n\n%2$s</string>
+    <string name="crash_details_close">關閉</string>
+
+    <!-- Hint -->
+    <string name="copied">已複製</string>
+    <string name="debug_log_dialog_message">調試日誌服務已啟動。\n\n局域網地址：\n%1$s\n\n本機地址：\n%2$s\n\n電視端沒有瀏覽器也沒關係，請在同一局域網的電腦或手機瀏覽器中打開局域網地址。</string>
+    <string name="debug_log_open_browser">打開瀏覽器</string>
+    <string name="debug_log_copy_url">複製地址</string>
+    <string name="debug_log_no_browser">未找到可打開網頁的應用，請使用局域網地址訪問</string>
+    <string name="debug_log_url_copied">調試日誌地址已複製</string>
+    <string name="manage_page_web">瀏覽器頁面</string>
+    <string name="manage_page_dialog_message">管理頁面已啟動。\n\n局域網地址：\n%1$s\n\n本機地址：\n%2$s\n\n管理檔案或設定時請保持頁面打開。瀏覽器頁面關閉一段時間後服務會自動停止，也可以手動停止。</string>
+    <string name="manage_page_open_browser">打開瀏覽器</string>
+    <string name="manage_page_copy_url">複製地址</string>
+    <string name="manage_page_stop">停止頁面</string>
+    <string name="manage_page_notification_title">管理頁面運行中</string>
+    <string name="manage_page_no_browser">未找到可打開網頁的應用，請使用局域網地址訪問</string>
+    <string name="manage_page_url_copied">管理頁面地址已複製</string>
+    <string name="manage_page_battery_title">後台訪問權限</string>
+    <string name="manage_page_battery_message">目前設備可能會在 App 切到後台後限制網路，導致瀏覽器管理頁無法連接。點擊「打開設定」只會嘗試目前品牌已知的後台運行/耗電管理入口；如果系統不允許直達，請按下面路徑手動設定：\n\n%1$s</string>
+    <string name="manage_page_battery_allow">打開設定</string>
+    <string name="manage_page_open_anyway">仍然打開</string>
+    <string name="manage_page_battery_open_failed">未找到可直達的後台設定頁，請按彈窗中的系統路徑手動設定</string>
+    <string name="manage_page_battery_guide_vivo">vivo/iQOO：設定 → 電池 → 後台耗電管理/後台高耗電 → 找到本應用 → 改為「允許後台高耗電」。如果不能直達，請在系統設定裡搜尋「後台耗電管理」。</string>
+    <string name="manage_page_battery_guide_xiaomi">小米/Redmi/POCO：設定 → 應用設定 → 授權管理 → 自啟動管理 → 允許本應用；再到應用電池用量中選擇無限制。</string>
+    <string name="manage_page_battery_guide_oppo">OPPO/realme/一加：設定 → 應用 → 自啟動/關聯啟動 → 允許本應用；再到電池 → 應用耗電管理中允許後台運行。</string>
+    <string name="manage_page_battery_guide_huawei">華為/榮耀：手機管家或設定 → 應用啟動管理 → 找到本應用 → 關閉自動管理，並允許自啟動、關聯啟動、後台活動。</string>
+    <string name="manage_page_battery_guide_samsung">三星：設定 → 應用 → 本應用 → 電池 → 選擇不受限制；同時在電池 → 後台使用限制中不要加入休眠應用。</string>
+    <string name="manage_page_battery_guide_meizu">魅族：手機管家 → 權限管理/後台管理 → 找到本應用 → 允許後台運行；再到電量管理中把本應用設為不限制。</string>
+    <string name="manage_page_battery_guide_default">設定 → 應用 → 本應用 → 電池 → 選擇不受限制/不最佳化；如果有自啟動或後台運行選項，也請允許本應用。</string>
+
+    <!-- UNIT -->
+    <string name="all">全部</string>
+    <string name="yes">有</string>
+    <string name="none">無</string>
+    <string name="times">倍</string>
+    <string name="lines">行</string>
+
+    <string-array name="select_player">
+        <item>EXO</item>
+        <item>IJK</item>
+        <item>系統</item>
+        <item>MPV</item>
+    </string-array>
+
+    <string-array name="select_decode">
+        <item>軟解</item>
+        <item>硬解</item>
+    </string-array>
+
+    <string-array name="select_player_failure_fallback">
+        <item>軟解後切核心</item>
+        <item>僅切軟硬解</item>
+        <item>僅切播放核心</item>
+        <item>關閉</item>
+    </string-array>
+
+    <string-array name="select_player_kernel">
+        <item>EXO</item>
+        <item>IJK</item>
+        <item>系統</item>
+        <item>MPV</item>
+    </string-array>
+    <string-array name="select_mpv_render">
+        <item>OpenGL</item>
+        <item>Vulkan</item>
+    </string-array>
+    <string-array name="select_buffer_bytes">
+        <item>自動</item>
+        <item>64MB</item>
+        <item>128MB</item>
+        <item>256MB</item>
+    </string-array>
+    <string-array name="select_back_buffer">
+        <item>關閉</item>
+        <item>15秒</item>
+        <item>30秒</item>
+        <item>60秒</item>
+    </string-array>
+    <string-array name="select_play_cache">
+        <item>128MB</item>
+        <item>256MB</item>
+        <item>512MB</item>
+        <item>1GB</item>
+        <item>2GB</item>
+    </string-array>
+
+    <string-array name="select_size">
+        <item>小</item>
+        <item>中</item>
+        <item>大</item>
+        <item>特大</item>
+    </string-array>
+
+    <string-array name="select_ui_scale">
+        <item>跟隨系統</item>
+        <item>標準</item>
+        <item>較緊湊</item>
+        <item>緊湊</item>
+        <item>更緊湊</item>
+        <item>更小</item>
+    </string-array>
+
+    <string-array name="select_language">
+        <item>跟隨系統</item>
+        <item>簡體中文</item>
+        <item>繁體中文</item>
+    </string-array>
+
+    <string name="aspect_ratio_title">自訂畫面比例</string>
+    <string name="aspect_ratio_width">寬</string>
+    <string name="aspect_ratio_height">高</string>
+    <string name="aspect_ratio_hint">可輸入 2560:1080 或 64:27</string>
+    <string name="aspect_ratio_invalid">請輸入有效的畫面比例</string>
+    <string-array name="select_scale">
+        <item>原始</item>
+        <item>16:9</item>
+        <item>4:3</item>
+        <item>填充</item>
+        <item>裁剪</item>
+        <item>21:9</item>
+        <item>自適應</item>
+        <item>自訂</item>
+    </string-array>
+
+    <string-array name="select_reset">
+        <item>刷新</item>
+        <item>重播</item>
+    </string-array>
+
+    <string-array name="select_caption">
+        <item>預設</item>
+        <item>系統</item>
+    </string-array>
+
+    <string-array name="select_realtime_subtitle_model">
+        <item>普通話（約 31 MB）</item>
+        <item>粵語（約 135 MB）</item>
+        <item>英語（約 45 MB）</item>
+        <item>德語（約 71 MB）</item>
+        <item>法語（約 71 MB）</item>
+        <item>西班牙語（約 156 MB）</item>
+        <item>日語（約 73 MB）</item>
+        <item>中英混合（約 199 MB）</item>
+    </string-array>
+    <string-array name="select_realtime_subtitle_model_value">
+        <item>zh</item>
+        <item>yue</item>
+        <item>en</item>
+        <item>de</item>
+        <item>fr</item>
+        <item>es</item>
+        <item>ja</item>
+        <item>zh-en</item>
+    </string-array>
+    <string-array name="select_subtitle_language">
+        <item>中文優先</item>
+        <item>簡體中文</item>
+        <item>繁體中文</item>
+        <item>英語</item>
+        <item>日語</item>
+        <item>韓語</item>
+        <item>不限制</item>
+    </string-array>
+
+    <string-array name="select_subtitle_language_value">
+        <item>zh</item>
+        <item>zh-Hans</item>
+        <item>zh-Hant</item>
+        <item>en</item>
+        <item>ja</item>
+        <item>ko</item>
+        <item>any</item>
+    </string-array>
+
+    <string-array name="select_player_osd">
+        <item>@string/display_time</item>
+        <item>@string/display_traffic</item>
+        <item>@string/display_size</item>
+        <item>@string/display_progress</item>
+        <item>@string/display_mini</item>
+        <item>@string/display_title</item>
+        <item>播放參數</item>
+    </string-array>
+
+    <string-array name="select_live_player_osd">
+        <item>@string/display_time</item>
+        <item>@string/display_traffic</item>
+        <item>@string/display_size</item>
+        <item>@string/display_title</item>
+        <item>@string/play_params</item>
+    </string-array>
+
+    <string-array name="select_track">
+        <item>選擇音軌</item>
+        <item>選擇視軌</item>
+        <item>選擇字幕</item>
+    </string-array>
+    <string name="select_secondary_subtitle_track">選擇第二字幕</string>
+
+    <string name="setting_tmdb_source">TMDB 數據配置</string>
+    <string name="setting_ai_recommendation">AI 通用配置</string>
+    <string name="setting_tmdb_model">TMDB 交互模型</string>
+    <string name="setting_tmdb_model_native">原生增強</string>
+    <string name="setting_tmdb_match_mode">TMDB 匹配模式</string>
+    <string name="setting_detail_open_mode">詳情頁模式</string>
+    <string name="setting_detail_open_original">原始詳情</string>
+    <string name="setting_detail_open_native">TMDB 內嵌增強</string>
+    <string name="setting_detail_open_original_enhanced">原生增強</string>
+    <string name="setting_detail_open_fusion">沉浸融合</string>
+    <string name="setting_detail_open_enhanced">炫彩詳情</string>
+    <string name="setting_detail_open_player">詳情直放</string>
+    <string name="setting_detail_open_direct">影視原生</string>
+    <string name="setting_detail_open_cinema">光影劇幕</string>
+    <string name="setting_detail_theme_mode">詳情頁主題</string>
+    <string name="setting_detail_theme_current">目前主題</string>
+    <string name="setting_detail_theme_native">原生暗色</string>
+    <string name="setting_detail_theme_profile">清透流彩</string>
+    <string name="setting_detail_theme_cinema">光影劇幕</string>
+    <string name="setting_configured">已配置</string>
+    <string name="setting_unconfigured">未配置</string>
+    <string name="detail_tmdb_need_key">請先配置 TMDB 數據</string>
+    <string name="detail_tmdb_empty">暫無 TMDB 數據</string>
+    <string name="detail_tmdb_match_title">匹配 TMDB 條目</string>
+    <string name="detail_tmdb_rematch">TMDB</string>
+    <string name="detail_tmdb_match_saved">已記錄 TMDB 匹配</string>
+    <string name="detail_tmdb_current_match">目前匹配</string>
+    <string name="detail_tmdb_searching">正在搜尋 TMDB...</string>
+    <string name="detail_tmdb_search_hint">搜尋標題</string>
+    <string name="detail_tmdb_search_action">搜尋</string>
+    <string name="detail_tmdb_result_count">共 %1$d 條</string>
+    <string name="detail_tmdb_skip">跳過</string>
+    <string name="detail_tmdb_site_disabled">目前站源未啟用 TMDB 匹配</string>
+    <string name="dialog_tmdb_api_key_label">TMDB API Key 或 Access Token</string>
+    <string name="dialog_tmdb_api_key_hint">輸入 API Key 或 v4 Access Token</string>
+    <string name="dialog_tmdb_api_key_tip">免費獲取 API Key: https://www.themoviedb.org/settings/api</string>
+    <string name="dialog_tmdb_language_label">TMDB 語言</string>
+    <string name="dialog_tmdb_language_hint">例如 zh-CN</string>
+    <string name="dialog_tmdb_api_host_label">API 域名</string>
+    <string name="dialog_tmdb_api_host_hint">例如 https://api.tmdb.org</string>
+    <string name="dialog_tmdb_image_host_label">圖片域名</string>
+    <string name="dialog_tmdb_image_host_hint">例如 https://images.tmdb.org</string>
+    <string name="dialog_tmdb_section_data">數據源</string>
+    <string name="dialog_tmdb_section_ratings">評分擴展</string>
+    <string name="dialog_tmdb_section_rules">站點規則</string>
+    <string name="dialog_omdb_api_key_label">OMDb API Key（可選，用於 IMDB 評分）</string>
+    <string name="dialog_omdb_api_key_hint">輸入 OMDb API Key</string>
+    <string name="dialog_omdb_api_key_tip">免費獲取 API Key（每天1000次）: https://www.omdbapi.com/apikey.aspx</string>
+    <string name="dialog_tmdb_enable_label">啟用 TMDB 元數據增強</string>
+    <string name="dialog_tmdb_enable_tip">這裡僅配置 TMDB 數據源、語言、圖片域名與站點規則；啟用狀態在「詳情頁模式」中控制。</string>
+    <string name="dialog_tmdb_enabled_sites_label">啟用站點規則</string>
+    <string name="dialog_tmdb_disabled_sites_label">排除規則</string>
+    <string name="dialog_tmdb_add_rule_hint">添加關鍵詞或站點…</string>
+    <string name="dialog_tmdb_add_disabled_rule_hint">添加排除關鍵詞或站點…</string>
+    <string name="dialog_tmdb_add">添加</string>
+    <string name="dialog_tmdb_all_sites">全部站點</string>
+    <string name="dialog_tmdb_site_manage">選擇站點</string>
+    <string name="dialog_tmdb_reset_default">恢復默認</string>
+    <string name="tmdb_cast_label">演員</string>
+    <string name="tmdb_loading_detail">正在載入劇集資訊...</string>
+    <string name="tmdb_loading_episodes">正在載入劇集資訊...</string>
+    <string name="tmdb_powered_by">數據來源：TMDB</string>
+    <string name="tmdb_photos_label">劇照</string>
+    <string name="tmdb_crew_label">主創團隊</string>
+    <string name="tmdb_recommendations_label">猜你喜歡</string>
+    <string name="tmdb_personal_recommendations_tmdb_label">個性推薦 · TMDB</string>
+    <string name="tmdb_personal_recommendations_douban_label">個性推薦 · 豆瓣</string>
+    <string name="tmdb_personal_recommendations_ai_label">個性推薦 · 智能</string>
+    <string name="dialog_ai_enable">啟用 AI 服務</string>
+    <string name="dialog_ai_title_extraction">AI 真實劇名識別</string>
+    <string name="dialog_ai_section_service">服務</string>
+    <string name="dialog_ai_section_connection">連線參數</string>
+    <string name="dialog_ai_section_model">模型設定</string>
+    <string name="dialog_ai_protocol_label">協議類型</string>
+    <string-array name="dialog_ai_protocol_labels">
+        <item>OpenAI Responses API</item>
+        <item>OpenAI Chat Completions</item>
+        <item>Anthropic Messages</item>
+        <item>Gemini Native generateContent</item>
+    </string-array>
+    <string name="dialog_ai_endpoint_label">API 服務端點 / 基地址</string>
+    <string name="dialog_ai_endpoint_hint">https://api.openai.com/v1/responses</string>
+    <string name="dialog_ai_api_key_label">API key</string>
+    <string name="dialog_ai_api_key_hint">sk-...</string>
+    <string name="dialog_ai_model_label">模型</string>
+    <string name="dialog_ai_model_hint">gpt-4.1-mini</string>
+    <string name="dialog_ai_fetch_models">取得模型</string>
+    <string name="dialog_ai_fetch_models_running">正在取得模型列表...</string>
+    <string name="dialog_ai_fetch_models_success">已取得 %1$d 個模型</string>
+    <string name="dialog_ai_fetch_models_empty">未取得可用模型</string>
+    <string name="dialog_ai_fetch_models_failed">模型取得失敗：%1$s</string>
+    <string name="dialog_ai_user_agent_label">自訂 User-Agent</string>
+    <string name="dialog_ai_user_agent_hint">可選，用於有 UA 限制的供應商</string>
+    <string name="dialog_ai_prompt_config">AI 提示詞配置</string>
+    <string name="dialog_ai_recommend_prompt_label">推薦提示詞</string>
+    <string name="dialog_ai_title_extraction_prompt_label">名稱提取提示詞</string>
+    <string name="dialog_ai_viewing_report_prompt_label">觀影報告提示詞</string>
+    <string name="dialog_ai_ad_detection_prompt_label">廣告偵測提示詞</string>
+    <string name="dialog_ai_group_rule_prompt_label">分組規則提示詞</string>
+    <string name="dialog_ai_prompt_reset">重置預設</string>
+    <string name="dialog_ai_test">測試配置</string>
+    <string name="dialog_ai_test_running">正在測試 AI 配置...</string>
+    <string name="dialog_ai_test_success">AI 測試通過：%1$s（耗時 %2$s）</string>
+    <string name="dialog_ai_test_failed">AI 測試失敗：%1$s（耗時 %2$s）</string>
+    <string name="ai_recommendation_info_title">智能推薦詳情</string>
+    <string name="ai_recommendation_reason_label">推薦理由</string>
+    <string name="ai_recommendation_reason_preview">推薦理由：%1$s</string>
+    <string name="detail_work_searching">正在當前站源搜尋 %1$s...</string>
+    <string name="detail_work_global_searching">當前站源無結果，正在全局搜尋 %1$s...</string>
+    <string name="detail_image_save">儲存</string>
+    <string name="detail_image_saving">正在儲存圖片...</string>
+    <string name="detail_image_save_success">已儲存至：%1$s</string>
+    <string name="detail_image_save_failed">圖片儲存失敗</string>
+    <string name="detail_external_open_failed">無法開啟外部連結</string>
+    <string name="detail_image_permission_denied">儲存權限被拒絕</string>
+
+    <string name="detail_tmdb_photos">劇照</string>
+    <string name="detail_no_overview">暫無簡介</string>
+    <string name="detail_image_rotate">旋轉</string>
+    <string name="tmdb_external_links_label">外部連結</string>
+    <string name="tmdb_ratings_label">評分與數據</string>
+    <string name="tmdb_ratings_votes">人評分</string>
+    <string name="control_display">屏顯</string>
+    <string name="display_time">時間</string>
+    <string name="display_traffic">網速</string>
+    <string name="display_size">解析度</string>
+    <string name="display_progress">進度</string>
+    <string name="display_mini">迷你</string>
+    <string name="display_title">標題</string>
+    <string name="play_decode_idle">解碼</string>
+    <string name="detail_close">關閉</string>
+    <string name="detail_expand">展開</string>
+    <string name="detail_collapse">收起</string>
+    <string name="detail_flag">線路</string>
+    <string name="detail_quality">畫質</string>
+    <string name="detail_play_now">立即播放</string>
+    <string name="detail_play_resume">繼續播放 - %1$s</string>
+    <string name="detail_score">評分 %1$s</string>
+    <string name="detail_runtime_format">%1$d 分鐘</string>
+    <string name="detail_season_format">第 %1$d 季</string>
+    <string name="detail_media_movie">電影</string>
+    <string name="detail_media_tv">劇集</string>
+    <string name="detail_media_unknown">詳情</string>
+    <string name="tmdb_episode_complete">全 %1$d 集</string>
+    <string name="tmdb_episode_total">共 %1$d 集</string>
+    <string name="tmdb_episode_ongoing">更新至 %1$d 集</string>
+    <string name="tmdb_episode_ongoing_total">更新至 %1$d / 共 %2$d 集</string>
+    <string name="tmdb_episode_series_ongoing">更新至 S%1$dE%2$d</string>
+    <string name="tmdb_episode_series_ongoing_total">更新至 S%1$dE%2$d · 全劇 %3$d 集</string>
+    <string name="tmdb_episode_season_complete">第 %1$d 季 · 全 %2$d 集</string>
+    <string name="tmdb_episode_season_total">第 %1$d 季 · 共 %2$d 集</string>
+    <string name="tmdb_episode_season_ongoing">第 %1$d 季 · 更新至 %2$d 集</string>
+    <string name="tmdb_episode_season_ongoing_total">第 %1$d 季 · 更新至 %2$d / 共 %3$d 集</string>
+    <string name="tmdb_episode_planned">待播</string>
+    <string name="tmdb_episode_planned_total">待播 · 計劃 %1$d 集</string>
+    <string name="tmdb_episode_canceled">已取消 · 共 %1$d 集</string>
+    <string name="tmdb_episode_compact_total">TMDB %1$d 集</string>
+    <string name="tmdb_episode_compact_progress">TMDB %1$d/%2$d 集</string>
+    <string name="tmdb_episode_compact_episode">TMDB 第 %1$d 集</string>
+    <string name="tmdb_episode_compact_series">TMDB S%1$dE%2$d</string>
+    <string name="tmdb_episode_compact_series_total">TMDB S%1$dE%2$d · %3$d 集</string>
+    <string name="tmdb_episode_compact_season">TMDB S%1$d · %2$d 集</string>
+    <string name="tmdb_episode_compact_season_progress">TMDB S%1$d %2$d/%3$d 集</string>
+    <string name="tmdb_episode_compact_planned">TMDB 待播</string>
+    <string name="detail_source_current">目前站源：%1$s</string>
+    <string name="detail_source_empty">暫無可用站源</string>
+    <string name="detail_source_episode_empty">暫無可用選集或站源</string>
+    <string name="detail_source_searching">正在搜尋站源...</string>
+    <string name="detail_theme_dark">深色</string>
+    <string name="detail_theme_light">淺色</string>
+    <string name="detail_tmdb_cast">演員</string>
+    <string name="detail_tmdb_creators">主創團隊</string>
+    <string name="detail_tmdb_works">猜你喜歡</string>
+    <string name="detail_tmdb_loading_detail">正在載入 TMDB 詳情...</string>
+    <string name="detail_episode_detail_title">第 %1$d 集 · %2$s</string>
+    <string name="detail_episode_guests">客串演員</string>
+    <string name="detail_episode_crew">職員</string>
+    <string name="detail_episode_original_name">原始名稱：%1$s</string>
+    <string name="detail_person_biography">簡介</string>
+    <string name="detail_person_empty">暫無人物資訊</string>
+    <string name="detail_person_info">個人資訊</string>
+    <string name="detail_person_photos">相冊</string>
+    <string name="detail_person_works">參與作品</string>
+    <string name="detail_person_work_count">%1$d 部作品</string>
+    <string name="detail_person_score_title">綜合得分</string>
+    <string name="detail_person_score_value">%1$d</string>
+    <string name="detail_person_score_meta">主攻：%1$s\n出演 %2$d · 導演 %3$d · 製作 %4$d\n作品均分 %5$s</string>
+    <string name="detail_filter_all">全部</string>
+    <string name="detail_filter_cast">出演</string>
+    <string name="detail_filter_crew">製作</string>
+    <string name="detail_filter_director">導演</string>
+    <string name="detail_filter_movie">電影</string>
+    <string name="detail_filter_tv">劇集</string>
+    <string name="detail_image_previous">上一張</string>
+    <string name="detail_image_next">下一張</string>
+    <string name="detail_image_close">關閉</string>
+
+    <string-array name="select_search_ui">
+        <item>橫屏</item>
+        <item>豎屏</item>
+    </string-array>
+
+    <string-array name="select_search_column">
+        <item>自適應</item>
+        <item>1個</item>
+        <item>2個</item>
+    </string-array>
+
+    <string-array name="select_tmdb_match_mode">
+        <item>嚴格</item>
+        <item>智能</item>
+        <item>嚴格 + 彈窗</item>
+        <item>智能 + 彈窗</item>
+    </string-array>
+
+    <string-array name="select_global_history_mode">
+        <item>關閉</item>
+        <item>自動配對播放源</item>
+        <item>搜尋後選擇播放源</item>
+    </string-array>
+
+    <string-array name="select_auto_skip_intro_outro">
+        <item>關閉</item>
+        <item>自動跳過</item>
+        <item>彈框確認</item>
+    </string-array>
+
+    <string-array name="select_site_column">
+        <item>單行</item>
+        <item>雙行</item>
+    </string-array>
+
+    <string-array name="select_search_result_sort">
+        <item>動態模式（誰快誰在前）</item>
+        <item>固定模式（按配置順序）</item>
+    </string-array>
+
+    <string name="menu_viewing_report">觀影報告</string>
+    <string name="viewing_report_title">觀影報告</string>
+    <string name="viewing_report_select_range">選擇報告時間範圍</string>
+    <string name="viewing_report_generate">生成報告</string>
+    <string name="viewing_report_refresh">重新整理</string>
+    <string name="viewing_report_loading_local">正在讀取觀看記錄…</string>
+    <string name="viewing_report_generating">正在生成報告…</string>
+    <string name="viewing_report_ai_analyzing">AI 正在分析你的觀影畫像…</string>
+    <string name="viewing_report_empty">該時間段暫無觀看記錄</string>
+    <string name="viewing_report_overview_watch">累計觀影</string>
+    <string name="viewing_report_ai_persona">AI 觀影畫像</string>
+    <string name="viewing_report_time_pattern">觀影時間分佈</string>
+    <string name="viewing_report_content_preference">內容偏好</string>
+    <string name="viewing_report_people_preference">人物偏好</string>
+    <string name="viewing_report_badges">成就徽章</string>
+    <string name="viewing_report_watched">觀看了</string>
+    <string name="viewing_report_completion_rate">完播率</string>
+    <string name="viewing_report_top_time_slot">最常觀影時段</string>
+    <string name="viewing_report_weekend_ratio">週末觀影佔比</string>
+    <string name="viewing_report_avg_watch">平均單次觀看</string>
+    <string name="viewing_report_late_night">深夜觀影次數</string>
+    <string name="viewing_report_tv_movie_ratio">劇集 / 電影佔比</string>
+    <string name="viewing_report_top_actors">最愛演員</string>
+    <string name="viewing_report_top_directors">最愛導演</string>
+    <string name="viewing_report_unit_hours">小時</string>
+    <string name="viewing_report_unit_vods">部</string>
+    <string name="viewing_report_unit_episodes">集</string>
+    <string name="viewing_report_unit_minutes">分鐘</string>
+    <string name="viewing_report_unit_times">次</string>
+
+    <string name="ad_rule_delete_confirm">刪除規則</string>
+    <string name="ad_rule_delete_message">確定刪除「%1$s」嗎？介面匯入規則刪除後可在待審核規則中重新匯入。</string>
+
+<string name="player_karaoke_status_free">K歌 · 自由唱</string>
+
+<string name="player_karaoke_status_free_score_grade">K歌 · 娛樂 %1$d 分 · %2$s</string>
+
+<string name="player_karaoke_status_score">K歌 · %1$d 分</string>
+
+<string name="player_karaoke_status_score_grade">K歌 · %1$d 分 · %2$s</string>
+
+<string name="player_karaoke_status_rhythm_score">K歌 · 節奏 %1$d 分</string>
+
+<string name="player_karaoke_status_rhythm_score_grade">K歌 · 節奏 %1$d 分 · %2$s</string>
+
+<string name="player_karaoke_need_permission">需要麥克風權限</string>
+
+<string name="player_karaoke_mic_unavailable">麥克風不可用</string>
+
+<string name="player_karaoke_no_voice">請靠近麥克風演唱</string>
+
+<string name="player_karaoke_pitch">音高 %1$s</string>
+
+<string name="player_karaoke_pitch_score">音高 %1$s · %2$s</string>
+
+<string name="player_karaoke_pitch_hit">命中</string>
+
+<string name="player_karaoke_pitch_perfect">完美</string>
+
+<string name="player_karaoke_pitch_vibrato">顫音</string>
+
+<string name="player_karaoke_pitch_miss">偏差 %1$.1f 半音</string>
+
+<string name="player_karaoke_free_detail">音高 %1$s · 參與 %2$d%%</string>
+
+<string name="player_karaoke_rhythm_detail">節奏命中 %1$d%%</string>
+
+<string name="player_karaoke_combo">連擊 %1$d 秒</string>
+
+<string name="player_karaoke_line_score">本句 %1$d 分</string>
+
+<string name="player_karaoke_result_title">K歌結果</string>
+
+<string name="player_karaoke_result_scoring">音準評分</string>
+
+<string name="player_karaoke_result_rhythm">節奏評分</string>
+
+<string name="player_karaoke_result_free">自由唱</string>
+
+<string name="player_karaoke_result_track">評分譜：%1$s</string>
+
+<string name="player_karaoke_result_no_track">未綁定評分譜，目前是自由唱娛樂估算。</string>
+
+<string name="player_karaoke_result_rhythm_note">根據歌詞時間軸自動生成，不判斷真實音高。</string>
+
+<string name="player_karaoke_result_metric_hit">命中率</string>
+
+<string name="player_karaoke_result_metric_rhythm">節奏命中</string>
+
+<string name="player_karaoke_result_metric_participation">參與度</string>
+
+<string name="player_karaoke_result_score_value">%1$d 分 · %2$s</string>
+
+<string name="player_karaoke_result_voice_coverage">演唱覆蓋</string>
+
+<string name="player_karaoke_result_bonus">表現加成</string>
+
+<string name="player_karaoke_result_perfect">完美命中</string>
+
+<string name="player_karaoke_result_vibrato">顫音獎勵</string>
+
+<string name="player_karaoke_result_active_time">有效 %1$d 秒</string>
+
+<string name="player_karaoke_result_best_combo">連擊 %1$d 秒</string>
+
+<string name="player_karaoke_result_line_average">逐句平均</string>
+
+<string name="player_karaoke_result_line_summary">逐句 %1$d 句 · 最佳 %2$d%%</string>
+
+<string name="player_karaoke_result_pitch_headline_high">音準和穩定度都不錯，表現很完整。</string>
+
+<string name="player_karaoke_result_pitch_headline_mid">這次表現可以，音高再穩一點分數會更好。</string>
+
+<string name="player_karaoke_result_pitch_headline_low">先把每句開頭唱穩，並盡量完整唱完。</string>
+
+<string name="player_karaoke_result_no_track_short">自由唱估算</string>
+
+<string name="player_karaoke_result_rhythm_note_short">歌詞節奏評分</string>
+
+<string name="player_karaoke_result_pitch_headline_high_short">表現完整</string>
+
+<string name="player_karaoke_result_pitch_headline_mid_short">音高再穩一點</string>
+
+<string name="player_karaoke_result_pitch_headline_low_short">唱穩開頭，完整唱完</string>
+
+<string name="player_karaoke_result_fun_note">娛樂評分包含音準命中、完美保持、連擊和顫音獎勵。</string>
+
+<string name="player_lyrics_offset">歌詞偏移</string>
+
+<string name="player_lyrics_rows">歌詞行數</string>
+
+<string name="player_lyrics_size">歌詞字號</string>
+
+<string name="player_lyrics_source">歌詞來源</string>
+
+<string name="player_karaoke_mode">K歌模式</string>
+
+<string name="player_audio_options">播放選項</string>
+
+<string name="player_karaoke_mode_enabled">目前已開啟</string>
+
+<string name="player_karaoke_mode_disabled">目前已關閉</string>
+
+<string name="player_karaoke_difficulty">K歌難度</string>
+
+<string name="player_karaoke_mic_delay">麥克風延遲</string>
+
+<string name="player_karaoke_track">評分譜</string>
+
+<string name="player_karaoke_track_generate_pitch">生成評分譜</string>
+
+<string name="player_karaoke_track_search">線上搜尋</string>
+
+<string name="player_karaoke_track_keyword">評分譜關鍵字</string>
+
+<string name="player_karaoke_track_import_file">本機導入</string>
+
+<string name="player_karaoke_track_import_url">連結導入</string>
+
+<string name="player_karaoke_track_sources">譜源管理</string>
+
+<string name="player_karaoke_track_advanced">進階選項</string>
+
+<string name="player_karaoke_track_back">返回</string>
+
+<string name="player_karaoke_track_basic_pitch_tflite">Basic Pitch：%1$s</string>
+
+<string name="player_karaoke_track_option_enabled">已開啟</string>
+
+<string name="player_karaoke_track_option_disabled">已關閉</string>
+
+<string name="player_karaoke_track_sources_hint">每行一個倉庫：owner/repo@branch 或 https://github.com/owner/repo/tree/branch</string>
+
+<string name="player_karaoke_track_sources_saved">評分譜源已儲存</string>
+
+<string name="player_karaoke_track_url_hint">UltraStar .txt 連結、USDB ID、USDB 詳情頁，或追加 @Cookie=...</string>
+
+<string name="player_karaoke_track_clear">清除綁定</string>
+
+<string name="player_karaoke_track_searching">正在搜尋評分譜...</string>
+
+<string name="player_karaoke_track_not_found">未找到評分譜</string>
+
+<string name="player_karaoke_track_select">選擇評分譜</string>
+
+<string name="player_karaoke_track_source_login"> · 需登入</string>
+
+<string name="player_karaoke_track_result_item">%1$s\n%2$s - %3$s\n%4$s</string>
+
+<string name="player_karaoke_track_imported">評分譜已導入</string>
+
+<string name="player_karaoke_track_import_failed">評分譜導入失敗</string>
+
+<string name="player_karaoke_track_generated">輕量節奏評分譜已生成</string>
+
+<string name="player_karaoke_track_generating_pitch">正在生成音高評分譜...</string>
+
+<string name="player_karaoke_track_generating_pitch_message">正在本地分析目前音訊並生成帶音高的評分譜，完成前請勿關閉播放器。</string>
+
+<string name="player_karaoke_track_generating_pitch_progress">%1$d%% · %2$s · %3$s</string>
+
+<string name="player_karaoke_track_generation_stop">停止</string>
+
+<string name="player_karaoke_track_generation_stopped">已停止生成評分譜</string>
+
+<string name="player_karaoke_track_pitch_stage_prepare">準備中</string>
+
+<string name="player_karaoke_track_pitch_stage_decode">解碼音訊</string>
+
+<string name="player_karaoke_track_pitch_stage_analyze">分析音高</string>
+
+<string name="player_karaoke_track_pitch_stage_write">寫入評分譜</string>
+
+<string name="player_karaoke_track_pitch_stage_finish">收尾中</string>
+
+<string name="player_karaoke_track_pitch_remaining_unknown">正在估算剩餘時間</string>
+
+<string name="player_karaoke_track_pitch_remaining_seconds">剩餘約 %1$d 秒</string>
+
+<string name="player_karaoke_track_pitch_remaining_minutes">剩餘約 %1$d 分 %2$d 秒</string>
+
+<string name="player_karaoke_track_generated_pitch">音高評分譜已生成</string>
+
+<string name="player_karaoke_track_generated_pitch_message">已套用到目前歌曲，K歌模式已開啟。</string>
+
+<string name="player_karaoke_track_generate_pitch_failed">音高評分譜生成失敗</string>
+
+<string name="player_karaoke_track_generate_pitch_failed_message">未生成評分譜：%1$s</string>
+
+<string name="player_karaoke_track_generate_pitch_unsupported_source">目前媒體源無法直接分析音訊，可嘗試切換線路/清晰度，或使用線上搜尋、本機導入評分譜。</string>
+
+<string name="player_karaoke_track_generate_failed">輕量節奏評分譜生成失敗</string>
+
+<string name="player_karaoke_track_generate_no_lyrics">目前沒有可用的歌詞時間軸</string>
+
+<string name="player_karaoke_track_cleared">評分譜綁定已清除</string>
+
+<string name="player_karaoke_track_none">目前沒有評分譜綁定</string>
+
+<string name="player_desktop_lyrics">桌面歌詞</string>
+
+<string name="player_desktop_lyrics_permission">請允許顯示在其他應用程式上層，用於顯示桌面歌詞</string>
+
+<string name="player_lyrics_cache">歌詞快取</string>
+
+<string name="player_lyrics_cache_value">%1$d 項</string>
+
+<string name="player_lyrics_cache_cleared">歌詞快取已清理</string>
+
+<string name="player_lyrics_search">搜尋歌詞</string>
+
+<string name="player_lyrics_reload">重搜歌詞</string>
+
+<string name="player_lyrics_keyword">歌詞關鍵字</string>
+
+<string name="player_lyrics_keyword_required">請輸入歌詞關鍵字</string>
+
+<string name="player_lyrics_searching">正在搜尋歌詞...</string>
+
+<string name="player_lyrics_not_found">未找到歌詞</string>
+
+<string name="player_lyrics_loaded">已載入歌詞：%1$s</string>
+
+<string name="player_lyrics_select">選擇歌詞</string>
+
+<string name="player_lyrics_word">逐字</string>
+
+<string name="player_lyrics_synced">逐句</string>
+
+<string name="player_lyrics_plain">文字</string>
+
+<string name="player_audio_badge_audio">音訊</string>
+
+<string name="player_audio_badge_lyrics">歌詞</string>
+
+<string name="player_audio_playlist">歌單</string>
+
+<string name="player_audio_playlist_results">搜尋結果</string>
+
+<string name="player_audio_playlist_search_hint">搜尋目前站源</string>
+
+<string name="player_audio_playlist_search_required">請輸入搜尋關鍵字</string>
+
+<string name="player_audio_playlist_search_failed">搜尋失敗</string>
+
+<string name="player_audio_playlist_no_results">未找到結果</string>
+
+<string name="player_audio_playlist_result_count">找到 %1$d 個結果</string>
+
+<string name="player_audio_playlist_adding">正在加入 %1$s...</string>
+
+<string name="player_audio_playlist_add_failed">加入失敗</string>
+
+<string name="player_audio_playlist_add_empty">未找到可播放項目</string>
+
+<string name="player_audio_playlist_added">已加入 %1$d 項</string>
+
+<string name="player_audio_playlist_exists">已在歌單中</string>
+
+<string name="player_audio_playlist_empty">歌單暫無歌曲</string>
+
+<string name="player_audio_playlist_removed">已移除 %1$s</string>
+
+<string name="player_audio_playlist_keep_one">歌單至少保留一首歌曲</string>
+
+<string name="player_audio_playlist_switch">切換</string>
+
+<string name="player_audio_playlist_create">新增</string>
+
+<string name="player_audio_playlist_name_hint">歌單名稱</string>
+
+<string name="player_audio_more">更多</string>
+
+<string name="player_audio_background">背景</string>
+
+<string name="player_audio_background_decorated_on">裝飾已開</string>
+
+<string name="player_audio_background_decorated_off">裝飾已關</string>
+
+<string name="player_audio_background_light_effect_on">光效已開</string>
+
+<string name="player_audio_background_light_effect_off">光效已關</string>
+
+<string name="player_audio_background_decorated_turn_on">打開裝飾</string>
+
+<string name="player_audio_background_decorated_turn_off">關閉裝飾</string>
+
+<string name="player_audio_background_random_plain">換背景</string>
+
+<string name="player_audio_background_random_decoration">換裝飾</string>
+
+<string name="player_audio_background_random_plain_done">已隨機生成純背景</string>
+
+<string name="player_audio_background_random_decoration_done">已隨機生成背景裝飾</string>
+
+<string name="player_audio_background_random_mix_done">已隨機生成背景搭配</string>
+
+<string name="player_lyrics_unknown">未知</string>
+
+<string name="player_lyrics_result_item">%1$s · %2$s · %3$d\n%4$s - %5$s</string>
+
+<string name="player_lyrics_rows_value">%1$d 行</string>
+
+<string-array name="select_lyrics_size">
+        <item>小</item>
+        <item>預設</item>
+        <item>大</item>
+        <item>特大</item>
+    </string-array>
+
+<string-array name="select_lyrics_source">
+        <item>自動</item>
+        <item>本地</item>
+        <item>AMLL TTML</item>
+        <item>QQMusic QRC</item>
+        <item>網易 YRC</item>
+        <item>酷我</item>
+        <item>LRCLIB</item>
+        <item>酷狗</item>
+        <item>咪咕</item>
+    </string-array>
+
+<string-array name="select_karaoke_difficulty">
+        <item>輕鬆</item>
+        <item>標準</item>
+        <item>嚴格</item>
+    </string-array>
+
+<string name="player_audio_badge_queue">佇列</string>
+
+<string name="player_audio_repeat">循環</string>
+
+
+    <!-- Auto-generated missing translations -->
+    <string name="live_no_epg">00:00 - 23:59 暫無節目信息</string>
+    <string name="setting_home_vod_auto_load">默認加載點播</string>
+    <string name="setting_home_site_lock">首頁源鎖定</string>
+    <string name="setting_auto_backup">自動備份</string>
+    <string name="setting_fullscreen_menu_key">全屏菜單鍵</string>
+    <string name="setting_home_menu_key">首頁菜單鍵</string>
+    <string name="setting_play_back_to_detail">播放返回詳情</string>
+    <string name="setting_play_speed">播放倍速</string>
+    <string name="setting_episode_history">記錄分集進度</string>
+    <string name="setting_history_aggregation">歷史記錄跨源聚合</string>
+    <string name="setting_history_aggregation_hint">基於 TMDB 匹配統一不同源的歷史記錄</string>
+    <string name="setting_global_history">全域歷史續播</string>
+    <string name="history_other_config">其他介面</string>
+    <string name="history_source_searching">正在配對可續播播放源…</string>
+    <string name="history_source_not_found">未找到可可靠續播的播放源</string>
+    <string name="history_source_open_search">開啟全域搜尋</string>
+    <string name="history_source_episode_missing">該播放源與歷史記錄不匹配或缺少對應集數</string>
+    <string name="history_source_load_failed">播放源載入失敗</string>
+    <string name="history_record_missing">歷史記錄已不存在</string>
+    <string name="history_config_changed">點播設定已切換，請重新操作</string>
+    <string name="dialog_delete_global_history">確定刪除所有點播設定的歷史記錄嗎？</string>
+    <string name="setting_home_history">首頁最近觀看</string>
+    <string name="site_health_report_ad_blocked">廣告攔截 · %1$d 次</string>
+    <string name="setting_custom_csp_sort">排序</string>
+    <string name="setting_custom_csp_sort_done">完成</string>
+    <string name="setting_custom_csp_sort_drag">拖拽排序</string>
+    <string name="setting_custom_csp_sort_more">排序操作</string>
+    <string name="setting_custom_csp_sort_top">置頂</string>
+    <string name="setting_custom_csp_sort_bottom">置底</string>
+    <string name="setting_custom_csp_sort_forward_five">上移 5 位</string>
+    <string name="setting_custom_csp_sort_backward_five">下移 5 位</string>
+    <string name="setting_custom_csp_sort_move_to">移動到指定位置</string>
+    <string name="setting_custom_csp_sort_move_to_title">移動到指定位置</string>
+    <string name="setting_custom_csp_sort_move_to_hint">位置 1-%1$d</string>
+    <string name="setting_proxy_recognize">自動識別</string>
+    <string name="setting_proxy_recognize_hint">粘貼完整配置、proxy 片段、規則數組或單個規則對象</string>
+    <string name="setting_proxy_recognize_empty">請先粘貼 Proxy 規則</string>
+    <string name="setting_proxy_recognize_failed">未識別到 Proxy 規則</string>
+    <string name="setting_proxy_recognize_done">已識別 %1$d 條 Proxy 規則</string>
+    <string name="search_column">搜索佈局</string>
+    <string name="dialog_audio_enabled_label">啓用規則</string>
+    <string name="dialog_audio_add_hint">添加關鍵詞或站點…</string>
+    <string name="dialog_audio_add">添加</string>
+    <string name="dialog_short_drama_site_disabled">已排除：%1$s</string>
+    <string name="dialog_short_drama_enabled_label">啓用規則</string>
+    <string name="dialog_short_drama_disabled_label">已排除</string>
+    <string name="dialog_short_drama_add_hint">添加關鍵詞或站點…</string>
+    <string name="dialog_short_drama_add">添加</string>
+    <string name="search_scope_all">全部</string>
+    <string name="search_scope_current">當前站</string>
+    <string name="search_scope_current_hint">當前站：%1$s</string>
+    <string name="search_scope_group_hint">分組：%1$s</string>
+    <string name="search_result_all">%1$s 的搜索結果</string>
+    <string name="search_result_current">當前站搜索：%1$s</string>
+    <string name="search_result_group">%1$s 搜索：%2$s</string>
+    <string name="search_filter_similarity">相似度</string>
+    <string name="search_filter_similarity_unlimited">不限</string>
+    <string name="search_filter_similarity_value">相似 %d%%</string>
+    <string name="search_filter_similarity_exact">精確</string>
+    <string name="search_filter_similarity_hint">調整搜尋結果的匹配寬鬆度，100為精確匹配，0為不限</string>
+    <string name="search_filter_similarity_description">%1$s，%2$s</string>
+    <string name="search_filter_empty">暫無達到 %1$d%% 相似度的結果，可降低相似度查看更多</string>
+    <string name="search_filter_empty_exact">暫無精確匹配結果，可降低相似度查看更多</string>
+    <string name="detail_site_not_searchable">當前站源不支持搜索</string>
+    <string name="viewing_report_refreshing">刷新報告中...</string>
+    <string name="setting_ai_ad_detection">AI 智能去廣</string>
+    <string name="setting_ad_rule_manage">規則管理</string>
+    <string name="ad_rule_add_manual">手動添加規則</string>
+    <string name="ad_rule_import_candidates">待審覈接口規則（%d）</string>
+    <string name="ad_rule_import_title">導入接口去廣規則</string>
+    <string name="ad_rule_import_action">導入（默認停用）</string>
+    <string name="ad_rule_ignore_all">忽略全部</string>
+    <string name="ad_rule_import_empty">暫無待審覈接口規則</string>
+    <string name="ad_rule_section_custom">自定義規則</string>
+    <string name="ad_rule_section_server">接口配置規則</string>
+    <string name="ad_rule_empty">暫無規則</string>
+    <string name="ad_rule_server_empty">來自配置 · 暫無</string>
+    <string name="ad_rule_server_summary">來自配置 · 共 %d 條（只讀）</string>
+    <string name="ad_rule_edit_title">編輯規則</string>
+    <string name="ad_rule_field_name">規則名稱（可選）</string>
+    <string name="ad_rule_field_hosts">域名列表（每行一個）</string>
+    <string name="ad_rule_field_hosts_hint">僅對這些域名生效，留空表示全局</string>
+    <string name="ad_rule_field_regex">廣告規則（每行一個正則）</string>
+    <string name="ad_rule_field_regex_hint">匹配的 URL 會被屏蔽</string>
+    <string name="ad_rule_field_exclude">白名單（每行一個正則）</string>
+    <string name="ad_rule_field_exclude_hint">匹配的 URL 不會被屏蔽</string>
+    <string name="ad_rule_empty_input">至少填寫一項</string>
+    <string name="ad_rule_invalid_regex">正則表達式無效：%s</string>
+    <string name="ad_rule_count">%d 條規則</string>
+    <string name="ad_rule_count_with_pending">%1$d 條規則 · %2$d 條待審覈</string>
+    <string name="play_ad_feedback">有廣告</string>
+    <string name="ad_feedback_analyzing">AI 正在分析廣告特徵…</string>
+    <string name="ad_feedback_no_url">當前沒有可分析的播放地址</string>
+    <string name="ad_feedback_ai_disabled">請先在增強設置中開啓 AI 與智能去廣</string>
+    <string name="ad_feedback_failed">分析失敗：%s</string>
+    <string name="ad_feedback_empty_result">AI 未識別到明顯的廣告特徵</string>
+    <string name="ad_feedback_preview_title">AI 廣告分析結果</string>
+    <string name="ad_feedback_confidence">置信度 %d%%</string>
+    <string name="ad_feedback_reasoning">分析說明</string>
+    <string name="ad_feedback_apply">應用並屏蔽</string>
+    <string name="ad_feedback_applied">已添加去廣規則</string>
+    <string name="ad_feedback_low_confidence">置信度較低，建議人工覈對後再應用</string>
+    <string name="ad_feedback_no_ad">AI 未識別到明顯的廣告特徵</string>
+    <string name="ad_feedback_saved">已添加去廣規則</string>
+    <string name="ad_rule_preview_title">AI 廣告分析結果</string>
+    <string name="ad_rule_confidence_value">置信度：%d%%</string>
+    <string name="ad_rule_low_confidence_warning">置信度較低，證據不足，建議人工覈對後再應用</string>
+    <string name="ad_rule_preview_hosts">屏蔽域名</string>
+    <string name="ad_rule_preview_regex">廣告規則（正則）</string>
+    <string name="ad_block_stats">廣告攔截統計</string>
+    <string name="ad_block_total">總攔截次數</string>
+    <string name="ad_feedback_count">AI 反饋次數</string>
+    <string name="ad_ai_success_rate">AI 分析成功率</string>
+    <string name="ad_site_rank">站點攔截排行</string>
+    <string name="ad_rule_rank">規則命中排行</string>
+    <string name="ad_stats_reset">重置統計</string>
+    <string name="ad_stats_reset_confirm">確定重置所有統計數據嗎？</string>
+    <string name="ad_stats_empty">暫無統計數據</string>
+    <string name="ad_stats_overview">統計概覽</string>
+    <string name="ad_stats_times">次</string>
+    <string name="ad_stats_percent">%.1f%%</string>
+    <string name="ad_stats_site_name">站點</string>
+    <string name="ad_stats_rule_name">規則</string>
+    <string name="ad_stats_count">次數</string>
+    <string name="ad_stats_source">來源</string>
+    <string name="ad_stats_source_default">默認</string>
+    <string name="ad_stats_source_ai">AI</string>
+    <string name="ad_stats_source_manual">手動</string>
+    <string name="ad_stats_source_unknown">未知</string>
+    <string name="ad_rule_preview_exclude">白名單（正則）</string>
+    <string name="ad_rule_preview_none">（無）</string>
+    <string name="ad_rule_preview_confirm">應用並屏蔽</string>
+    <string name="ad_rule_section_summary">AI/自定義 %1$d 條 · 接口配置 %2$d 條 · 內置 HLS %3$d 條</string>
+    <string name="ad_rule_hls_builtin_summary">內置 HLS · v%1$d · %2$s</string>
+    <string name="ad_rule_hls_enabled">已啓用</string>
+    <string name="ad_rule_hls_disabled">默認關閉</string>
+    <string name="ad_rule_hls_invalid">規則異常：%1$s</string>
+    <string name="ad_rule_detail_hint">查看完整規則</string>
+    <string name="ad_rule_detail_hosts">適用域名</string>
+    <string name="ad_rule_detail_regex">匹配規則</string>
+    <string name="ad_rule_detail_script">自動化腳本</string>
+    <string name="ad_rule_detail_exclude">白名單 / 正片保護</string>
+    <string name="ad_rule_detail_json">完整規則（JSON）</string>
+    <string name="ad_rule_detail_id">規則 ID：%1$s</string>
+    <string name="ad_rule_detail_source">來源：%1$s</string>
+    <string name="ad_rule_default_disable_confirm">臨時停用此接口配置規則？\n可能導致部分廣告無法過濾，可隨時重新啓用。</string>
+    <string name="ad_rule_imported_disable_confirm">臨時停用此接口導入規則？\n可隨時重新啓用，刪除後也可從待審覈規則重新導入。</string>
+    <string name="ad_rule_ai_disable_confirm">臨時停用此 AI 識別規則？\n可隨時重新啓用。</string>
+    <string name="ad_rule_manual_disable_confirm">臨時停用此手動規則？\n可隨時重新啓用。</string>
+    <string name="ad_rule_default_enable_confirm">重新啓用此默認規則？</string>
+    <string-array name="select_render">
+        <item>Surface</item>
+        <item>Texture</item>
+    </string-array>
+    <string-array name="select_fullscreen_menu_key">
+        <item>控制欄</item>
+        <item>選集</item>
+    </string-array>
+    <string-array name="select_home_menu_key">
+        <item>選項彈窗</item>
+        <item>切換站源</item>
+        <item>切換線路</item>
+        <item>直播頁面</item>
+        <item>歷史頁面</item>
+        <item>搜索頁面</item>
+        <item>推送頁面</item>
+        <item>投屏頁面</item>
+        <item>收藏頁面</item>
+        <item>設置頁面</item>
+    </string-array>
+</resources>

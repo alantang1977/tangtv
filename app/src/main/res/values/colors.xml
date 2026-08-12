@@ -1,0 +1,42 @@
+<resources>
+
+    <color name="transparent">#00000000</color>
+    <color name="black">#000000</color>
+    <color name="startup_background">#4A4740</color>
+    <color name="black_05">#0D000000</color>
+    <color name="black_10">#1A000000</color>
+    <color name="black_15">#26000000</color>
+    <color name="black_20">#33000000</color>
+    <color name="black_30">#4D000000</color>
+    <color name="black_40">#66000000</color>
+    <color name="black_50">#80000000</color>
+    <color name="black_60">#99000000</color>
+    <color name="black_70">#B3000000</color>
+    <color name="black_80">#CC000000</color>
+    <color name="black_90">#E6000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="white_05">#0DFFFFFF</color>
+    <color name="white_15">#26FFFFFF</color>
+    <color name="white_10">#1AFFFFFF</color>
+    <color name="white_20">#33FFFFFF</color>
+    <color name="white_30">#4DFFFFFF</color>
+    <color name="white_40">#66FFFFFF</color>
+    <color name="white_50">#80FFFFFF</color>
+    <color name="white_60">#99FFFFFF</color>
+    <color name="white_70">#B3FFFFFF</color>
+    <color name="white_80">#CCFFFFFF</color>
+    <color name="white_90">#E6FFFFFF</color>
+    <color name="display_option_selected">#1C2328</color>
+    <color name="display_option_focused">#102A43</color>
+    <color name="display_option_default">#F2FFFFFF</color>
+    <color name="display_option_bg_selected">#FFE16A</color>
+    <color name="display_option_bg_focused">#E6FFFFFF</color>
+    <color name="display_option_bg_default">#2EFFFFFF</color>
+    <color name="display_option_stroke_selected">#FFFFFFFF</color>
+    <color name="display_option_stroke_default">#33FFFFFF</color>
+    <color name="display_dialog_panel_bg">#E61F2A31</color>
+    <color name="site_health_good">#0B8043</color>
+    <color name="site_health_warn">#B7791F</color>
+    <color name="site_health_bad">#C53030</color>
+
+</resources>

@@ -1,0 +1,32 @@
+{
+  "ijkplayer": {
+    "repository": "https://github.com/ShikinChen/ijkplayer-android.git",
+    "revision": "be89479c77c52acfb023d3b3acefccc5d8b9a101",
+    "patches": [
+      "third_party/patches/ijk-vod-buffer-capacity.patch",
+      "third_party/patches/ijk-ffmpeg4-link.patch",
+      "third_party/patches/ijk-vod-buffer-capacity-ff4.patch",
+      "third_party/patches/ijk-ffmpeg4-ndk28-core.patch",
+      "third_party/patches/ijk-error-propagation.patch"
+    ],
+    "ffmpeg_patches": [
+      "third_party/patches/ijk-ffmpeg4-ndk28.patch"
+    ],
+    "ffmpeg4_config_revision": "96598d75d381a4e8c3137795a7b490253a26ec80",
+    "ffmpeg_repository": "https://github.com/ShikinChen/FFmpeg.git",
+    "ffmpeg_tag": "ff4.0--ijk0.8.8--20210426--001",
+    "ffmpeg_commit": "e88b5afbf9ca543a098ede6dd6765ef0e629836d",
+    "openssl_repository": "https://github.com/openssl/openssl.git",
+    "openssl_branch": "openssl-3.2",
+    "openssl_commit": "14ddbcee237cb99b3921c352852b4d4fadbb8e6c"
+  },
+  "toolchain": {
+    "arm64-v8a": "28.2.13676358",
+    "armeabi-v7a": "28.2.13676358"
+  },
+  "outputs": [
+    "libijkffmpeg.so",
+    "libijksdl.so",
+    "libijkplayer.so"
+  ]
+}

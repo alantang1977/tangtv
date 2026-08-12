@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.textview.MaterialTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/text"
+    android:layout_width="wrap_content"
+    android:layout_height="36dp"
+    android:layout_margin="4dp"
+    android:background="@drawable/selector_search_hot_word"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:gravity="center"
+    android:paddingStart="10dp"
+    android:paddingEnd="10dp"
+    android:singleLine="true"
+    android:textColor="@color/white"
+    android:textSize="15sp"
+    tools:text="熱搜詞" />

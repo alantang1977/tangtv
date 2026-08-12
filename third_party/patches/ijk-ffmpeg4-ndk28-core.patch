@@ -1,0 +1,116 @@
+diff --git a/ijkmedia/ijkplayer/android/pipeline/ffpipeline_android.c b/ijkmedia/ijkplayer/android/pipeline/ffpipeline_android.c
+index cbb1d7b4..54fd99f5 100644
+--- a/ijkmedia/ijkplayer/android/pipeline/ffpipeline_android.c
++++ b/ijkmedia/ijkplayer/android/pipeline/ffpipeline_android.c
+@@ -106,7 +106,7 @@ static IJKFF_Pipenode *func_init_video_decoder(IJKFF_Pipeline *pipeline, FFPlaye
+ static int func_config_video_decoder(IJKFF_Pipeline *pipeline, FFPlayer *ffp)
+ {
+     IJKFF_Pipeline_Opaque *opaque = pipeline->opaque;
+-    int                       ret = NULL;
++    int                       ret = 0;
+
+     if (ffp->node_vdec) {
+         ret = ffpipenode_config_from_android_mediacodec(ffp, pipeline, opaque->weak_vout, ffp->node_vdec);
+diff --git a/ijkmedia/ijkj4a/Android.mk b/ijkmedia/ijkj4a/Android.mk
+index da0396e4..43737641 100644
+--- a/ijkmedia/ijkj4a/Android.mk
++++ b/ijkmedia/ijkj4a/Android.mk
+@@ -19,7 +19,7 @@
+ LOCAL_PATH := $(call my-dir)
+
+ include $(CLEAR_VARS)
+-LOCAL_CFLAGS += -std=c99
++LOCAL_CONLYFLAGS += -std=c99
+
+ LOCAL_C_INCLUDES += $(LOCAL_PATH)
+ LOCAL_C_INCLUDES += $(realpath $(LOCAL_PATH))
+diff --git a/ijkmedia/ijkplayer/Android.mk b/ijkmedia/ijkplayer/Android.mk
+index 3ac90b0d..c83f418c 100644
+--- a/ijkmedia/ijkplayer/Android.mk
++++ b/ijkmedia/ijkplayer/Android.mk
+@@ -26,6 +26,6 @@ ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
+ LOCAL_CFLAGS += -mfloat-abi=soft
+ endif
+-LOCAL_CFLAGS += -std=c99
++LOCAL_CONLYFLAGS += -std=c99
+ LOCAL_LDLIBS += -llog -landroid
+
+ LOCAL_C_INCLUDES += $(LOCAL_PATH)
+diff --git a/ijkmedia/ijkplayer/ff_ffplay.c b/ijkmedia/ijkplayer/ff_ffplay.c
+index eae2dae4..f0366cb2 100755
+--- a/ijkmedia/ijkplayer/ff_ffplay.c
++++ b/ijkmedia/ijkplayer/ff_ffplay.c
+@@ -87,15 +87,6 @@
+ #define AV_CODEC_CAP_DR1 CODEC_CAP_DR1
+ #endif
+
+-// FIXME: 9 work around NDKr8e or gcc4.7 bug
+-// isnan() may not recognize some double NAN, so we test both double and float
+-#if defined(__ANDROID__)
+-#ifdef isnan
+-#undef isnan
+-#endif
+-#define isnan(x) (isnan((double)(x)) || isnanf((float)(x)))
+-#endif
+-
+ #if defined(__ANDROID__)
+ #define printf(...) ALOGD(__VA_ARGS__)
+ #endif
+
+diff --git a/ijkmedia/ijksdl/Android.mk b/ijkmedia/ijksdl/Android.mk
+index e45dd2f6..35be31df 100644
+--- a/ijkmedia/ijksdl/Android.mk
++++ b/ijkmedia/ijksdl/Android.mk
+@@ -20,7 +20,7 @@
+ LOCAL_PATH := $(call my-dir)
+
+ include $(CLEAR_VARS)
+-LOCAL_CFLAGS += -std=c99
++LOCAL_CONLYFLAGS += -std=c99
+ LOCAL_LDLIBS += -llog -landroid -lOpenSLES -lEGL -lGLESv2
+
+ LOCAL_C_INCLUDES += $(LOCAL_PATH)
+
+diff --git a/ijkmedia/ijkplayer/ijkavutil/ijkdict.c b/ijkmedia/ijkplayer/ijkavutil/ijkdict.c
+index e264a70a..baf5e518 100644
+--- a/ijkmedia/ijkplayer/ijkavutil/ijkdict.c
++++ b/ijkmedia/ijkplayer/ijkavutil/ijkdict.c
+@@ -153,30 +153,29 @@ int ijk_av_dict_set_intptr(IjkAVDictionary **pm, const char *key, uintptr_t valu
+ int ijk_av_dict_set_intptr(IjkAVDictionary **pm, const char *key, uintptr_t value, int flags) {
+     char valuestr[22];
+-    snprintf(valuestr, sizeof(valuestr), "%p", value);
++    snprintf(valuestr, sizeof(valuestr), "%p", (void *)value);
+     flags &= ~IJK_AV_DICT_DONT_STRDUP_VAL;
+     return ijk_av_dict_set(pm, key, valuestr, flags);
+ }
+
+ uintptr_t ijk_av_dict_strtoptr(char * value) {
+-    uintptr_t ptr = NULL;
++    uintptr_t ptr = 0;
+     char *next = NULL;
+-    if(value[0] !='0' || (value[1]|0x20)!='x') {
+-        return NULL;
++    if(!value || value[0] !='0' || (value[1]|0x20)!='x') {
++        return 0;
+     }
+-    ptr = strtoll(value, &next, 16);
++    ptr = strtoull(value, &next, 16);
+     if (next == value) {
+-        return NULL;
++        return 0;
+     }
+     return ptr;
+ }
+
+ uintptr_t ijk_av_dict_get_intptr(const IjkAVDictionary *m, const char* key) {
+-    uintptr_t ptr = NULL;
+     IjkAVDictionaryEntry *t = NULL;
+-    if ((t = av_dict_get(m, key, NULL, 0))) {
++    if ((t = ijk_av_dict_get(m, key, NULL, 0))) {
+         return ijk_av_dict_strtoptr(t->value);
+     }
+-    return NULL;
++    return 0;
+ }
+
+ void ijk_av_dict_free(IjkAVDictionary **pm)

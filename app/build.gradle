@@ -1,0 +1,170 @@
+plugins {
+    alias libs.plugins.android.application
+}
+
+def localProps = new Properties()
+def localPropsFile = rootProject.file('local.properties')
+if (localPropsFile.exists()) {
+    localPropsFile.withInputStream {
+        localProps.load(it)
+    }
+}
+def hasReleaseSigning = localProps['storeFile'] && localProps['keyAlias'] && localProps['storePassword']
+def releaseKeyPassword = localProps['keyPassword'] ?: localProps['storePassword']
+def fastRelease = (project.findProperty('fastRelease') ?: 'false').toString().toBoolean()
+def buildTimestamp = new Date().format('yyyyMMddHHmm', TimeZone.getTimeZone('Asia/Shanghai'))
+def buildTime = fastRelease ? "fast-${buildTimestamp}" : buildTimestamp
+def releaseTag = (System.getenv('WEBHTV_RELEASE_TAG') ?: '').replace('\\', '\\\\').replace('"', '\\"')
+def apkSuffix = (System.getenv('WEBHTV_APK_SUFFIX') ?: '').replaceAll('[^A-Za-z0-9._-]', '')
+
+android {
+    namespace = 'com.fongmi.android.tv'
+
+    compileSdk libs.versions.compileSdk.get().toInteger()
+
+    defaultConfig {
+        applicationId "com.silent.android.webhtv"
+        minSdk libs.versions.minSdk.get().toInteger()
+        targetSdk libs.versions.targetSdk.get().toInteger()
+        versionCode 560
+        versionName "5.6.0"
+        buildConfigField "String", "BUILD_TIME", "\"${buildTime}\""
+        buildConfigField "String", "BUILD_TAG", "\"${releaseTag}\""
+        buildConfigField "String", "MEDIA3_VERSION", "\"${libs.versions.media3.get()}\""
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = ["room.schemaLocation": "$projectDir/schemas".toString(), "eventBusIndex": "com.fongmi.android.tv.event.EventIndex"]
+            }
+        }
+    }
+
+    flavorDimensions = ["mode", "abi"]
+
+    productFlavors {
+        leanback {
+            dimension "mode"
+        }
+        mobile {
+            dimension "mode"
+        }
+        arm64_v8a {
+            dimension "abi"
+            ndk { abiFilters "arm64-v8a" }
+        }
+        armeabi_v7a {
+            dimension "abi"
+            ndk { abiFilters "armeabi-v7a" }
+        }
+    }
+
+    buildFeatures {
+        buildConfig = true
+        viewBinding = true
+    }
+
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                storeFile file(localProps['storeFile'])
+                keyAlias localProps['keyAlias']
+                keyPassword releaseKeyPassword
+                storePassword localProps['storePassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled = !fastRelease
+            shrinkResources = !fastRelease
+            signingConfig = hasReleaseSigning ? signingConfigs.release : signingConfigs.debug
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'proguard-rules-media.pro'
+        }
+    }
+
+    configurations.configureEach {
+        exclude group: 'stax', module: 'stax-api'
+        exclude group: 'xpp3', module: 'xpp3'
+        exclude group: 'com.android.support'
+        resolutionStrategy {
+            force libs.okhttp
+            eachDependency { details ->
+                if (details.requested.group == 'androidx.media3') {
+                    details.useVersion(libs.versions.media3.get())
+                    details.because('Use bundled Media3 build with MediaTitle and danmaku APIs')
+                }
+            }
+        }
+    }
+
+    lint {
+        disable 'UnsafeOptInUsageError'
+        disable 'ExpiredTargetSdkVersion'
+        checkReleaseBuilds = !fastRelease
+    }
+
+    compileOptions {
+        coreLibraryDesugaringEnabled = true
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+}
+
+androidComponents {
+    onVariants(selector().withBuildType('release')) { variant ->
+        def flavors = variant.productFlavors.collectEntries { [(it.first): it.second] }
+        def mode = flavors['mode'] ?: 'mode'
+        def abi = flavors['abi'] ?: 'abi'
+        variant.outputs.each { output ->
+            output.outputFileName.set("${mode}-${abi}${apkSuffix}.apk")
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: "libs", include: ["*.aar", "*.jar"])
+    implementation project(':catvod')
+    implementation project(':chaquo')
+    implementation project(':quickjs')
+    implementation libs.appcompat
+    implementation libs.lifecycle.service
+    implementation libs.media
+    implementation libs.bundles.media3
+    implementation libs.nextlib.media3ext
+    implementation libs.palette
+    implementation libs.recyclerview
+    implementation libs.room.runtime
+    implementation libs.splashscreen
+    implementation libs.swiperefreshlayout
+    implementation libs.viewpager2
+    implementation libs.webkit
+    implementation libs.android.gif.drawable
+    implementation libs.bundles.glide
+    implementation libs.bundles.jupnp
+    implementation libs.customactivityoncrash
+    implementation libs.eventbus
+    implementation libs.flexbox
+    implementation libs.jgit
+    implementation libs.lottie
+    implementation libs.material
+    implementation libs.materialdesigncolors
+    implementation libs.nanohttpd
+    implementation libs.newpipeextractor
+    implementation libs.permissionx
+    implementation libs.simple.xml
+    implementation libs.textdrawable
+    implementation libs.tensorflow.lite
+    implementation libs.zxing.core
+    leanbackImplementation libs.leanback
+    leanbackImplementation libs.androidautosize
+    leanbackImplementation libs.zxing.android.embedded
+    mobileImplementation libs.biometric
+    mobileImplementation libs.zxing.android.embedded
+    testImplementation libs.junit
+    annotationProcessor libs.room.compiler
+    annotationProcessor libs.eventbus.annotation.processor
+    annotationProcessor libs.glide.compiler
+    coreLibraryDesugaring libs.desugar
+    testImplementation libs.junit
+    testImplementation libs.okhttp.mockwebserver
+}

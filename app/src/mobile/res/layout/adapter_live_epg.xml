@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="46dp"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/selector_control_sheet_button"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="14dp"
+    android:paddingEnd="6dp">
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/text"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:duplicateParentState="true"
+        android:ellipsize="middle"
+        android:gravity="center_vertical"
+        android:singleLine="true"
+        android:textColor="@color/selector_control_sheet_text"
+        android:textSize="13sp"
+        tools:text="http://diyp5.112114.xyz/?ch={name}&amp;date={date}" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/edit"
+        android:layout_width="48dp"
+        android:layout_height="match_parent"
+        android:duplicateParentState="true"
+        android:gravity="center"
+        android:text="@string/live_epg_edit"
+        android:textColor="@color/selector_control_sheet_text"
+        android:textSize="12sp" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/delete"
+        android:layout_width="48dp"
+        android:layout_height="match_parent"
+        android:duplicateParentState="true"
+        android:gravity="center"
+        android:text="@string/live_epg_delete"
+        android:textColor="@color/selector_control_sheet_text"
+        android:textSize="12sp" />
+
+</androidx.appcompat.widget.LinearLayoutCompat>

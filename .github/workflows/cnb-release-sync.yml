@@ -1,0 +1,76 @@
+name: CNB Release Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Existing GitHub release tag, blank = latest release"
+        required: false
+        type: string
+      cnb_repo_url:
+        description: "CNB repo URL, blank = fish2035/webhtv-release"
+        required: false
+        type: string
+      cnb_repo_slug:
+        description: "CNB repo slug, blank = fish2035/webhtv-release"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  TZ: Asia/Shanghai
+  GH_REPO: ${{ github.repository }}
+  CNB_API_ENDPOINT: https://api.cnb.cool
+  CNB_WEB_ENDPOINT: https://cnb.cool
+  CNB_REPO_SLUG: ${{ inputs.cnb_repo_slug || 'fish2035/webhtv-release' }}
+  CNB_REPO_URL: ${{ inputs.cnb_repo_url || 'https://cnb.cool/fish2035/webhtv-release.git' }}
+
+jobs:
+  sync:
+    name: Sync GitHub release assets to CNB
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve release tag
+        id: meta
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          TAG="$RELEASE_TAG"
+          if [ -z "$TAG" ]; then
+            TAG="$(gh release list --limit 1 --json tagName --jq '.[0].tagName')"
+          fi
+          gh release view "$TAG" --json name,body,isPrerelease > github-release.json
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Sync tag: $TAG"
+
+      - name: Download release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf dist
+          mkdir -p dist
+          gh release download "${{ steps.meta.outputs.tag }}" \
+            --pattern "*.apk" \
+            --pattern "*.json" \
+            --dir dist
+          ls -lh dist
+          test "$(find dist -maxdepth 1 -type f \( -name '*.apk' -o -name '*.json' \) | wc -l | tr -d ' ')" -gt 0
+
+      - name: Sync to CNB
+        env:
+          CNB_TOKEN: ${{ secrets.CNB_TOKEN }}
+          CNB_RELEASE_TAG: ${{ steps.meta.outputs.tag }}
+          CNB_RELEASE_LATEST: "false"
+        run: |
+          export CNB_RELEASE_TITLE="$(jq -r '.name // empty' github-release.json)"
+          export CNB_RELEASE_NOTES="$(jq -r '.body // empty' github-release.json)"
+          export CNB_RELEASE_PRERELEASE="$(jq -r '.isPrerelease // false' github-release.json)"
+          .github/scripts/sync-cnb-release.sh

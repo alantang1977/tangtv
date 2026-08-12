@@ -1,0 +1,23 @@
+name = "webhtv-remote-cloudflare"
+main = "src/index.js"
+compatibility_date = "2026-07-23"
+
+[[durable_objects.bindings]]
+name = "RELAY_DO"
+class_name = "WebHTVRemoteRelayDO"
+
+[[durable_objects.bindings]]
+name = "PLAYBACK_DO"
+class_name = "WebHTVPlaybackSyncDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["WebHTVRemoteRelayDO"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["WebHTVPlaybackSyncDO"]
+
+# No KV, R2, external database, or required environment variable is needed.
+# RELAY_DO keeps short-lived relay state consistent across devices.
+# PLAYBACK_DO stores playback progress and 90-day deletion tombstones in SQLite.

@@ -1,0 +1,97 @@
+diff --git a/android/contrib/tools/do-compile-ffmpeg.sh b/android/contrib/tools/do-compile-ffmpeg.sh
+--- a/android/contrib/tools/do-compile-ffmpeg.sh
++++ b/android/contrib/tools/do-compile-ffmpeg.sh
+@@ -140,7 +140,7 @@ elif [ "$FF_ARCH" = "arm64" ]; then
+     FF_EXTRA_CFLAGS="$FF_EXTRA_CFLAGS"
+     FF_EXTRA_LDFLAGS="$FF_EXTRA_LDFLAGS"
+
+-    FF_ASSEMBLER_SUB_DIRS="aarch64"
++    FF_ASSEMBLER_SUB_DIRS="aarch64 neon"
+ else
+     echo "unknown architecture $FF_ARCH"
+     exit 1
+@@ -276,10 +276,12 @@ if [ -f "${FF_DEP_OPENSSL_LIB}/libssl.a" ]; then
+     FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-nonfree"
+     # FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-version3"
+     FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-openssl"
+     FF_CFG_FLAGS="$FF_CFG_FLAGS --pkg-config=pkg-config --pkg-config-flags=--static"
++    export PKG_CONFIG_LIBDIR="${FF_DEP_OPENSSL_LIB}/pkgconfig"
++    export PKG_CONFIG_PATH=""
+
+     FF_CFLAGS="$FF_CFLAGS -I${FF_DEP_OPENSSL_INC} "
+-    FF_DEP_LIBS="$FF_DEP_LIBS -lssl -lcrypto"
++    FF_DEP_LIBS="$FF_DEP_LIBS -L${FF_DEP_OPENSSL_LIB} -lssl -lcrypto -ldl -pthread"
+
+     export CPPFLAGS="-I${FF_DEP_OPENSSL_INC}"
+     export LDFLAGS="-L${FF_DEP_OPENSSL_LIB} -lssl -lcrypto -v"
+@@ -361,3 +361,70 @@ make $FF_MAKE_FLAGS >/dev/null
+ make install
+ mkdir -p $FF_PREFIX/include/libffmpeg
+ cp -f config.h $FF_PREFIX/include/libffmpeg/config.h
++
++#--------------------
++echo ""
++echo "--------------------"
++echo "[*] link ffmpeg"
++echo "--------------------"
++echo $FF_EXTRA_LDFLAGS
++
++FF_C_OBJ_FILES=
++FF_ASM_OBJ_FILES=
++for MODULE_DIR in $FF_MODULE_DIRS
++do
++    C_OBJ_FILES="$MODULE_DIR/*.o"
++    if ls $C_OBJ_FILES 1> /dev/null 2>&1; then
++        echo "link $MODULE_DIR/*.o"
++        FF_C_OBJ_FILES="$FF_C_OBJ_FILES $C_OBJ_FILES"
++    fi
++
++    for ASM_SUB_DIR in $FF_ASSEMBLER_SUB_DIRS
++    do
++        ASM_OBJ_FILES="$MODULE_DIR/$ASM_SUB_DIR/*.o"
++        if ls $ASM_OBJ_FILES 1> /dev/null 2>&1; then
++            echo "link $MODULE_DIR/$ASM_SUB_DIR/*.o"
++            FF_ASM_OBJ_FILES="$FF_ASM_OBJ_FILES $ASM_OBJ_FILES"
++        fi
++    done
++done
++
++$CC -lm -lz -shared --sysroot=$FF_SYSROOT -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-Bsymbolic $FF_EXTRA_LDFLAGS \
++    -Wl,-soname,libijkffmpeg.so \
++    $FF_C_OBJ_FILES \
++    $FF_ASM_OBJ_FILES \
++    $FF_DEP_LIBS \
++    -o $FF_PREFIX/libijkffmpeg.so
++
++mysedi() {
++    f=$1
++    exp=$2
++    n=`basename $f`
++    cp $f /tmp/$n
++    sed $exp /tmp/$n > $f
++    rm /tmp/$n
++}
++
++echo ""
++echo "--------------------"
++echo "[*] create files for shared ffmpeg"
++echo "--------------------"
++rm -rf $FF_PREFIX/shared
++mkdir -p $FF_PREFIX/shared/lib/pkgconfig
++ln -s $FF_PREFIX/include $FF_PREFIX/shared/include
++ln -s $FF_PREFIX/libijkffmpeg.so $FF_PREFIX/shared/lib/libijkffmpeg.so
++cp $FF_PREFIX/lib/pkgconfig/*.pc $FF_PREFIX/shared/lib/pkgconfig
++for f in $FF_PREFIX/lib/pkgconfig/*.pc; do
++    if [ ! -f $f ]; then
++        continue
++    fi
++    cp $f $FF_PREFIX/shared/lib/pkgconfig
++    f=$FF_PREFIX/shared/lib/pkgconfig/`basename $f`
++    mysedi $f 's/\/output/\/output\/shared/g'
++    mysedi $f 's/-lavcodec/-lijkffmpeg/g'
++    mysedi $f 's/-lavfilter/-lijkffmpeg/g'
++    mysedi $f 's/-lavformat/-lijkffmpeg/g'
++    mysedi $f 's/-lavutil/-lijkffmpeg/g'
++    mysedi $f 's/-lswresample/-lijkffmpeg/g'
++    mysedi $f 's/-lswscale/-lijkffmpeg/g'
++done

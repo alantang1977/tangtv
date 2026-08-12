@@ -1,0 +1,107 @@
+<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
+
+    <!-- App -->
+    <string name="app_keep">Keep</string>
+    <string name="app_history">History</string>
+
+    <!-- Nav -->
+    <string name="nav_vod">Vod</string>
+    <string name="nav_live">Live</string>
+    <string name="nav_setting">Setting</string>
+
+    <!-- Menu -->
+    <string name="menu_sync">Sync</string>
+    <string name="menu_delete">Delete</string>
+    <string name="menu_search">Search</string>
+    <string name="menu_site">Site</string>
+    <string name="menu_reset">Reset</string>
+    <string name="menu_more">More</string>
+    <string name="menu_push_apk">Push APK</string>
+    <string name="apk_push_preparing">Preparing APK...</string>
+    <string name="apk_push_select_device">Push APK · Select receiving device</string>
+    <string name="apk_push_ready">Push APK · %1$s · %2$s</string>
+    <string name="apk_push_progress">Pushing APK · %1$d%% · %2$s / %3$s</string>
+    <string name="apk_push_success">APK sent. Confirm installation on the receiving device.</string>
+    <string name="apk_push_failed">APK push failed: %1$s</string>
+    <string name="apk_push_invalid">Select a valid APK file</string>
+    <string name="apk_push_read_failed">Unable to read the selected APK</string>
+    <string name="apk_push_no_space">Not enough storage to prepare the APK</string>
+    <string name="apk_push_receiver_unsupported">The receiving device does not support APK push. Update WebHTV first.</string>
+
+    <!-- Vod -->
+    <string name="vod_home">Home</string>
+
+    <!-- Detail -->
+    <string name="detail_flag">Flag</string>
+    <string name="detail_episode">Episode</string>
+    <string name="detail_quality">Quality</string>
+    <string name="detail_content">Summary</string>
+    <string name="detail_search">Searching <xliff:g name="name">%s</xliff:g></string>
+
+    <!-- Device -->
+    <string name="device_select">Select devices</string>
+    <string name="device_offline">Device is offline</string>
+    <string name="device_scan">Please scan QR Code to bind</string>
+
+    <!-- Control -->
+    <string name="control_speed">Speed</string>
+    <string name="control_scale">Scale</string>
+    <string name="control_episode_column">Long title columns</string>
+    <string name="control_episode_column_single">Single</string>
+    <string name="control_episode_column_double">Double</string>
+    <string name="control_compact_episode_title">Compact title</string>
+    <string name="control_track">Track</string>
+    <string name="control_other">Other</string>
+    <string name="live_control_play">Sources</string>
+    <string name="live_control_config">Subscription</string>
+    <string name="live_control_source">Live source</string>
+    <string name="live_control_epg">EPG source</string>
+    <string name="live_control_action">Actions</string>
+    <string name="live_control_pip">PiP</string>
+    <string name="live_control_preference">Preference</string>
+    <string name="live_control_display_style">Display Style</string>
+    <string name="live_control_list_transparent">Transparent</string>
+    <string name="live_control_list_readable">Readable</string>
+    <string name="live_control_player">Player</string>
+    <string name="live_source_select">Select live source</string>
+    <string name="live_epg_select">Select EPG source</string>
+    <string name="live_epg_default">Follow live source</string>
+    <string name="live_epg_follow">Source</string>
+    <string name="live_epg_apply">Use</string>
+    <string name="live_epg_save">Save</string>
+    <string name="live_epg_edit">Edit</string>
+    <string name="live_epg_delete">Delete</string>
+    <string name="live_epg_hint">XML/GZ or {name}/{date} template URL</string>
+    <string name="live_epg_empty">Enter an EPG URL or select a source below</string>
+    <string name="live_program_title">Program guide</string>
+    <string name="live_program_empty">No program guide</string>
+    <string name="live_program_current">Live</string>
+    <string name="dialog_clear">Clear</string>
+
+    <!-- Dialog -->
+    <string name="dialog_delete_record">Delete all records?</string>
+    <string name="dialog_delete_keep">All keep records will be removed.</string>
+    <string name="dialog_delete_history">All history records will be removed.</string>
+
+    <!-- Timer -->
+    <string name="timer_5">5 minutes</string>
+    <string name="timer_15">15 minutes</string>
+    <string name="timer_30">30 minutes</string>
+    <string name="timer_60">1 hour</string>
+    <string name="timer_delay">Add 5 minutes</string>
+    <string name="timer_cancel">Cancel timer</string>
+
+    <!-- Hint -->
+    <string name="shortcut">Shortcut has been added.</string>
+
+    <string-array name="select_background">
+        <item>Off</item>
+        <item>On</item>
+    </string-array>
+
+    <string-array name="select_pad_live_mode">
+        <item>Fullscreen</item>
+        <item>Standard</item>
+    </string-array>
+
+</resources>

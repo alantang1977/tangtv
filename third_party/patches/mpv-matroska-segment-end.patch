@@ -1,0 +1,18 @@
+diff --git a/demux/demux_mkv.c b/demux/demux_mkv.c
+index b60c158cf..870c0d141 100644
+--- a/demux/demux_mkv.c
++++ b/demux/demux_mkv.c
+@@ -2543,6 +2543,13 @@ static int demux_mkv_open(demuxer_t *demuxer, enum demux_check check)
+     }
+
+     int64_t end = stream_get_size(s);
++    if (end < 0 && s->seekable && mkv_d->segment_end > 0) {
++        // Matroska carries an exact boundary for a known-size Segment. Use
++        // that boundary to validate and load SeekHead/Cues when a seekable
++        // proxy cannot expose the enclosing HTTP resource size.
++        end = mkv_d->segment_end;
++        MP_VERBOSE(demuxer, "Using declared Matroska segment end for seek metadata.\n");
++    }
+
+     // Read headers that come after the first cluster (i.e. require seeking).
+     // Note: reading might increase ->num_headers.

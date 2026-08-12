@@ -1,0 +1,70 @@
+diff --git a/filters/f_enhancement_pair.c b/filters/f_enhancement_pair.c
+index 18cea5446..32697e326 100644
+--- a/filters/f_enhancement_pair.c
++++ b/filters/f_enhancement_pair.c
+@@ -15,6 +15,8 @@
+  * License along with mpv.  If not, see <http://www.gnu.org/licenses/>.
+  */
+ 
++#include "config.h"
++
+ #include <libavutil/buffer.h>
+ 
+ #include "common/common.h"
+@@ -35,6 +37,10 @@ struct priv {
+     struct mp_decoder_wrapper *el_dec;
+     struct mp_pin *el_in; // el_dec->f->pins[0]
+ 
++#if HAVE_ANDROID
++    struct mp_stream_info el_stream_info;
++#endif
++
+     // BL/EL frames decoded but not yet emitted as a pair.
+     struct mp_image **bl_pending;
+     int num_bl_pending;
+@@ -212,6 +218,22 @@ struct mp_filter *mp_enhancement_pair_create(struct mp_filter *parent,
+     mp_filter_add_pin(f, MP_PIN_OUT, "out");
+ 
+     struct priv *p = f->priv;
++#if HAVE_ANDROID
++    struct mp_stream_info *parent_info = mp_filter_find_stream_info(parent);
++    if (parent_info) {
++        // AImageReader exposes one BufferQueue producer Surface. Reusing the
++        // primary decoder's hwdec device for the enhancement layer makes two
++        // MediaCodec instances connect to that same Surface, which Android
++        // rejects with -EINVAL. Keep the base layer on zero-copy MediaCodec,
++        // but make the EL decoder probe its copying fallback independently.
++        p->el_stream_info = *parent_info;
++        p->el_stream_info.hwdec_devs = NULL;
++        f->stream_info = &p->el_stream_info;
++        MP_VERBOSE(f, "Android Dolby Vision enhancement layer uses an "
++                      "isolated decoder without the primary AImageReader "
++                      "Surface.\n");
++    }
++#endif
+     p->el_dec = mp_decoder_wrapper_create(f, el_sh);
+     if (!p->el_dec || !mp_decoder_wrapper_reinit(p->el_dec)) {
+         MP_WARN(f, "Failed to set up enhancement-layer decoder; "
+diff --git a/player/loadfile.c b/player/loadfile.c
+index d6f44c8a9..f5adc49d3 100644
+--- a/player/loadfile.c
++++ b/player/loadfile.c
+@@ -1610,7 +1610,17 @@ void update_vo_chain_el_state(struct MPContext *mpctx)
+     struct track *track = mpctx->current_track[0][STREAM_VIDEO];
+     struct sh_stream *el =
+         track ? sh_stream_dependent_sibling(track->stream) : NULL;
+-    bool use_el = el && !is_android_dolby_vision_direct_output_active(mpctx);
++    bool direct_dovi =
++        is_android_dolby_vision_direct_output_active(mpctx);
++    bool gpu_dovi = mpctx->video_out &&
++        (mpctx->video_out->driver->caps & VO_CAP_GPU_DOVI);
++    bool use_el = el && !direct_dovi && gpu_dovi;
++
++    if (el && !direct_dovi && !gpu_dovi) {
++        MP_VERBOSE(mpctx, "Dolby Vision enhancement layer disabled: active "
++                           "video output cannot consume it; rendering base "
++                           "layer only.\n");
++    }
+ 
+     if (el) {
+         double pts = get_current_time(mpctx);

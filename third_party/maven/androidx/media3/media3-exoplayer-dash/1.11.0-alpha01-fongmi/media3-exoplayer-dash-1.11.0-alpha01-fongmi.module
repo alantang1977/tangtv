@@ -1,0 +1,103 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "androidx.media3",
+    "module": "media3-exoplayer-dash",
+    "version": "1.11.0-alpha01-fongmi",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.1.0"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "androidx.media3",
+          "module": "media3-exoplayer",
+          "version": {
+            "requires": "1.11.0-alpha01-fongmi"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "media3-exoplayer-dash-1.11.0-alpha01-fongmi.aar",
+          "url": "media3-exoplayer-dash-1.11.0-alpha01-fongmi.aar",
+          "size": 148198,
+          "sha512": "3309ab7ff490f69f99222cd3159afc6998b4da0432dbe9ceaf5cae2005d9b656b8c9e74172d071591711610887a3534eb9d32f7361b5b0eecc393e865176c4e2",
+          "sha256": "2fc009c2b20303bf7c8263db4259a08d94cc05e1578a53e5ff68cf159f1860dc",
+          "sha1": "aa218294976c4bfc97e536149ff5c6f3fac22ed0",
+          "md5": "e9c208658b15ba52de197165beb65cf9"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "androidx.annotation",
+          "module": "annotation",
+          "version": {
+            "requires": "1.6.0"
+          }
+        },
+        {
+          "group": "androidx.media3",
+          "module": "media3-exoplayer",
+          "version": {
+            "requires": "1.11.0-alpha01-fongmi"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "media3-exoplayer-dash-1.11.0-alpha01-fongmi.aar",
+          "url": "media3-exoplayer-dash-1.11.0-alpha01-fongmi.aar",
+          "size": 148198,
+          "sha512": "3309ab7ff490f69f99222cd3159afc6998b4da0432dbe9ceaf5cae2005d9b656b8c9e74172d071591711610887a3534eb9d32f7361b5b0eecc393e865176c4e2",
+          "sha256": "2fc009c2b20303bf7c8263db4259a08d94cc05e1578a53e5ff68cf159f1860dc",
+          "sha1": "aa218294976c4bfc97e536149ff5c6f3fac22ed0",
+          "md5": "e9c208658b15ba52de197165beb65cf9"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "media3-exoplayer-dash-1.11.0-alpha01-fongmi-sources.jar",
+          "url": "media3-exoplayer-dash-1.11.0-alpha01-fongmi-sources.jar",
+          "size": 100485,
+          "sha512": "c71abdce85500bc6054953f0d0dcfbeceb229c643ece61b2cc0861abddd23cedbdeb9377fc3742c97ba48374f58516add3ca6a1494b72ea5dbacf3aeea35d398",
+          "sha256": "e24afff26ea1d21338b9c4f835b56e6ed5c95b996c46b9306cffbae2c5632af9",
+          "sha1": "33bd526b0fd8073b9b2c386fd78909c4c2fdcf7c",
+          "md5": "b5d67e20c63c66f5edc02aab0e1ef006"
+        }
+      ]
+    }
+  ]
+}

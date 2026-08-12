@@ -1,0 +1,36 @@
+diff --git a/ijkmedia/ijkplayer/ff_ffplay_def.h b/ijkmedia/ijkplayer/ff_ffplay_def.h
+index 7ca73f52..fef46eb1 100755
+--- a/ijkmedia/ijkplayer/ff_ffplay_def.h
++++ b/ijkmedia/ijkplayer/ff_ffplay_def.h
+@@ -83,7 +83,8 @@
+ #define FAST_BUFFERING_CHECK_PER_MILLISECONDS   (50)
+ #define MAX_RETRY_CONVERT_IMAGE                 (3)
+
+-#define MAX_QUEUE_SIZE (15 * 1024 * 1024)
++#define DEFAULT_QUEUE_SIZE (15 * 1024 * 1024)
++#define MAX_QUEUE_SIZE (256 * 1024 * 1024)
+ #define MAX_ACCURATE_SEEK_TIMEOUT (5000)
+ #ifdef FFP_MERGE
+ #define MIN_FRAMES 25
+@@ -541,7 +542,7 @@ typedef struct FFDemuxCacheControl
+ inline static void ffp_reset_demux_cache_control(FFDemuxCacheControl *dcc)
+ {
+     dcc->min_frames                = DEFAULT_MIN_FRAMES;
+-    dcc->max_buffer_size           = MAX_QUEUE_SIZE;
++    dcc->max_buffer_size           = DEFAULT_QUEUE_SIZE;
+     dcc->high_water_mark_in_bytes  = DEFAULT_HIGH_WATER_MARK_IN_BYTES;
+
+     dcc->first_high_water_mark_in_ms    = DEFAULT_FIRST_HIGH_WATER_MARK_IN_MS;
+diff --git a/ijkmedia/ijkplayer/ff_ffplay_options.h b/ijkmedia/ijkplayer/ff_ffplay_options.h
+index 5384d945..dbd17bcd 100644
+--- a/ijkmedia/ijkplayer/ff_ffplay_options.h
++++ b/ijkmedia/ijkplayer/ff_ffplay_options.h
+@@ -122,7 +122,7 @@ static const AVOption ffp_context_options[] = {
+                                                        VIDEO_PICTURE_QUEUE_SIZE_MAX) },
+
+     { "max-buffer-size",                    "max buffer size should be pre-read",
+-        OPTION_OFFSET(dcc.max_buffer_size), OPTION_INT(MAX_QUEUE_SIZE, 0, MAX_QUEUE_SIZE) },
++        OPTION_OFFSET(dcc.max_buffer_size), OPTION_INT(DEFAULT_QUEUE_SIZE, 0, MAX_QUEUE_SIZE) },
+     { "min-frames",                         "minimal frames to stop pre-reading",
+         OPTION_OFFSET(dcc.min_frames),      OPTION_INT(DEFAULT_MIN_FRAMES, MIN_MIN_FRAMES, MAX_MIN_FRAMES) },
+     { "first-high-water-mark-ms",           "first chance to wakeup read_thread",

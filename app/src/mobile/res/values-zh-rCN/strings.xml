@@ -1,0 +1,107 @@
+<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
+
+    <!-- App -->
+    <string name="app_keep">我的收藏</string>
+    <string name="app_history">最近观看</string>
+
+    <!-- Nav -->
+    <string name="nav_vod">点播</string>
+    <string name="nav_live">直播</string>
+    <string name="nav_setting">设置</string>
+
+    <!-- Menu -->
+    <string name="menu_sync">同步</string>
+    <string name="menu_delete">删除</string>
+    <string name="menu_search">搜索</string>
+    <string name="menu_site">站点</string>
+    <string name="menu_reset">重置</string>
+    <string name="menu_more">更多</string>
+    <string name="menu_push_apk">推送apk</string>
+    <string name="apk_push_preparing">正在准备APK…</string>
+    <string name="apk_push_select_device">推送apk · 选择接收设备</string>
+    <string name="apk_push_ready">推送apk · %1$s · %2$s</string>
+    <string name="apk_push_progress">推送apk · %1$d%% · %2$s / %3$s</string>
+    <string name="apk_push_success">APK已发送，请在接收设备确认安装</string>
+    <string name="apk_push_failed">APK推送失败：%1$s</string>
+    <string name="apk_push_invalid">请选择有效的APK文件</string>
+    <string name="apk_push_read_failed">无法读取所选APK</string>
+    <string name="apk_push_no_space">存储空间不足，无法准备APK</string>
+    <string name="apk_push_receiver_unsupported">接收设备不支持APK推送，请先更新WebHTV</string>
+
+    <!-- Vod -->
+    <string name="vod_home">推荐</string>
+
+    <!-- Detail -->
+    <string name="detail_flag">线路</string>
+    <string name="detail_episode">选集</string>
+    <string name="detail_quality">画质</string>
+    <string name="detail_content">简介</string>
+    <string name="detail_search">快搜“<xliff:g name="name">%s</xliff:g>”</string>
+
+    <!-- Device -->
+    <string name="device_select">选择装置</string>
+    <string name="device_offline">装置已离线</string>
+    <string name="device_scan">请扫描影视 QRCode 进行绑定</string>
+
+    <!-- Control -->
+    <string name="control_speed">倍速</string>
+    <string name="control_scale">缩放</string>
+    <string name="control_episode_column">长标题列数</string>
+    <string name="control_episode_column_single">单列</string>
+    <string name="control_episode_column_double">双列</string>
+    <string name="control_compact_episode_title">精简标题</string>
+    <string name="control_track">轨道</string>
+    <string name="control_other">其它</string>
+    <string name="live_control_play">来源</string>
+    <string name="live_control_config">订阅接口</string>
+    <string name="live_control_source">直播源</string>
+    <string name="live_control_epg">EPG源</string>
+    <string name="live_control_action">操作</string>
+    <string name="live_control_pip">悬窗</string>
+    <string name="live_control_preference">偏好</string>
+    <string name="live_control_display_style">显示风格</string>
+    <string name="live_control_list_transparent">通透</string>
+    <string name="live_control_list_readable">易读</string>
+    <string name="live_control_player">播放</string>
+    <string name="live_source_select">选择直播源</string>
+    <string name="live_epg_select">选择EPG源</string>
+    <string name="live_epg_default">随直播源</string>
+    <string name="live_epg_follow">随源</string>
+    <string name="live_epg_apply">使用</string>
+    <string name="live_epg_save">保存</string>
+    <string name="live_epg_edit">编辑</string>
+    <string name="live_epg_delete">删除</string>
+    <string name="live_epg_hint">输入 XML/GZ 或 {name}/{date} 模板地址</string>
+    <string name="live_epg_empty">请输入EPG地址，或直接选择下方来源</string>
+    <string name="live_program_title">节目预告</string>
+    <string name="live_program_empty">暂无节目预告</string>
+    <string name="live_program_current">直播中</string>
+    <string name="dialog_clear">清空</string>
+
+    <!-- Dialog -->
+    <string name="dialog_delete_record">删除全部纪录？</string>
+    <string name="dialog_delete_keep">收藏纪录将会全部删除。</string>
+    <string name="dialog_delete_history">观看纪录将会全部删除。</string>
+
+    <!-- Timer -->
+    <string name="timer_5">5 分钟</string>
+    <string name="timer_15">15 分钟</string>
+    <string name="timer_30">30 分钟</string>
+    <string name="timer_60">1 小时</string>
+    <string name="timer_delay">延长 5 分钟</string>
+    <string name="timer_cancel">取消定时器</string>
+
+    <!-- Hint -->
+    <string name="shortcut"> 已于主萤幕新增捷径。</string>
+
+    <string-array name="select_background">
+        <item>关闭</item>
+        <item>开启</item>
+    </string-array>
+
+    <string-array name="select_pad_live_mode">
+        <item>全屏</item>
+        <item>标准</item>
+    </string-array>
+
+</resources>

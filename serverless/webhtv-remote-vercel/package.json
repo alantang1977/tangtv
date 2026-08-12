@@ -1,0 +1,8 @@
+{
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "check": "node --check api/index.js && node --check api/relay.js && node --check api/playback-sync.js && node --check api/playback-store.js",
+    "test": "node --test test/*.test.js"
+  }
+}

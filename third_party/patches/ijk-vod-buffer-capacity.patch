@@ -1,0 +1,143 @@
+diff --git a/android/compile-ijk.sh b/android/compile-ijk.sh
+--- a/android/compile-ijk.sh
++++ b/android/compile-ijk.sh
+@@ -35,7 +35,7 @@ then
+     FF_MAKEFLAGS=-j`nproc`
+ elif [ "$UNAME_S" = "Darwin" ] && which sysctl >/dev/null
+ then
+-    FF_MAKEFLAGS=-j`sysctl -n machdep.cpu.thread_count`
++    FF_MAKEFLAGS=-j`sysctl -n machdep.cpu.thread_count 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1`
+ fi
+
+ do_sub_cmd () {
+diff --git a/android/contrib/tools/do-compile-ffmpeg.sh b/android/contrib/tools/do-compile-ffmpeg.sh
+--- a/android/contrib/tools/do-compile-ffmpeg.sh
++++ b/android/contrib/tools/do-compile-ffmpeg.sh
+@@ -91,7 +91,7 @@ if [ "$FF_ARCH" = "armv7a" ]; then
+     FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-neon"
+     FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-thumb"
+
+-    FF_EXTRA_CFLAGS="$FF_EXTRA_CFLAGS -march=armv7-a -mcpu=cortex-a8 -mfpu=vfpv3-d16 -mfloat-abi=softfp -mthumb -fno-integrated-as"
++    FF_EXTRA_CFLAGS="$FF_EXTRA_CFLAGS -march=armv7-a -mcpu=cortex-a8 -mfpu=vfpv3-d16 -mfloat-abi=softfp -mthumb"
+     FF_EXTRA_LDFLAGS="$FF_EXTRA_LDFLAGS -Wl,--fix-cortex-a8"
+
+     FF_ASSEMBLER_SUB_DIRS="arm"
+@@ -148,8 +148,6 @@ else
+     exit 1
+ fi
+
+-FF_SOURCE=$FF_BUILD_ROOT/../../extra/ffmpeg
+-
+ if [ ! -d $FF_SOURCE ]; then
+     echo ""
+     echo "!! ERROR"
+@@ -224,8 +224,8 @@ fi
+ export CC=${FF_TOOLCHAIN_PATH_BIN}/${FF_CROSS_PREFIX}-${FF_CC}
+ export AR=${FF_TOOLCHAIN_PATH_BIN}/${FF_CROSS_PREFIX}-ar
+ export STRIP=${FF_TOOLCHAIN_PATH_BIN}/${FF_CROSS_PREFIX}-strip
+-NM=${FF_TOOLCHAIN_PATH_BIN}/${FF_CROSS_PREFIX}-nm
+-RANLIB=${FF_TOOLCHAIN_PATH_BIN}/${FF_CROSS_PREFIX}-ranlib
++export NM=${FF_TOOLCHAIN_PATH_BIN}/${FF_CROSS_PREFIX}-nm
++export RANLIB=${FF_TOOLCHAIN_PATH_BIN}/${FF_CROSS_PREFIX}-ranlib
+ if [ ! -f "$AR" ]; then
+     ln -s ${FF_TOOLCHAIN_PATH_BIN}/llvm-ar $AR
+ fi
+@@ -268,7 +266,9 @@ export CPPFLAGS=""
+ export LDFLAGS=""
+
+ if [ -d $OPENSSL_SOURCE ]; then
+-    $CURRENT_DIR/../compile-openssl.sh $FF_ARCH
++    if [ ! -f "${FF_DEP_OPENSSL_LIB}/libssl.a" ] || [ ! -f "${FF_DEP_OPENSSL_LIB}/libcrypto.a" ]; then
++        $CURRENT_DIR/../compile-openssl.sh $FF_ARCH
++    fi
+ fi
+
+ if [ -f "${FF_DEP_OPENSSL_LIB}/libssl.a" ]; then
+@@ -278,6 +278,7 @@ if [ -f "${FF_DEP_OPENSSL_LIB}/libssl.a" ]; then
+     FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-nonfree"
+     # FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-version3"
+     FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-openssl"
++    FF_CFG_FLAGS="$FF_CFG_FLAGS --pkg-config=pkg-config --pkg-config-flags=--static"
+
+     FF_CFLAGS="$FF_CFLAGS -I${FF_DEP_OPENSSL_INC} "
+     FF_DEP_LIBS="$FF_DEP_LIBS -lssl -lcrypto"
+@@ -304,7 +305,6 @@ FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-cross-compile"
+ FF_CFG_FLAGS="$FF_CFG_FLAGS --target-os=android"
+ FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-pic"
+ FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-pthreads"
+-FF_CFG_FLAGS="$FF_CFG_FLAGS --disable-vulkan"
+ FF_CFG_FLAGS="$FF_CFG_FLAGS --disable-shared"
+ FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-static"
+ FF_CFG_FLAGS="$FF_CFG_FLAGS --disable-doc"
+diff --git a/android/contrib/tools/do-compile-openssl.sh b/android/contrib/tools/do-compile-openssl.sh
+--- a/android/contrib/tools/do-compile-openssl.sh
++++ b/android/contrib/tools/do-compile-openssl.sh
+@@ -76,7 +76,6 @@ if [ "$FF_ARCH" = "armv7a" ]; then
+     FF_PLATFORM_CFG_FLAGS="android-arm"
+
+     FF_CFG_FLAGS="$FF_CFG_FLAGS -DOPENSSL_NO_ATEXIT"
+-    FF_CFG_FLAGS="$FF_CFG_FLAGS -nostartfiles"
+
+ elif [ "$FF_ARCH" = "x86" ]; then
+     FF_BUILD_NAME=openssl-x86
+@@ -162,7 +162,7 @@ if [ ! -f "$FF_TOOLCHAIN_TOUCH" ]; then
+             $FF_MAKE_TOOLCHAIN_FLAGS
+     fi
+     touch $FF_TOOLCHAIN_TOUCH
+-    cd $FF_TOOLCHAIN_PATH_BIN && ln -s ${FF_CROSS_PREFIX}-ld ld
++    cd $FF_TOOLCHAIN_PATH_BIN && (ln -s ${FF_CROSS_PREFIX}-ld ld || true)
+     cd -
+ fi
+
+@@ -199,8 +199,8 @@ export LD=${FF_TOOLCHAIN_PATH_BIN}/${FF_CROSS_PREFIX}-ld
+ export AR=${FF_TOOLCHAIN_PATH_BIN}/${FF_CROSS_PREFIX}-ar
+ export STRIP=${FF_TOOLCHAIN_PATH_BIN}/${FF_CROSS_PREFIX}-strip
+
+-NM=${FF_TOOLCHAIN_PATH_BIN}/${FF_CROSS_PREFIX}-nm
+-RANLIB=${FF_TOOLCHAIN_PATH_BIN}/${FF_CROSS_PREFIX}-ranlib
++export NM=${FF_TOOLCHAIN_PATH_BIN}/${FF_CROSS_PREFIX}-nm
++export RANLIB=${FF_TOOLCHAIN_PATH_BIN}/${FF_CROSS_PREFIX}-ranlib
+
+ if [ ! -f "$AR" ]; then
+     ln -s ${FF_TOOLCHAIN_PATH_BIN}/llvm-ar $AR
+@@ -230,8 +230,9 @@ FF_CFG_FLAGS="$FF_CFG_FLAGS no-tests"
+ FF_CFG_FLAGS="$FF_CFG_FLAGS no-apps"
++FF_CFG_FLAGS="$FF_CFG_FLAGS no-legacy"
+ # FF_CFG_FLAGS="$FF_CFG_FLAGS no-legacy"
+ # FF_CFG_FLAGS="$FF_CFG_FLAGS CC=$FF_CC"
+ FF_CFG_FLAGS="$FF_CFG_FLAGS -D__ANDROID_API__=$FF_ANDROID_PLATFORM"
+
+ # FF_DEP_OPENSSL_INC=$FF_SOURCE/include
+ # FF_DEP_OPENSSL_LIB=$FF_SOURCE
+ # export CFLAGS="-I${FF_DEP_OPENSSL_INC}"
+@@ -238,6 +239,9 @@ FF_CFG_FLAGS="$FF_CFG_FLAGS -D__ANDROID_API__=$FF_ANDROID_PLATFORM"
+ # export LDFLAGS="-L${FF_DEP_OPENSSL_LIB}"
+
+ NDK_MAJOR=$(echo "$IJK_NDK_REL" | cut -d'.' -f1)
++if [ "$FF_ARCH" = "armv7a" ] && [ "$NDK_MAJOR" -lt 28 ]; then
++    FF_CFG_FLAGS="$FF_CFG_FLAGS -nostartfiles"
++fi
+ if [ "$NDK_MAJOR" -lt 27 ]; then
+     FF_CFG_FLAGS="$FF_CFG_FLAGS no-quic"
+     FF_CFG_FLAGS="$FF_CFG_FLAGS no-legacy"
+diff --git a/android/contrib/tools/do-detect-env.sh b/android/contrib/tools/do-detect-env.sh
+--- a/android/contrib/tools/do-detect-env.sh
++++ b/android/contrib/tools/do-detect-env.sh
+@@ -74,7 +74,7 @@ case "$IJK_NDK_REL" in
+             exit 1
+         fi
+         ;;
+-    17* | 21* | 22* | 23* | 24* | 25* | 26* | 27*)
++    17* | 21* | 22* | 23* | 24* | 25* | 26* | 27* | 28*)
+         export IJK_CC=clang
+         ;;
+     *)
+@@ -93,7 +93,7 @@ esac
+
+ case "$UNAME_S" in
+ Darwin*)
+-    export IJK_MAKE_FLAG=-j$(sysctl -n machdep.cpu.thread_count)
++    export IJK_MAKE_FLAG=-j$(sysctl -n machdep.cpu.thread_count 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)
+     ;;
+ CYGWIN_NT-*)
+     IJK_WIN_TEMP="$(cygpath -am /tmp)"

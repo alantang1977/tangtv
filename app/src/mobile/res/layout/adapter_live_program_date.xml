@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.textview.MaterialTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/text"
+    android:layout_width="match_parent"
+    android:layout_height="38dp"
+    android:layout_marginBottom="6dp"
+    android:background="@drawable/selector_control_sheet_button"
+    android:ellipsize="end"
+    android:gravity="center"
+    android:singleLine="true"
+    android:textColor="@color/selector_control_sheet_text"
+    android:textSize="12sp"
+    tools:text="今天" />

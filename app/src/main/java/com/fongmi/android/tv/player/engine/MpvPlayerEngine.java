@@ -1,0 +1,662 @@
+package com.fongmi.android.tv.player.engine;
+
+import androidx.media3.common.MimeTypes;
+import androidx.media3.common.C;
+import androidx.media3.common.Format;
+import androidx.media3.common.MediaEdition;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.MediaMetadata;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.Player;
+import androidx.media3.common.Tracks;
+import androidx.media3.common.VideoSize;
+import androidx.media3.common.util.UnstableApi;
+import androidx.media3.mpvplayer.MpvPlayer;
+import androidx.media3.mpvplayer.MpvPlayerConfig;
+import androidx.annotation.Nullable;
+
+import com.fongmi.android.tv.App;
+import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.bean.Track;
+import com.fongmi.android.tv.player.PlayerHelper;
+import com.fongmi.android.tv.player.PlaybackRoute;
+import com.fongmi.android.tv.player.PlaybackResourceClassifier;
+import com.fongmi.android.tv.player.PlaybackTrace;
+import com.fongmi.android.tv.player.exo.ExoUtil;
+import com.fongmi.android.tv.player.exo.TrackUtil;
+import com.fongmi.android.tv.player.lut.MpvLutShader;
+import com.fongmi.android.tv.player.mpv.MpvConfigStore;
+import com.fongmi.android.tv.player.mpv.MpvAutoControlPolicy;
+import com.fongmi.android.tv.setting.PlayerSetting;
+import com.fongmi.android.tv.setting.MpvPerformanceSetting;
+import com.fongmi.android.tv.setting.PlaybackPerformanceSetting;
+import com.fongmi.android.tv.utils.ResUtil;
+import com.fongmi.android.tv.utils.Util;
+import com.github.catvod.crawler.SpiderDebug;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+
+import is.xyz.mpv.MPVLib;
+
+@UnstableApi
+public class MpvPlayerEngine implements PlayerEngine {
+
+    private MpvPlayer player;
+    private PlaySpec spec;
+    private boolean playWhenReady;
+    private boolean retriedFormat;
+    private boolean surfaceDirect;
+    private Boolean surfaceDirectOverride;
+    private String hwdecOverride;
+    private String configuredHwdec = "no";
+    private final BiConsumer<Integer, Integer> videoSizeProbeListener;
+    private int decode;
+
+    public MpvPlayerEngine(int decode, Player.Listener listener, BiConsumer<Integer, Integer> videoSizeProbeListener) {
+        this.decode = decode;
+        this.videoSizeProbeListener = videoSizeProbeListener;
+        this.player = buildPlayer(listener);
+    }
+
+    @Override
+    public Player getPlayer() {
+        return player;
+    }
+
+    @Override
+    public void release() {
+        player.release();
+    }
+
+    @Override
+    public Player rebuild(Player.Listener listener) {
+        player.release();
+        PlaybackTrace.log("player-engine", getPlaybackTraceId(), "rebuild mpv decode=%d", decode);
+        return player = buildPlayer(listener);
+    }
+
+    @Override
+    public boolean isRepeatOne() {
+        return player.getRepeatMode() == Player.REPEAT_MODE_ONE;
+    }
+
+    @Override
+    public void setRepeatOne(boolean repeat) {
+        player.setRepeatMode(repeat ? Player.REPEAT_MODE_ONE : Player.REPEAT_MODE_OFF);
+    }
+
+    @Override
+    public int getDecode() {
+        return decode;
+    }
+
+    @Override
+    public void setDecode(int decode) {
+        this.decode = decode;
+    }
+
+    @Override
+    public boolean isHard() {
+        return decode == HARD;
+    }
+
+    @Override
+    public String getDecodeText() {
+        return ResUtil.getStringArray(R.array.select_decode)[decode];
+    }
+
+    @Override
+    public void start(PlaySpec spec) {
+        start(spec, true);
+    }
+
+    @Override
+    public void start(PlaySpec spec, boolean playWhenReady) {
+        start(spec, 0, playWhenReady);
+    }
+
+    @Override
+    public void start(PlaySpec spec, long position, boolean playWhenReady) {
+        this.spec = spec;
+        this.playWhenReady = playWhenReady;
+        this.retriedFormat = false;
+        player.setPlaybackTraceId(spec.getPlaybackTraceId());
+        PlaybackTrace.log("player-engine", getPlaybackTraceId(), "start mpv decode=%d position=%d play=%s urlLen=%d headers=%d", decode, position, playWhenReady, spec.getUrl() == null ? 0 : spec.getUrl().length(), spec.getHeaders() == null ? 0 : spec.getHeaders().size());
+        MediaItem item = ExoUtil.getMediaItem(spec, decode);
+        if (position > 0) player.setMediaItem(item, position);
+        else player.setMediaItem(item);
+        player.prepare();
+        if (playWhenReady) player.play();
+        else player.pause();
+    }
+
+    @Override
+    public void restart(PlaySpec spec, long position, boolean playWhenReady) {
+        player.stop();
+        start(spec, position, playWhenReady);
+    }
+
+    @Override
+    public void stop() {
+        player.stop();
+    }
+
+    @Override
+    public void setMetadata(MediaMetadata data) {
+        MediaItem current = player.getCurrentMediaItem();
+        if (current != null) player.replaceMediaItem(player.getCurrentMediaItemIndex(), current.buildUpon().setMediaMetadata(data).build());
+    }
+
+    @Override
+    public boolean isLive() {
+        return player.getDuration() < TimeUnit.MINUTES.toMillis(1) || player.isCurrentMediaItemLive();
+    }
+
+    @Override
+    public boolean isVod() {
+        return player.getDuration() > TimeUnit.MINUTES.toMillis(1) && !player.isCurrentMediaItemLive();
+    }
+
+    @Override
+    public void setTrack(List<Track> tracks) {
+        for (Track track : tracks) {
+            if (track.isDisabled() && track.getType() == C.TRACK_TYPE_TEXT) {
+                player.setTrackSelection(C.TRACK_TYPE_TEXT, "no");
+                continue;
+            }
+            String id = resolveMpvTrackId(track);
+            if (id != null) {
+                player.setTrackSelection(track.getType(), id);
+            } else {
+                SpiderDebug.log("mpv", "select track failed: no mpv id type=%d name=%s format=%s", track.getType(), track.getName(), track.getFormat());
+            }
+        }
+    }
+
+    @Override
+    public void resetTrack() {
+        player.resetTrackSelection();
+    }
+
+    @Override
+    public void restoreVideoTrack() {
+        player.restoreVideoTrackSelection();
+    }
+
+    @Override
+    public boolean haveTrack(int type) {
+        return TrackUtil.count(getCurrentTracks(), type) > 0;
+    }
+
+    @Override
+    public Tracks getCurrentTracks() {
+        return player.getCurrentTracksSnapshot();
+    }
+
+    public VideoSize getVideoSizeSnapshot() {
+        return player.getVideoSizeSnapshot();
+    }
+
+    @Override
+    public Format getVideoFormat() {
+        return TrackUtil.selectedFormat(getCurrentTracks(), C.TRACK_TYPE_VIDEO);
+    }
+
+    @Override
+    public void setVideoAspect(float aspectRatio, boolean stretch) {
+        player.setVideoAspect(aspectRatio, stretch);
+    }
+
+    @Override
+    public PlaybackFactsSnapshot getPlaybackFactsSnapshot() {
+        Format video = TrackUtil.explicitlySelectedFormat(getCurrentTracks(), C.TRACK_TYPE_VIDEO);
+        Format audio = TrackUtil.explicitlySelectedFormat(getCurrentTracks(), C.TRACK_TYPE_AUDIO);
+        String hwdec = player.getObservedHwdecCurrent();
+        String currentVo = player.getObservedCurrentVideoOutput();
+        return new PlaybackFactsSnapshot(
+                video,
+                audio,
+                video,
+                audio,
+                "",
+                "",
+                decoderKind(hwdec, player.hasObservedHwdecCurrent()),
+                null,
+                hwdec,
+                currentVo,
+                null);
+    }
+
+    @Override
+    public RuntimeMetrics getRuntimeMetrics() {
+        PlayerCacheState cache = player.getCachedCacheState();
+        long inputBytesPerSecond = cache.rawInputBytesPerSecond();
+        long bandwidth = inputBytesPerSecond > Long.MAX_VALUE / 8L
+                ? Long.MAX_VALUE : inputBytesPerSecond * 8L;
+        Format video = TrackUtil.explicitlySelectedFormat(getCurrentTracks(), C.TRACK_TYPE_VIDEO);
+        Format audio = TrackUtil.explicitlySelectedFormat(getCurrentTracks(), C.TRACK_TYPE_AUDIO);
+        long mediaBitrate = safeAdd(formatBitrate(video), formatBitrate(audio));
+        float frameRate = player.getObservedDisplayFrameRate();
+        return new RuntimeMetrics(
+                bandwidth > 0 ? bandwidth : null,
+                mediaBitrate > 0 ? mediaBitrate : null,
+                frameRate > 0 ? frameRate : null,
+                player.hasObservedDroppedFrames() ? player.getObservedDroppedFrames() : null);
+    }
+
+    @Override
+    public boolean supportsNativeLut() {
+        return !surfaceDirect;
+    }
+
+    public boolean isSurfaceDirect() {
+        return surfaceDirect;
+    }
+
+    public void setSurfaceDirectOverride(@Nullable Boolean value) {
+        surfaceDirectOverride = value;
+    }
+
+    public void forceMediaCodecCopy() {
+        hwdecOverride = "mediacodec-copy";
+    }
+
+    public boolean clearHwdecOverride() {
+        boolean changed = hwdecOverride != null;
+        hwdecOverride = null;
+        return changed;
+    }
+
+    public boolean isMediaCodecCopyOnly() {
+        return "mediacodec-copy".equals(configuredHwdec);
+    }
+
+    public MpvPlayer.AutoCacheBaselineResult applyAutoCacheBaseline(
+            String traceId, long forwardBytes, long backBytes) {
+        player.setPlaybackTraceId(traceId);
+        return player.applyAutoCacheBaseline(forwardBytes, backBytes);
+    }
+
+    /** Observer-only native cache counters; this never performs a synchronous property query. */
+    public PlayerCacheState getAutoCacheSnapshot() {
+        return player.getCachedCacheState();
+    }
+
+    public void clearAutoCacheBaseline() {
+        player.clearAutoCacheBaseline();
+    }
+
+    public boolean updateAutomaticPreloadControl(
+            boolean automatic,
+            boolean resourceAllowed,
+            boolean trafficAllowed) {
+        return player.updateAutomaticPreloadControl(
+                automatic, resourceAllowed, trafficAllowed);
+    }
+
+    public void requestAutomaticHlsPreload(long positionMs) {
+        player.requestAutomaticHlsPreload(positionMs);
+    }
+
+    public void stopAutomaticHlsPreload() {
+        player.updateAutomaticPreloadControl(true, false, false);
+    }
+
+    public MpvPlayer.AutoHlsBitrateResult applyAutoHlsBitrate(
+            String traceId, String option) {
+        player.setPlaybackTraceId(traceId);
+        return player.applyAutoHlsBitrate(option);
+    }
+
+    public void clearAutoHlsBitrate() {
+        player.clearAutoHlsBitrate();
+    }
+
+    /** Cached track/proxy HLS state; this method never performs a native query. */
+    public MpvPlayer.AutoHlsRuntimeSnapshot getAutoHlsRuntimeSnapshot() {
+        return player.getAutoHlsRuntimeSnapshot();
+    }
+
+    /** Proxy-only upstream and disk facts; this never performs a native query. */
+    public MpvPlayer.AutoHlsPreloadRuntimeSnapshot getAutoHlsPreloadRuntimeSnapshot() {
+        return player.getAutoHlsPreloadRuntimeSnapshot();
+    }
+
+    @Override
+    public void setNativeLutShader(MpvLutShader shader) {
+        player.setLutShader(shader);
+    }
+
+    @Override
+    public PlayerCacheState getCacheState() {
+        return player.getCacheState();
+    }
+
+    @Override
+    public String getRenderDiagnostics() {
+        return player.getRenderDiagnostics();
+    }
+
+    @Override
+    public String getRuntimeDiagnostics() {
+        return player.getRuntimeDiagnostics();
+    }
+
+    @Override
+    public VideoPlaybackDetails getVideoPlaybackDetails() {
+        MpvPlayer.VideoTrackDiagnostics details =
+                player.getSelectedVideoTrackDiagnostics();
+        return new VideoPlaybackDetails(
+                details.sourceCodecs(),
+                details.dolbyVisionProfile(),
+                details.dolbyVisionLevel(),
+                details.decodedCodec(),
+                details.decoderName(),
+                player.getObservedHwdecCurrent(),
+                details.outputColorInfo());
+    }
+
+    @Override
+    public long getDroppedFrames() {
+        return player.getDroppedFrames();
+    }
+
+    @Override
+    public String getPlaybackTraceId() {
+        return spec == null ? PlaybackTrace.NONE : spec.getPlaybackTraceId();
+    }
+
+    @Override
+    public PlaybackRoute.Resolution getEffectivePlaybackRoute() {
+        PlaybackRoute.Resolution current = player.getPlaybackRouteResolution();
+        if (current.route() != PlaybackRoute.OTHER) return current;
+        return spec == null ? current : spec.getPlaybackRoute();
+    }
+
+    @Override
+    public PlaybackResourceClassifier.Classification getResourceClassification() {
+        return player.getResourceClassification();
+    }
+
+    @Override
+    public boolean supportsSubtitleStyle() {
+        return !surfaceDirect;
+    }
+
+    @Override
+    public String getAudioSpdifCodecs() {
+        return player.getAudioSpdifCodecs();
+    }
+
+    @Override
+    public void setSubtitleStyle(float textSize, float position) {
+        player.setSubtitleStyle(textSize, position);
+    }
+
+    @Override
+    public boolean supportsSecondarySubtitle() {
+        return !surfaceDirect;
+    }
+
+    @Override
+    public boolean isSecondarySubtitleSelected(Format format) {
+        return format != null && player.isSecondarySubtitleSelected(parseMpvTrackId(format.id));
+    }
+
+    @Override
+    public void setSecondarySubtitleTrack(Track track) {
+        if (track == null) return;
+        if (track.isDisabled() && track.getType() == C.TRACK_TYPE_TEXT) {
+            player.setSecondarySubtitleTrackSelection("no");
+            return;
+        }
+        String id = resolveMpvTrackId(track);
+        if (id != null) {
+            player.setSecondarySubtitleTrackSelection(id);
+        } else {
+            SpiderDebug.log("mpv", "select secondary subtitle failed: no mpv id name=%s format=%s", track.getName(), track.getFormat());
+        }
+    }
+
+    @Override
+    public boolean haveTitle() {
+        return !getCurrentMediaEditions().isEmpty();
+    }
+
+    @Override
+    public List<MediaEdition> getCurrentMediaEditions() {
+        return player.getCurrentMediaEditions();
+    }
+
+    @Override
+    public boolean selectEdition(MediaEdition edition) {
+        return player.selectEdition(edition);
+    }
+
+    private String findMpvTrackId(Track track) {
+        if (track == null || track.getFormat() == null) return null;
+        for (Tracks.Group group : getCurrentTracks().getGroups()) {
+            if (group.getType() != track.getType()) continue;
+            for (int i = 0; i < group.length; i++) {
+                if (!group.isTrackSupported(i)) continue;
+                Format format = group.getTrackFormat(i);
+                if (!track.getFormat().equals(PlayerHelper.describeFormat(format))) continue;
+                return parseMpvTrackId(format.id);
+            }
+        }
+        return null;
+    }
+
+    private String resolveMpvTrackId(Track track) {
+        if (track == null) return null;
+        String id = parseMpvTrackId(track.getPlayerId());
+        // playerId is supplied by the currently visible track list. Only persisted
+        // preferences from an earlier playback need the legacy description fallback.
+        return id != null ? id : findMpvTrackId(track);
+    }
+
+    private String parseMpvTrackId(String id) {
+        if (id == null) return null;
+        int index = id.indexOf(':');
+        return index >= 0 && index + 1 < id.length() ? id.substring(index + 1) : id;
+    }
+
+    @Override
+    public String getErrorMessage(PlaybackException e) {
+        String message = e.getMessage();
+        if (startsWith(message, MpvPlayer.ERROR_HLS_PLAYBACK_FAILED)) return ResUtil.getString(R.string.error_play_mpv_hls_unsupported);
+        if (startsWith(message, MpvPlayer.ERROR_LOAD_FAILED)) return ResUtil.getString(R.string.error_play_mpv_load_failed);
+        if (startsWith(message, MpvPlayer.ERROR_NETWORK_FAILED)) return ResUtil.getString(R.string.error_play_mpv_network_failed);
+        if (startsWith(message, MpvPlayer.ERROR_DRM_UNSUPPORTED)) return ResUtil.getString(R.string.error_play_mpv_drm_unsupported);
+        if (startsWith(message, MpvPlayer.ERROR_UNEXPECTED_IMAGE)) return ResUtil.getString(R.string.error_play_mpv_unexpected_image);
+        if (startsWith(message, MpvPlayer.ERROR_NO_AV_DATA)) return ResUtil.getString(R.string.error_play_mpv_no_av);
+        if (startsWith(message, MpvPlayer.ERROR_INVALID_MEDIA_DATA)) return ResUtil.getString(R.string.error_play_mpv_invalid_data);
+        if (startsWith(message, MpvPlayer.ERROR_DECODE_FAILED)) return ResUtil.getString(R.string.error_play_mpv_decode_failed);
+        if (startsWith(message, MpvPlayer.ERROR_VIDEO_OUTPUT_FAILED)) return ResUtil.getString(R.string.error_play_mpv_video_output);
+        return e.getMessage();
+    }
+
+    @Override
+    public ErrorAction handleError(PlaybackException e) {
+        PlaybackTrace.log("player-engine", getPlaybackTraceId(), "handleError mpv code=%d message=%s format=%s retried=%s urlLen=%d", e.errorCode, e.getMessage(), spec == null ? null : spec.getFormat(), retriedFormat, spec == null || spec.getUrl() == null ? 0 : spec.getUrl().length());
+        if (shouldRetryFormat(e)) return retryFormat();
+        return ErrorAction.FATAL;
+    }
+
+    private boolean shouldRetryFormat(PlaybackException e) {
+        if (retriedFormat || spec == null || spec.getFormat() != null) return false;
+        String message = e.getMessage();
+        if (isTerminalMpvError(message)) return false;
+        return e.errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED
+                || e.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED
+                || e.errorCode == PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED
+                || e.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED
+                || e.errorCode == PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED;
+    }
+
+    private ErrorAction retryFormat() {
+        retriedFormat = true;
+        spec.setFormat(MimeTypes.APPLICATION_M3U8);
+        long position = Math.max(0, player.getCurrentPosition());
+        PlaybackTrace.log("player-engine", getPlaybackTraceId(), "retryFormat mpv newFormat=%s position=%d", spec.getFormat(), position);
+        player.stop();
+        MediaItem item = ExoUtil.getMediaItem(spec, decode);
+        if (position > 0) player.setMediaItem(item, position);
+        else player.setMediaItem(item);
+        player.prepare();
+        if (playWhenReady) player.play();
+        else player.pause();
+        return ErrorAction.RECOVERED;
+    }
+
+    private boolean isTerminalMpvError(String message) {
+        return startsWith(message, MpvPlayer.ERROR_HLS_PLAYBACK_FAILED)
+                || startsWith(message, MpvPlayer.ERROR_NETWORK_FAILED)
+                || startsWith(message, MpvPlayer.ERROR_DRM_UNSUPPORTED)
+                || startsWith(message, MpvPlayer.ERROR_UNEXPECTED_IMAGE)
+                || startsWith(message, MpvPlayer.ERROR_NO_AV_DATA)
+                || startsWith(message, MpvPlayer.ERROR_INVALID_MEDIA_DATA)
+                || startsWith(message, MpvPlayer.ERROR_DECODE_FAILED)
+                || startsWith(message, MpvPlayer.ERROR_VIDEO_OUTPUT_FAILED);
+    }
+
+    private boolean startsWith(String message, String prefix) {
+        return message != null && message.startsWith(prefix);
+    }
+
+    private DecoderKind decoderKind(String hwdec, boolean observed) {
+        if (!observed) return DecoderKind.UNKNOWN;
+        if (hwdec == null || hwdec.isBlank()) return DecoderKind.SOFTWARE;
+        String value = hwdec.trim().toLowerCase(java.util.Locale.US);
+        return value.equals("no") || value.equals("none") || value.equals("software")
+                ? DecoderKind.SOFTWARE : DecoderKind.HARDWARE;
+    }
+
+    private MpvPlayer buildPlayer(Player.Listener listener) {
+        MpvPlayer player = new MpvPlayer(App.get(), buildConfig());
+        if (PlaybackPerformanceSetting.isAuto(PlayerSetting.MPV)) {
+            player.updateAutomaticPreloadControl(true, false, false);
+        }
+        player.setVideoSizeProbeListener(videoSizeProbeListener);
+        player.addListener(listener);
+        return player;
+    }
+
+    private MpvPlayerConfig buildConfig() {
+        MpvConfigStore.ensureReady();
+        boolean zeroCopyBlocked = MpvPerformanceSetting.isZeroCopyBlocked();
+        surfaceDirect = surfaceDirectOverride == null
+                ? MpvPerformanceSetting.shouldUseSurfaceDirect(false, Util.isLeanback(), decode == HARD)
+                : surfaceDirectOverride && decode == HARD && !zeroCopyBlocked;
+        boolean requestVulkan = PlayerSetting.getMpvRender() == PlayerSetting.MPV_RENDER_VULKAN;
+        boolean nativeVulkan = MPVLib.isBundledVulkanEnabled(App.get());
+        boolean deviceVulkan = MPVLib.isDeviceVulkan13Capable(App.get());
+        boolean useVulkan = !surfaceDirect && requestVulkan && nativeVulkan && deviceVulkan;
+        boolean useGpuNext = !surfaceDirect && (useVulkan || decode != HARD);
+        if (requestVulkan && !surfaceDirect && !useVulkan) SpiderDebug.log("player-engine", "mpv render requested=vulkan but unavailable native=%s device=%s; fallback=opengl", nativeVulkan, deviceVulkan);
+        String hwdec = surfaceDirect ? "mediacodec" : resolveGpuHwdec(zeroCopyBlocked);
+        configuredHwdec = hwdec;
+        SpiderDebug.log("player-engine", "mpv output mode=%s direct=%s zeroCopyBlocked=%s hwdec=%s render requested=%s nativeVulkan=%s deviceVulkan=%s decode=%s actual=%s/%s", MpvPerformanceSetting.getOutputModeText(), surfaceDirect, zeroCopyBlocked, hwdec, requestVulkan ? "vulkan" : "opengl", nativeVulkan, deviceVulkan, decode == HARD ? "hard" : "soft", surfaceDirect ? "surface" : useVulkan ? "vulkan" : "opengl", surfaceDirect ? "mediacodec_embed" : useGpuNext ? "gpu-next" : "gpu");
+        MpvPlayerConfig.Builder builder = MpvPlayerConfig.builder(App.get())
+                .configDir(MpvConfigStore.configDir())
+                .hwdec(hwdec)
+                .audioSpdif(resolveAudioSpdifCodecs())
+                .logLevel(MpvPerformanceSetting.isVerboseLog() ? "all=v" : "all=warn")
+                .demuxerMaxBytes(getDemuxerMaxBytes())
+                .demuxerMaxBackBytes(getDemuxerMaxBackBytes())
+                .cacheSeconds(getCacheTargetSeconds())
+                .demuxerReadaheadSeconds(MpvPlayerConfig.DEFAULT_DEMUXER_READAHEAD_SECONDS)
+                .demuxerHysteresisSeconds(MpvPlayerConfig.DEFAULT_DEMUXER_HYSTERESIS_SECONDS)
+                .rebufferMs(MpvPerformanceSetting.getRebufferMs())
+                .performanceOptionsPriority(MpvPerformanceSetting.isPerformancePriority())
+                .automaticCacheTime(PlaybackPerformanceSetting.isAuto(PlayerSetting.MPV))
+                .automaticHlsVariant(PlaybackPerformanceSetting.isAuto(PlayerSetting.MPV))
+                .option("framedrop", MpvPerformanceSetting.getFrameDropOption())
+                .option("video-sync", MpvPerformanceSetting.getSyncOption())
+                .option("interpolation", MpvPerformanceSetting.isInterpolation() ? "yes" : "no")
+                .option("hls-bitrate", MpvPerformanceSetting.getHlsBitrateOption());
+        applySoftDecodeOptions(builder);
+        if (surfaceDirect) {
+            builder.vo("mediacodec_embed")
+                    .gpuApi("")
+                    .openglEs(false);
+        } else if (useVulkan) {
+            builder.vo("gpu-next")
+                    .gpuContext("androidvk")
+                    .gpuApi("vulkan")
+                    .openglEs(false);
+        } else if (useGpuNext) {
+            // The legacy gpu renderer restores the original pre-Dolby-Vision
+            // color representation. Software-decoded Profile 5 frames need
+            // gpu-next/libplacebo to apply their per-frame DOVI mapping.
+            builder.vo("gpu-next");
+        }
+        return builder.build();
+    }
+
+    private String resolveGpuHwdec(boolean zeroCopyBlocked) {
+        if (decode != HARD) return "no";
+        if (zeroCopyBlocked) return "mediacodec-copy";
+        return hwdecOverride == null ? MpvPerformanceSetting.getHwdecOption() : hwdecOverride;
+    }
+
+    private void applySoftDecodeOptions(MpvPlayerConfig.Builder builder) {
+        int mode = MpvPerformanceSetting.getSoftTuneMode();
+        if (mode == MpvPerformanceSetting.SOFT_TUNE_OFF) return;
+        // MPV can silently fall back from MediaCodec while the engine still represents a hard-decode request.
+        // Prime the libavcodec fallback so 4K software decoding does not start with the expensive defaults.
+        builder.option("vd-lavc-fast", "yes");
+        builder.option("vd-lavc-threads", "0");
+        builder.option("vd-lavc-skiploopfilter", mode == MpvPerformanceSetting.SOFT_TUNE_AGGRESSIVE ? "nonkey" : "nonref");
+    }
+
+    private String resolveAudioSpdifCodecs() {
+        if (!PlayerSetting.isAudioPassThrough(PlayerSetting.MPV)) return "";
+        return MpvAudioCapabilities.getAudioSpdifCodecs(App.get());
+    }
+
+    private long getDemuxerMaxBytes() {
+        if (PlaybackPerformanceSetting.isAuto(PlayerSetting.MPV)) {
+            return MpvAutoControlPolicy.MIN_FORWARD_BYTES;
+        }
+        int bytes = PlayerSetting.getBufferBytes(PlayerSetting.MPV);
+        return bytes > 0 ? bytes : MpvPlayerConfig.DEFAULT_DEMUXER_BYTES;
+    }
+
+    private long getDemuxerMaxBackBytes() {
+        if (PlaybackPerformanceSetting.isAuto(PlayerSetting.MPV)) {
+            return MpvAutoControlPolicy.INITIAL_BACK_BYTES;
+        }
+        if (PlayerSetting.getBackBufferMs(PlayerSetting.MPV) <= 0) return 0;
+        long forward = getDemuxerMaxBytes();
+        return switch (PlayerSetting.getBackBufferOption(PlayerSetting.MPV)) {
+            case 1 -> Math.max(16L * 1024 * 1024, forward / 4);
+            case 2 -> Math.max(32L * 1024 * 1024, forward / 2);
+            case 3 -> forward;
+            default -> 0;
+        };
+    }
+
+    private int getDemuxerReadAheadSeconds() {
+        return Math.min(120, Math.max(15, PlayerSetting.getBuffer(PlayerSetting.MPV) * 4));
+    }
+
+    private int getCacheTargetSeconds() {
+        return Math.min(60, Math.max(15, PlayerSetting.getBuffer(PlayerSetting.MPV) * 3));
+    }
+
+    private static long formatBitrate(Format format) {
+        if (format == null) return 0;
+        if (format.averageBitrate > 0) return format.averageBitrate;
+        if (format.peakBitrate > 0) return format.peakBitrate;
+        return Math.max(0, format.bitrate);
+    }
+
+    private static long safeAdd(long first, long second) {
+        if (first <= 0) return Math.max(0, second);
+        if (second <= 0) return first;
+        return first > Long.MAX_VALUE - second ? Long.MAX_VALUE : first + second;
+    }
+}

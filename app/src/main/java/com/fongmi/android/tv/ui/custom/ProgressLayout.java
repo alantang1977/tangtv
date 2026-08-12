@@ -1,0 +1,160 @@
+package com.fongmi.android.tv.ui.custom;
+
+import android.content.Context;
+import android.util.AttributeSet;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.RelativeLayout;
+
+import com.fongmi.android.tv.databinding.ViewEmptyBinding;
+import com.fongmi.android.tv.databinding.ViewProgressBinding;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ProgressLayout extends RelativeLayout {
+
+    private static final String TAG_PROGRESS = "ProgressLayout.TAG_PROGRESS";
+
+    public enum State {
+        CONTENT, PROGRESS, EMPTY
+    }
+
+    private List<View> mContentViews;
+    private View mProgressView;
+    private View mEmptyView;
+    private State mState;
+
+    public ProgressLayout(Context context) {
+        super(context);
+    }
+
+    public ProgressLayout(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        init();
+    }
+
+    public ProgressLayout(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+        init();
+    }
+
+    private void init() {
+        mState = State.CONTENT;
+        mContentViews = new ArrayList<>();
+    }
+
+    private void ensureEmptyView() {
+        if (mEmptyView != null) return;
+        mEmptyView = ViewEmptyBinding.inflate(LayoutInflater.from(getContext())).getRoot();
+        mEmptyView.setTag(TAG_PROGRESS);
+        mEmptyView.setVisibility(GONE);
+        addView(mEmptyView, centerParams());
+    }
+
+    private void ensureProgressView() {
+        if (mProgressView != null) return;
+        mProgressView = ViewProgressBinding.inflate(LayoutInflater.from(getContext())).getRoot();
+        mProgressView.setTag(TAG_PROGRESS);
+        mProgressView.setVisibility(GONE);
+        addView(mProgressView, centerParams());
+    }
+
+    private LayoutParams centerParams() {
+        LayoutParams params = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.addRule(CENTER_IN_PARENT);
+        return params;
+    }
+
+    @Override
+    public void addView(View child, int index, ViewGroup.LayoutParams params) {
+        super.addView(child, index, params);
+        if (child.getTag() == null || !child.getTag().equals(TAG_PROGRESS)) {
+            mContentViews.add(child);
+        }
+    }
+
+    /** Adds a child that must not follow CONTENT/PROGRESS/EMPTY visibility changes. */
+    public void addOverlayView(View child, ViewGroup.LayoutParams params) {
+        addView(child, params);
+        mContentViews.remove(child);
+    }
+
+    public void showProgress() {
+        switchState(State.PROGRESS);
+    }
+
+    public void showEmpty() {
+        switchState(State.EMPTY);
+    }
+
+    public void showContent() {
+        switchState(State.CONTENT);
+    }
+
+    // 强制把内容视图重新隐藏（仅在 PROGRESS/EMPTY 态有意义）：
+    // 用于内容填充（如 setText）在 loading 期间把部分子视图改回 VISIBLE 后，重新压回隐藏，避免泄漏
+    public void hideContent() {
+        if (mState == State.CONTENT) return;
+        setContentVisibility(false);
+    }
+
+    public void showContent(boolean flag, int size) {
+        if (flag && size == 0) showEmpty();
+        else showContent();
+    }
+
+    public boolean isProgress() {
+        return mState == State.PROGRESS;
+    }
+
+    public boolean isContent() {
+        return mState == State.CONTENT;
+    }
+
+    public boolean isEmpty() {
+        return mState == State.EMPTY;
+    }
+
+    public void switchState(State state) {
+        if (mState == state) return;
+        mState = state;
+        switch (state) {
+            case CONTENT:
+                if (mEmptyView != null) mEmptyView.setVisibility(GONE);
+                if (mProgressView != null) mProgressView.setVisibility(GONE);
+                setContentVisibility(true);
+                break;
+            case PROGRESS:
+                ensureProgressView();
+                if (mEmptyView != null) mEmptyView.setVisibility(GONE);
+                mProgressView.setVisibility(VISIBLE);
+                setContentVisibility(false);
+                break;
+            case EMPTY:
+                ensureEmptyView();
+                mEmptyView.setVisibility(VISIBLE);
+                if (mProgressView != null) mProgressView.setVisibility(GONE);
+                setContentVisibility(false);
+                break;
+        }
+    }
+
+    private void setContentVisibility(boolean visible) {
+        for (View view : mContentViews) {
+            if (visible) showView(view);
+            else hideView(view);
+        }
+    }
+
+    private void showView(View view) {
+        view.setAlpha(0f);
+        view.setVisibility(VISIBLE);
+        view.animate().alpha(1f).setDuration(100);
+    }
+
+    private void hideView(View view) {
+        view.setVisibility(INVISIBLE);
+    }
+}

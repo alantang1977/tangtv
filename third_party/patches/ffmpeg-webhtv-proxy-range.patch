@@ -1,0 +1,19 @@
+diff --git a/libavformat/http.c b/libavformat/http.c
+index 51bd660bc9..3f2c1ab3c8 100644
+--- a/libavformat/http.c
++++ b/libavformat/http.c
+@@ -1246,6 +1246,14 @@ static int process_line(URLContext *h, char *line, int line_count,
+             s->filesize = strtoull(p, NULL, 10);
+         } else if (!av_strcasecmp(tag, "Content-Range")) {
+             parse_content_range(h, p);
++        } else if (!av_strcasecmp(tag, "X-WebHTV-Proxy-Range-Start") &&
++                   p[0] && strspn(p, "0123456789") == strlen(p)) {
++            // The app's loopback proxy can preserve a valid 206 byte offset
++            // even when its upstream stream does not expose Content-Range.
++            s->off = strtoull(p, NULL, 10);
++            if (s->seekable == -1)
++                h->is_streamed = 0;
++            av_log(h, AV_LOG_VERBOSE, "WebHTV proxy range offset accepted: %"PRIu64"\n", s->off);
+         } else if (!av_strcasecmp(tag, "Accept-Ranges") &&
+                    !strncmp(p, "bytes", 5) &&
+                    s->seekable == -1) {
