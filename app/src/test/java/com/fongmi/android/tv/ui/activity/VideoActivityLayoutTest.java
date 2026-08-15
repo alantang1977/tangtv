@@ -1392,6 +1392,19 @@ public class VideoActivityLayoutTest {
     }
 
     @Test
+    public void playbackServiceRegistersDirectSessionForMediaNotificationLifecycle() throws Exception {
+        Path servicePath = findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "service", "PlaybackService.java"));
+        String service = new String(Files.readAllBytes(servicePath), StandardCharsets.UTF_8);
+        String onCreate = methodBody(service, "public void onCreate()", "private PendingIntent buildDefaultIntent()");
+        int setupNotification = onCreate.indexOf("setupNotification();");
+        int addSession = onCreate.indexOf("addSession(session);");
+
+        assertTrue("the media notification provider must be configured before session registration", setupNotification >= 0);
+        assertTrue("direct SessionToken controllers bypass MediaSessionService binding, so the session must be registered explicitly",
+                addSession > setupNotification);
+    }
+
+    @Test
     public void playbackControllerConnectionDoesNotReplayStaleState() throws Exception {
         Path sourcePath = findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "PlaybackActivity.java"));
         String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
@@ -2683,9 +2696,9 @@ public class VideoActivityLayoutTest {
         assertTrue("history playback must respect the configured standalone detail mode",
                 historyStartBody.contains("if (shouldOpenLegacyTmdbDetail(item.getSiteKey(), item.getVodId()))"));
         assertTrue("standalone detail mode must use the normal detail-aware start path",
-                historyStartBody.contains("start(activity, item.getSiteKey(), item.getVodId(), item.getVodName(), item.getVodPic(), item.getVodRemarks())"));
+                historyStartBody.contains("TmdbDetailActivity.startFromHistory(activity, item)"));
         assertTrue("non-detail playback must preserve flag, episode title, and episode url",
-                historyStartBody.contains("startDirect(activity, item.getSiteKey(), item.getVodId(), item.getVodName(), item.getVodPic(), item.getVodRemarks(), item.getVodFlag(), item.getVodRemarks(), item.getEpisodeUrl(), true)"));
+                historyStartBody.contains("startDirect(activity, item.getSiteKey(), item.getVodId(), item.getVodName(), item.getVodPic(), item.getVodRemarks(), item.getVodFlag(), item.getVodRemarks(), item.getEpisodeUrl(), item)"));
         assertTrue("direct playback must preserve the requested episode selection in the intent",
                 video.contains("putIntentPlaybackSelection(intent, playFlag, playEpisodeName, playEpisodeUrl);"));
     }
@@ -2706,9 +2719,9 @@ public class VideoActivityLayoutTest {
         assertTrue("TV history playback must respect the configured standalone detail mode",
                 historyStartBody.contains("if (shouldOpenLegacyTmdbDetail(item.getSiteKey(), item.getVodId(), false))"));
         assertTrue("TV standalone detail mode must use the normal detail-aware start path",
-                historyStartBody.contains("start(activity, item.getSiteKey(), item.getVodId(), item.getVodName(), item.getVodPic(), item.getVodRemarks())"));
+                historyStartBody.contains("TmdbDetailActivity.startFromHistory(activity, item)"));
         assertTrue("TV non-detail playback must preserve flag, episode title, and episode url",
-                historyStartBody.contains("startDirect(activity, item.getSiteKey(), item.getVodId(), item.getVodName(), item.getVodPic(), item.getVodRemarks(), item.getVodFlag(), item.getVodRemarks(), item.getEpisodeUrl(), true)"));
+                historyStartBody.contains("startDirect(activity, item.getSiteKey(), item.getVodId(), item.getVodName(), item.getVodPic(), item.getVodRemarks(), item.getVodFlag(), item.getVodRemarks(), item.getEpisodeUrl(), item)"));
         assertTrue("TV direct playback must preserve the requested episode selection in the intent",
                 video.contains("putIntentPlaybackSelection(intent, playFlag, playEpisodeName, playEpisodeUrl);"));
     }

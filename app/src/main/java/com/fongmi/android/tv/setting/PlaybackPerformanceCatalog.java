@@ -28,6 +28,7 @@ public final class PlaybackPerformanceCatalog {
     public static final String LATE_DROP = "late_drop";
     public static final String SURFACE_FIXED_SIZE = "surface_fixed_size";
     public static final String DECODER_FALLBACK = "decoder_fallback";
+    public static final String DV7_HDR10_FALLBACK = "dv7_hdr10_fallback";
     public static final String SOFT_VIDEO_TUNE = "soft_video_tune";
     public static final String AUDIO_PASSTHROUGH = "audio_passthrough";
     public static final String PREFER_AAC = "prefer_aac";
@@ -112,6 +113,7 @@ public final class PlaybackPerformanceCatalog {
         options.add(option(LATE_DROP, DECODE, "输入丢帧阈值", "作用：输入帧明显迟到时提前丢弃，优先保证“跟上进度”。CPU不足、4K掉帧时建议开启；希望保留每一帧可关闭。代价：画面可能跳帧，但通常比持续延迟更容易接受。"));
         options.add(option(SURFACE_FIXED_SIZE, DECODE, "Surface 固定尺寸", "作用：按视频尺寸创建 Surface，减少超高分辨率合成压力。电视4K建议开启（默认）；切清晰度/旋转出现画面尺寸异常时关闭。代价：少数设备切换分辨率需要重建 Surface。"));
         options.add(option(DECODER_FALLBACK, DECODE, "解码器兜底", "作用：首选硬解初始化失败时尝试其他解码器。兼容性优先建议开启（默认）；只想快速暴露硬件问题可关闭。代价：可能多等待一次初始化，且备用解码器性能可能较低。"));
+        options.add(option(DV7_HDR10_FALLBACK, DECODE, "DV7回退HDR10", "作用：原生 Dolby Vision Profile 7 路径不可用时，允许使用兼容的 HDR10 基底层继续播放，默认开启。部分设备虽未完整声明 DV7 能力但实际能够解码，可关闭后尝试原生 DV7；设备若确实不支持，可能黑屏、无画面或播放失败。"));
         options.add(option(SOFT_VIDEO_TUNE, DECODE, "软解降负载", "作用：仅在 EXO 使用 FFmpeg 软解时降低滤波和解码负载。低性能设备/软解视频可开启；硬解4K基本不受影响。代价：积极降负载会牺牲细节，不能替代硬解。"));
         options.add(option(AUDIO_PASSTHROUGH, AUDIO, "音频直通", "作用：把 Dolby/DTS 等压缩音频交给电视或功放解码，保留多声道。设备明确支持且要环绕声才开启；出现无声立即关闭。代价：输出链不支持时不会自动变成可播放音频。"));
         options.add(option(PREFER_AAC, AUDIO, "AAC 优先", "作用：有多条音轨时优先选兼容性更高的 AAC。电视无声、切换音轨失败时建议开启；追求原始多声道/高码率时关闭。代价：可能放弃质量更高的音轨。"));
@@ -134,6 +136,7 @@ public final class PlaybackPerformanceCatalog {
         options.add(option(MPV_INTERPOLATION, DECODE, "平滑运动", "怎么选：默认关闭。只有GPU余量充足、使用GPU完整＋显示重采样且想改善低帧率运动时才开启；电视4K、HDR、LUT或已经卡顿时必须关闭。代价：会明显增加GPU负载，电视直出时不生效。"));
         options.add(option(MPV_SOFT_TUNE, DECODE, "软解降负载", "作用：仅软件解码时减少滤波和解码工作。默认“温和”；软解仍掉帧可选“积极”；硬解视频无需靠它提速。代价：模式越积极，细节和画面连续性损失越大。"));
         options.add(option(MPV_VERBOSE_LOG, DECODE, "详细日志", "怎么选：正常播放保持“正常”（默认）；只在排查崩溃、解码或缓冲问题时临时打开详细日志。代价：增加JNI、字符串处理和日志I/O，可能干扰低性能设备的流畅度。"));
+        options.add(option(DV7_HDR10_FALLBACK, DECODE, "DV7回退HDR10", "作用：MPV 自动输出使用 GPU 路径时，允许 Dolby Vision Profile 7 使用 HDR10 基底层播放，默认开启。关闭后会优先尝试原生 DV7 电视直出，适配能力声明不完整但实际可解码的设备；若设备确实不支持，可能黑屏或播放失败，MPV 字幕、LUT 和 GPU 滤镜也可能不可用。"));
         options.add(option(AUDIO_PASSTHROUGH, AUDIO, "音频直通", "怎么选：电视/功放明确支持Dolby、DTS且需要多声道时开启；出现无声、杂音或同步异常立即关闭。代价：压缩音频交给外部设备后，MPV无法完成所有混音和重采样处理。"));
         options.add(option(PREFER_AAC, AUDIO, "AAC 优先", "怎么选：高级音轨无声或设备兼容性差时开启；功放支持原始多声道、希望保留最佳音轨时关闭。代价：可能从Dolby/DTS切到质量或声道较低的AAC。"));
     }

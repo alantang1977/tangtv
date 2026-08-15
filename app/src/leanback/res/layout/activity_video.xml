@@ -814,7 +814,6 @@
                 android:gravity="center"
                 android:minWidth="96dp"
                 android:nextFocusLeft="@id/searchDetail"
-                android:nextFocusRight="@id/tmdbRematch"
                 android:nextFocusUp="@id/actor"
                 android:nextFocusDown="@id/tmdbCast"
                 android:singleLine="true"
@@ -833,7 +832,7 @@
                 android:focusableInTouchMode="true"
                 android:gravity="center"
                 android:minWidth="96dp"
-                android:nextFocusRight="@id/tmdbRematch"
+                android:nextFocusLeft="@id/keep"
                 android:nextFocusUp="@id/actor"
                 android:nextFocusDown="@id/tmdbCast"
                 android:singleLine="true"
@@ -917,13 +916,27 @@
 
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/episodeTitle"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:background="@drawable/selector_button"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:focusableInTouchMode="false"
+                    android:gravity="center"
+                    android:minHeight="40dp"
+                    android:minWidth="112dp"
+                    android:nextFocusRight="@id/episodeReverse"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
                     android:text="@string/detail_episode"
                     android:textColor="@color/white"
                     android:textSize="18sp"
                     android:textStyle="bold" />
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
 
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/episodeReverse"
@@ -934,6 +947,7 @@
                     android:focusableInTouchMode="true"
                     android:gravity="center"
                     android:minWidth="76dp"
+                    android:nextFocusLeft="@id/episodeTitle"
                     android:text="@string/detail_episode_reverse"
                     android:textColor="@color/white"
                     android:textSize="16sp" />

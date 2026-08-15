@@ -26,6 +26,7 @@ public class Episode implements Parcelable, Diffable<Episode> {
     private int number;
     private boolean selected;
     private TmdbEpisode tmdbEpisode;
+    private transient boolean tmdbEpisodeMapped;
 
     private Episode(String name, String desc, String url) {
         this.number = Util.getEpisodeNumber(name);
@@ -111,6 +112,16 @@ public class Episode implements Parcelable, Diffable<Episode> {
 
     public void setTmdbEpisode(TmdbEpisode tmdbEpisode) {
         this.tmdbEpisode = tmdbEpisode;
+        this.tmdbEpisodeMapped = false;
+    }
+
+    public void setMappedTmdbEpisode(TmdbEpisode tmdbEpisode) {
+        this.tmdbEpisode = tmdbEpisode;
+        this.tmdbEpisodeMapped = tmdbEpisode != null;
+    }
+
+    public boolean isTmdbEpisodeMapped() {
+        return tmdbEpisodeMapped;
     }
 
     public int getScore(String name, int number) {

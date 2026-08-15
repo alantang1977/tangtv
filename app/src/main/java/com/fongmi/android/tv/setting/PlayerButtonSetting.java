@@ -21,6 +21,7 @@ public class PlayerButtonSetting {
     public static final String PLAYER = "player";
     public static final String DECODE = "decode";
     public static final String PLAY_PARAMS = "play_params";
+    public static final String MULTI_THREAD_PROXY = "multi_thread_proxy";
     public static final String CODEC_CAPABILITY = "codec_capability";
     public static final String SPEED = "speed";
     public static final String SCALE = "scale";
@@ -56,6 +57,7 @@ public class PlayerButtonSetting {
             new Item(PLAYER, R.string.play_exo),
             new Item(DECODE, R.string.play_decode),
             new Item(PLAY_PARAMS, R.string.play_params),
+            new Item(MULTI_THREAD_PROXY, R.string.multi_thread_proxy_button),
             new Item(CODEC_CAPABILITY, R.string.codec_capability_short),
             new Item(SPEED, R.string.play_speed),
             new Item(SCALE, R.string.play_scale),

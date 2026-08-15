@@ -108,6 +108,13 @@ public class PlaySpec {
         return copy;
     }
 
+    public PlaySpec copyForPlayback(String playbackUrl, Map<String, String> playbackHeaders) {
+        PlaySpec copy = new PlaySpec(key, playbackUrl, playbackHeaders, format, drm, subs, danmakus, metadata)
+                .setSource(parseResult, parseSource, parseUseParse);
+        copy.playbackTraceId = playbackTraceId;
+        return copy;
+    }
+
     public PlaybackRoute.Resolution getPlaybackRoute() {
         return playbackRoute;
     }

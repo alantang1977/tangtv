@@ -101,6 +101,28 @@ public class TmdbEpisodeMatcherTest {
     }
 
     @Test
+    public void allowsOnlyExplicitlyMarkedCrossSeasonMapping() {
+        Episode episode = Episode.create("11", "http://example.test/11");
+        TmdbEpisode tmdbEpisode = new TmdbEpisode(1, "Season 2 Episode 1", "", "", "", 0, 0, 0, 2);
+
+        assertFalse(TmdbEpisodeMatcher.shouldApply(episode, tmdbEpisode, 1));
+        assertTrue(TmdbEpisodeMatcher.shouldApplyMapped(episode, tmdbEpisode, 2, 1));
+        episode.setMappedTmdbEpisode(tmdbEpisode);
+        assertTrue(TmdbEpisodeMatcher.shouldApply(episode, tmdbEpisode, 1));
+        assertFalse(TmdbEpisodeMatcher.shouldApply(episode, new TmdbEpisode(1, "Other", "", "", "", 0, 0, 0, 2), 1));
+    }
+
+    @Test
+    public void mappedEpisodeMustMatchExpectedTmdbSeason() {
+        Episode episode = Episode.create("11", "http://example.test/11");
+        TmdbEpisode seasonTwoEpisode = new TmdbEpisode(1, "Season 2 Episode 1", "", "", "", 0, 0, 0, 2);
+        TmdbEpisode wrongSeasonEpisode = new TmdbEpisode(1, "Season 1 Episode 1", "", "", "", 0, 0, 0, 1);
+
+        assertTrue(TmdbEpisodeMatcher.shouldApplyMapped(episode, seasonTwoEpisode, 2, 1));
+        assertFalse(TmdbEpisodeMatcher.shouldApplyMapped(episode, wrongSeasonEpisode, 2, 1));
+    }
+
+    @Test
     public void rejectsWhenSourceNumberMismatchesTmdb() {
         // 新逻辑：文件名有明确集号时，必须与 TMDB 集号一致才匹配
         // 即使 mappedNumber 说它是第1集，但文件名是"第14集"，就不应该匹配到 TMDB 第1集

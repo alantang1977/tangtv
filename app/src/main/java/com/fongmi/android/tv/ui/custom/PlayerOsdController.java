@@ -26,7 +26,9 @@ import androidx.media3.common.Tracks;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.player.DolbyVisionFormatLabel;
 import com.fongmi.android.tv.player.PlayerManager;
+import com.fongmi.android.tv.player.PlaybackDiagnosticsSourcePolicy;
 import com.fongmi.android.tv.player.PlaybackRoute;
 import com.fongmi.android.tv.player.engine.PlayerCacheState;
 import com.fongmi.android.tv.player.engine.PlayerEngine;
@@ -188,7 +190,7 @@ public class PlayerOsdController {
         }
         setTextSize(miniSp);
         PlayerManager player = source.getPlayer();
-        updateSpeed();
+        updateSpeed(player);
 
         // 控制栏显示时的处理：
         // - leanback: suppressed=false，强制显示 OSD 的标题/分辨率/时间（因为控制栏没有自己的 title/size）
@@ -373,7 +375,11 @@ public class PlayerOsdController {
         miniProgress.setVisibility(View.GONE);
     }
 
-    private void updateSpeed() {
+    private void updateSpeed(PlayerManager player) {
+        if (player == null || PlaybackDiagnosticsSourcePolicy.isLocal(player.getUrl())) {
+            resetSpeed();
+            return;
+        }
         long total = TrafficStats.getUidRxBytes(UID);
         if (total == TrafficStats.UNSUPPORTED) {
             lastSpeedKBps = 0;
@@ -403,7 +409,8 @@ public class PlayerOsdController {
                 TextUtils.isEmpty(networkProtection) ? "" : networkProtection,
                 "可支撑 " + new DecimalFormat("0.00x").format(player.getNetworkProtectionSupportedSpeed()),
                 "当前 " + new DecimalFormat("0.00x").format(player.getEffectiveSpeed()));
-        String network = player.isExo() ? join(" / ",
+        boolean localSource = PlaybackDiagnosticsSourcePolicy.isLocal(player.getUrl());
+        String network = localSource ? "本地文件 / 不检测网速" : player.isExo() ? join(" / ",
                 consumption > 0 ? "消费需求 " + formatBitrate(consumption) : "",
                 stableThroughput > 0 ? "稳定吞吐 " + formatBitrate(stableThroughput) : "",
                 stableThroughput > 0 && consumption > 0 ? "网络余量 " + formatSignedBitrate(stableThroughput - consumption) : "")
@@ -412,10 +419,13 @@ public class PlayerOsdController {
         String nativeCache = player.isMpv() ? summarizeNativeCache(player.getCacheState()) : "";
         String renderDiagnostics = player.isMpv() ? player.getRenderDiagnostics() : "";
         String runtimeDiagnostics = player.isMpv() ? player.getRuntimeDiagnostics() : "";
+        String gpuLoad = getGpuLoadText(player);
         String frameTiming = player.isExo() ? summarizeFrameTiming() : "";
-        String videoText = summarizeVideo(video, player, snapshot.videoDecoderName(), getVideoTrackState(player));
-        String sourceVideoText = summarizeSourceVideo(
-                player.getVideoPlaybackDetails(), video);
+        PlayerEngine.VideoPlaybackDetails videoDetails =
+                player.getVideoPlaybackDetails();
+        String videoText = summarizeVideo(video, player,
+                snapshot.videoDecoderName(), getVideoTrackState(player),
+                videoDetails);
         AudioTrackState audioTrack = getAudioTrackState(player);
         String audioText = summarizeAudio(audio, audioTrack, snapshot.audioDecoderName());
         String render = PlayerSetting.getRender() == PlayerSetting.RENDER_SURFACE ? "Surface" : "Texture";
@@ -431,17 +441,17 @@ public class PlayerOsdController {
         String main = join("\n",
                 TextUtils.isEmpty(error) ? "" : row("错误", error),
                 row("视频", videoText),
-                TextUtils.isEmpty(sourceVideoText) ? "" : row("源片", sourceVideoText),
                 row("音频", audioText),
                 row("网络", network),
-                player.isExo() ? row("保流畅", strategy) : "",
+                player.isExo() && !localSource ? row("保流畅", strategy) : "",
                 TextUtils.isEmpty(nativeCache) ? "" : row("MPV缓存", nativeCache),
                 TextUtils.isEmpty(renderDiagnostics) ? "" : row("MPV渲染", renderDiagnostics),
                 TextUtils.isEmpty(runtimeDiagnostics) ? "" : row("MPV运行", runtimeDiagnostics),
+                row("GPU负载", gpuLoad),
                 TextUtils.isEmpty(frameTiming) ? "" : row("帧调度", frameTiming),
                 row("播放", playback),
                 row("配置", playerText),
-                row("结论", getDiagnosis(player, snapshot, video, audioTrack)));
+                row("结论", getDiagnosis(player, snapshot, video, audioTrack, localSource)));
         String extra = join("\n",
                 row("设备", getDeviceText()),
                 row("系统", getSystemText()),
@@ -452,20 +462,28 @@ public class PlayerOsdController {
         return new DiagnosticsText(main, extra);
     }
 
-    private String getDiagnosis(PlayerManager player, PlaybackAnalyticsListener.Snapshot snapshot, Format video, AudioTrackState audioTrack) {
+    private String getDiagnosis(PlayerManager player, PlaybackAnalyticsListener.Snapshot snapshot, Format video, AudioTrackState audioTrack, boolean localSource) {
         if (isDecodeError(snapshot) && player.isHardDecode()) return "硬件解码失败：设备可能不支持该视频编码、分辨率、帧率或规格";
         if (!TextUtils.isEmpty(snapshot.errorCode())) return "播放器报错，先看错误行";
         if (audioTrack.hasTracks() && audioTrack.isUnsupported()) return "音频轨不支持：" + summarizeAudioFormat(audioTrack.format()) + " / " + supportText(audioTrack.support());
         if (player.isExo() && audioTrack.hasTracks() && !audioTrack.selected() && snapshot.audioFormat() == null && player.getPlaybackState() == androidx.media3.common.Player.STATE_READY) return "已发现音轨但未选中，可能无声";
         if (player.isExo() && audioTrack.hasTracks() && TextUtils.isEmpty(snapshot.audioDecoderName()) && player.getPlaybackState() == androidx.media3.common.Player.STATE_READY) return "已发现音轨但 decoder 未初始化，可能无声";
-        long mediaBitrate = getMediaBitrate(video, snapshot.audioFormat() != null ? snapshot.audioFormat() : audioTrack.format());
-        long availableBitrate = snapshot.bandwidthEstimate() > 0 ? snapshot.bandwidthEstimate() : lastSpeedKBps * 1024 * 8;
-        if (availableBitrate > 0 && mediaBitrate > 0 && availableBitrate < mediaBitrate * 13 / 10) return "网速可能低于资源码率";
-        if (player.isLoading() && player.getBufferedDuration() < 3000) return "缓冲偏少，可能是网络或源响应慢";
+        if (!localSource) {
+            long mediaBitrate = getMediaBitrate(video, snapshot.audioFormat() != null ? snapshot.audioFormat() : audioTrack.format());
+            long availableBitrate = snapshot.bandwidthEstimate() > 0 ? snapshot.bandwidthEstimate() : lastSpeedKBps * 1024 * 8;
+            if (availableBitrate > 0 && mediaBitrate > 0 && availableBitrate < mediaBitrate * 13 / 10) return "网速可能低于资源码率";
+            if (player.isLoading() && player.getBufferedDuration() < 3000) return "缓冲偏少，可能是网络或源响应慢";
+        }
         if (player.getDroppedFrames() >= 60) return "掉帧较多，可能是解码或渲染压力";
-        if (formatBitrateValue(video) >= 30_000_000) return "资源码率较高，对网络和解码要求高";
+        if (!localSource && formatBitrateValue(video) >= 30_000_000) return "资源码率较高，对网络和解码要求高";
         if (player.isExo() && audioTrack.hasTracks() && snapshot.audioFormat() == null) return "正在等待音频轨信息";
         return "正常";
+    }
+
+    private String getGpuLoadText(PlayerManager player) {
+        String renderer = player.getGpuLoadDiagnostics();
+        if (!TextUtils.isEmpty(renderer)) return renderer;
+        return "-";
     }
 
     private String getErrorText(PlayerManager player, PlaybackAnalyticsListener.Snapshot snapshot) {
@@ -496,17 +514,29 @@ public class PlayerOsdController {
         return "ERROR_CODE_DECODER_INIT_FAILED".equals(code) || "ERROR_CODE_DECODER_QUERY_FAILED".equals(code) || "ERROR_CODE_DECODING_FAILED".equals(code);
     }
 
-    private String summarizeVideo(Format format, PlayerManager player, String decoder, VideoTrackState videoTrack) {
+    private String summarizeVideo(Format format, PlayerManager player,
+                                  String decoder,
+                                  VideoTrackState videoTrack,
+                                  PlayerEngine.VideoPlaybackDetails details) {
         if (videoTrack.hasTracks()) format = mergeFormat(format, videoTrack.format());
         String size = getSize(format, player);
         String fps = getFrameRate(format, player);
         String bitrate = getBitrate(format, player);
-        String codec = format == null || TextUtils.isEmpty(format.codecs) ? "codec -" : "codec " + format.codecs;
+        boolean dolbyVision = details != null
+                && details.hasDolbyVisionSource();
+        String formatName = dolbyVision
+                ? DolbyVisionFormatLabel.formatName(details)
+                : getVideoCodecName(format);
+        String codecValue = dolbyVision
+                ? DolbyVisionFormatLabel.codecText(details)
+                : format == null ? "" : format.codecs;
+        String codec = TextUtils.isEmpty(codecValue)
+                ? "codec -" : "codec " + codecValue;
         String color = getColor(format).replace("color ", "色彩 ");
         String support = videoTrack.hasTracks() && !videoTrack.isHandled() ? supportText(videoTrack.support()) : "";
         String decode = "decoder " + emptyDash(decoderText(player, decoder));
         return join(" / ",
-                "格式 " + emptyDash(getVideoCodecName(format)),
+                "格式 " + emptyDash(formatName),
                 "分辨率 " + emptyDash(size),
                 "帧率 " + emptyDash(fps),
                 "码率 " + emptyDash(bitrate),
@@ -550,19 +580,6 @@ public class PlayerOsdController {
         }
         if (player.isIjk()) return player.isHardDecode() ? "IJK mediacodec" : "IJK ffmpeg";
         return "";
-    }
-
-    private String summarizeSourceVideo(
-            PlayerEngine.VideoPlaybackDetails details, Format current) {
-        if (details == null || !details.hasDolbyVisionSource()) return "";
-        String profile = String.format(Locale.US, "%02d",
-                details.dolbyVisionProfile());
-        String codecs = TextUtils.isEmpty(details.sourceCodecs())
-                ? "dvhe." + profile : details.sourceCodecs();
-        String output = outputHdrName(current);
-        return "Dolby Vision Profile " + details.dolbyVisionProfile()
-                + "（DV." + profile + "） / " + codecs
-                + " / 已回退" + (TextUtils.isEmpty(output) ? "" : "到 " + output);
     }
 
     private String audioDecoderText(String decoder) {

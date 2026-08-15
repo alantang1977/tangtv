@@ -132,6 +132,7 @@ public final class AiCompletionClient {
             default:
                 body.addProperty("model", safe.getModel());
                 body.addProperty("input", Objects.toString(prompt, ""));
+                body.addProperty("max_output_tokens", MAX_OUTPUT_TOKENS);
                 headers.put("Authorization", "Bearer " + safe.getApiKey());
                 break;
         }

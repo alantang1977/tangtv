@@ -345,9 +345,15 @@ public class MpvPlayerEngine implements PlayerEngine {
     }
 
     @Override
+    public String getGpuLoadDiagnostics() {
+        return player.getGpuLoadDiagnostics();
+    }
+
+    @Override
     public VideoPlaybackDetails getVideoPlaybackDetails() {
         MpvPlayer.VideoTrackDiagnostics details =
                 player.getSelectedVideoTrackDiagnostics();
+        String currentVo = player.getObservedCurrentVideoOutput();
         return new VideoPlaybackDetails(
                 details.sourceCodecs(),
                 details.dolbyVisionProfile(),
@@ -355,7 +361,16 @@ public class MpvPlayerEngine implements PlayerEngine {
                 details.decodedCodec(),
                 details.decoderName(),
                 player.getObservedHwdecCurrent(),
-                details.outputColorInfo());
+                details.outputColorInfo(),
+                isDolbyVisionHdr10Fallback(details, currentVo));
+    }
+
+    static boolean isDolbyVisionHdr10Fallback(
+            MpvPlayer.VideoTrackDiagnostics details, String currentVo) {
+        if (details == null || details.dolbyVisionProfile() != 7
+                || currentVo == null) return false;
+        String output = currentVo.trim().toLowerCase(java.util.Locale.US);
+        return output.equals("gpu") || output.startsWith("gpu-next");
     }
 
     @Override

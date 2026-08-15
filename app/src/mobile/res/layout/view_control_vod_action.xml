@@ -38,6 +38,10 @@
             android:id="@+id/playParams"
             style="@style/Control"
             android:text="@string/play_params" />
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/multiThreadProxy"
+            style="@style/Control"
+            android:text="@string/multi_thread_proxy_button" />
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/codecCapability"

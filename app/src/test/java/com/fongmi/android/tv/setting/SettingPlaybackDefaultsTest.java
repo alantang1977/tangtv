@@ -60,6 +60,39 @@ public class SettingPlaybackDefaultsTest {
         assertPersonalOwnsEpisodeHistory("mobile", "fragment", "Fragment");
     }
 
+    @Test
+    public void resetApp_isUnderPersonalSettings() throws Exception {
+        Path root = moduleRoot();
+        String mobileLayout = read(root.resolve(Path.of("src", "mobile", "res", "layout", "fragment_setting_personal.xml")));
+        String leanbackLayout = read(root.resolve(Path.of("src", "leanback", "res", "layout", "activity_setting_personal.xml")));
+        String mobileSource = read(root.resolve(Path.of("src", "mobile", "java", "com", "fongmi", "android", "tv", "ui", "fragment", "SettingPersonalFragment.java")));
+        String leanbackSource = read(root.resolve(Path.of("src", "leanback", "java", "com", "fongmi", "android", "tv", "ui", "activity", "SettingPersonalActivity.java")));
+        String utilSource = read(root.resolve(Path.of("src", "main", "java", "com", "fongmi", "android", "tv", "utils", "Util.java")));
+
+        assertTrue(mobileLayout.contains("@+id/resetApp"));
+        assertTrue(leanbackLayout.contains("@+id/resetApp"));
+        assertTrue(mobileLayout.contains("@string/setting_reset_app"));
+        assertTrue(leanbackLayout.contains("@string/setting_reset_app"));
+        assertTrue(mobileSource.contains("mBinding.resetApp.setOnClickListener(this::showResetAppDialog)"));
+        assertTrue(leanbackSource.contains("mBinding.resetApp.setOnClickListener(this::showResetAppDialog)"));
+        String confirmedReset = ".setPositiveButton(R.string.dialog_positive, (dialog, which) -> resetApp())";
+        assertTrue(mobileSource.contains(confirmedReset));
+        assertTrue(leanbackSource.contains(confirmedReset));
+        assertTrue(mobileSource.contains("if (!Util.resetApp()) Notify.show(R.string.reset_app_failed)"));
+        assertTrue(leanbackSource.contains("if (!Util.resetApp()) Notify.show(R.string.reset_app_failed)"));
+        assertTrue(utilSource.contains("ActivityManager manager = App.get().getSystemService(ActivityManager.class)"));
+        assertTrue(utilSource.contains("manager.clearApplicationUserData()"));
+        assertTrue(utilSource.contains("catch (RuntimeException e)"));
+        assertFalse(utilSource.contains("pm clear"));
+        for (String values : new String[]{"values", "values-zh-rCN", "values-zh-rTW"}) {
+            String strings = read(root.resolve(Path.of("src", "main", "res", values, "strings.xml")));
+            assertTrue(strings.contains("<string name=\"setting_reset_app\">"));
+            assertTrue(strings.contains("<string name=\"dialog_reset_app\">"));
+            assertTrue(strings.contains("<string name=\"dialog_reset_app_data\">"));
+            assertTrue(strings.contains("<string name=\"reset_app_failed\">"));
+        }
+    }
+
     private static void assertPlayerOwnsAutoSkip(String flavor, String layoutPrefix, String classSuffix) throws Exception {
         Path root = moduleRoot();
         assertTrue(read(root.resolve(Path.of("src", flavor, "res", "layout", layoutPrefix + "_setting_player.xml"))).contains("@+id/autoSkipIntroOutro"));

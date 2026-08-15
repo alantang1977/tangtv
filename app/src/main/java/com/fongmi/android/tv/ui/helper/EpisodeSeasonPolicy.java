@@ -15,10 +15,21 @@ public final class EpisodeSeasonPolicy {
     private EpisodeSeasonPolicy() {
     }
 
-    public static boolean canSliceBySeasonCounts(int episodeCount, List<Integer> seasons, Map<Integer, Integer> seasonCounts) {
-        if (episodeCount <= 0 || seasons == null || seasons.size() <= 1 || seasonCounts == null || seasonCounts.isEmpty()) return false;
-        int total = 0;
+    /** Season 0 contains specials and is not part of a flat ordinary-season sequence. */
+    public static List<Integer> sliceableSeasons(List<Integer> seasons) {
+        if (seasons == null || seasons.isEmpty()) return List.of();
+        List<Integer> result = new ArrayList<>();
         for (Integer season : seasons) {
+            if (season != null && season > 0) result.add(season);
+        }
+        return List.copyOf(result);
+    }
+
+    public static boolean canSliceBySeasonCounts(int episodeCount, List<Integer> seasons, Map<Integer, Integer> seasonCounts) {
+        List<Integer> countedSeasons = sliceableSeasons(seasons);
+        if (episodeCount <= 0 || countedSeasons.size() <= 1 || seasonCounts == null || seasonCounts.isEmpty()) return false;
+        int total = 0;
+        for (Integer season : countedSeasons) {
             int count = Math.max(0, seasonCounts.getOrDefault(season, 0));
             if (count <= 0) return false;
             total += count;
@@ -29,9 +40,10 @@ public final class EpisodeSeasonPolicy {
 
     public static <T> List<T> sliceBySeasonCounts(List<T> episodes, List<Integer> seasons, Map<Integer, Integer> seasonCounts, int selectedSeason) {
         if (episodes == null || episodes.isEmpty()) return List.of();
-        if (!canSliceBySeasonCounts(episodes.size(), seasons, seasonCounts)) return episodes;
+        List<Integer> countedSeasons = sliceableSeasons(seasons);
+        if (!canSliceBySeasonCounts(episodes.size(), countedSeasons, seasonCounts)) return episodes;
         int start = 0;
-        for (Integer season : seasons) {
+        for (Integer season : countedSeasons) {
             int count = Math.max(0, seasonCounts.getOrDefault(season, 0));
             int end = Math.min(episodes.size(), start + count);
             if (season == selectedSeason) return start < end ? episodes.subList(start, end) : List.of();
@@ -56,6 +68,16 @@ public final class EpisodeSeasonPolicy {
             int firstSeason,
             List<Integer> tmdbSeasons,
             Map<Integer, Integer> seasonCounts) {
+        return resolveAvailableSeasons(sourceSeasonNumbers, titleSeason, firstSeason, tmdbSeasons, seasonCounts, null);
+    }
+
+    public static List<Integer> resolveAvailableSeasons(
+            List<Integer> sourceSeasonNumbers,
+            int titleSeason,
+            int firstSeason,
+            List<Integer> tmdbSeasons,
+            Map<Integer, Integer> seasonCounts,
+            List<Integer> sourceEpisodeNumbers) {
         if (sourceSeasonNumbers == null || sourceSeasonNumbers.isEmpty() || tmdbSeasons == null || tmdbSeasons.isEmpty()) return List.of();
         boolean hasAnyExplicitSeason = hasAnyExplicitSeason(sourceSeasonNumbers);
         if (hasAnyExplicitSeason) {
@@ -79,7 +101,9 @@ public final class EpisodeSeasonPolicy {
         if (titleSeason >= 0) return tmdbSeasons.contains(titleSeason) ? List.of(titleSeason) : List.of();
         if (tmdbSeasons.size() == 1) return List.of(tmdbSeasons.get(0));
         int sourceEpisodeCount = sourceSeasonNumbers.size();
-        if (canSliceBySeasonCounts(sourceEpisodeCount, tmdbSeasons, seasonCounts)) return List.copyOf(tmdbSeasons);
+        if (canSliceBySeasonCounts(sourceEpisodeCount, tmdbSeasons, seasonCounts)) return sliceableSeasons(tmdbSeasons);
+        List<Integer> keyedSeasons = mappedSeasonsByEpisodeNumbers(sourceEpisodeNumbers, tmdbSeasons, seasonCounts);
+        if (keyedSeasons.size() > 1) return keyedSeasons;
         if (tmdbSeasons.contains(firstSeason) && shouldUseSingleSeasonEpisodeData(sourceEpisodeCount, firstSeason, tmdbSeasons, seasonCounts)) return List.of(firstSeason);
         return List.of();
     }
@@ -108,7 +132,7 @@ public final class EpisodeSeasonPolicy {
     }
 
     public static List<Integer> episodeMetadataSeasonCandidates(int sourceSeason) {
-        return sourceSeason >= 0 ? List.of(sourceSeason) : List.of(1, 0);
+        return sourceSeason >= 0 ? List.of(sourceSeason) : List.of();
     }
 
     public static String episodePositionCacheKey(int season, String episodeName) {
@@ -132,6 +156,94 @@ public final class EpisodeSeasonPolicy {
             if (season == null || season < 0 || !tmdbSeasons.contains(season)) return false;
         }
         return true;
+    }
+
+    /**
+     * Returns true only when a flat source line is a complete 1..N sequence and
+     * TMDB season counts cover it exactly. This prevents gap/duplicate lists
+     * from being silently remapped by position.
+     */
+    public static boolean canMapFlatEpisodeNumbers(
+            List<Integer> sourceEpisodeNumbers,
+            List<Integer> seasons,
+            Map<Integer, Integer> seasonCounts) {
+        if (sourceEpisodeNumbers == null || sourceEpisodeNumbers.isEmpty()) return false;
+        if (!canSliceBySeasonCounts(sourceEpisodeNumbers.size(), seasons, seasonCounts)) return false;
+        for (int index = 0; index < sourceEpisodeNumbers.size(); index++) {
+            Integer number = sourceEpisodeNumbers.get(index);
+            if (number == null || number != index + 1) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Returns true when at least one extracted source episode number can be
+     * mapped to an ordinary TMDB season. Missing, duplicate, unordered and
+     * out-of-range numbers do not shift other episodes and are ignored.
+     */
+    public static boolean canMapFlatEpisodeKeys(
+            List<Integer> sourceEpisodeNumbers,
+            List<Integer> seasons,
+            Map<Integer, Integer> seasonCounts) {
+        return !mappedSeasonsByEpisodeNumbers(sourceEpisodeNumbers, seasons, seasonCounts).isEmpty();
+    }
+
+    /** Returns ordinary TMDB seasons referenced by extracted episode-number keys. */
+    public static List<Integer> mappedSeasonsByEpisodeNumbers(
+            List<Integer> sourceEpisodeNumbers,
+            List<Integer> seasons,
+            Map<Integer, Integer> seasonCounts) {
+        List<Integer> ordinarySeasons = sliceableSeasons(seasons);
+        if (sourceEpisodeNumbers == null || sourceEpisodeNumbers.isEmpty()
+                || ordinarySeasons.isEmpty() || seasonCounts == null || seasonCounts.isEmpty()) {
+            return List.of();
+        }
+        List<Integer> touched = new ArrayList<>();
+        for (Integer number : sourceEpisodeNumbers) {
+            SeasonEpisode mapped = mapFlatEpisodeNumber(number == null ? -1 : number, ordinarySeasons, seasonCounts);
+            if (mapped != null && !touched.contains(mapped.seasonNumber())) touched.add(mapped.seasonNumber());
+        }
+        if (touched.isEmpty()) return List.of();
+        List<Integer> ordered = new ArrayList<>();
+        for (Integer season : ordinarySeasons) if (touched.contains(season)) ordered.add(season);
+        return List.copyOf(ordered);
+    }
+
+    /** Returns ordinary TMDB seasons touched by a 1..N source prefix. */
+    public static List<Integer> coveredSeasonsByEpisodeCount(
+            int episodeCount,
+            List<Integer> seasons,
+            Map<Integer, Integer> seasonCounts) {
+        List<Integer> ordinarySeasons = sliceableSeasons(seasons);
+        if (episodeCount <= 0 || ordinarySeasons.isEmpty() || seasonCounts == null || seasonCounts.isEmpty()) return List.of();
+        int remaining = episodeCount;
+        List<Integer> covered = new ArrayList<>();
+        for (Integer season : ordinarySeasons) {
+            int count = Math.max(0, seasonCounts.getOrDefault(season, 0));
+            if (count <= 0) return List.of();
+            covered.add(season);
+            if (remaining <= count) return List.copyOf(covered);
+            remaining -= count;
+        }
+        return List.of();
+    }
+
+    public static SeasonEpisode mapFlatEpisodeNumber(
+            int sourceEpisodeNumber,
+            List<Integer> seasons,
+            Map<Integer, Integer> seasonCounts) {
+        if (sourceEpisodeNumber <= 0 || seasons == null || seasonCounts == null) return null;
+        int offset = sourceEpisodeNumber - 1;
+        for (Integer season : sliceableSeasons(seasons)) {
+            int count = Math.max(0, seasonCounts.getOrDefault(season, 0));
+            if (count <= 0) return null;
+            if (offset < count) return new SeasonEpisode(season, offset + 1);
+            offset -= count;
+        }
+        return null;
+    }
+
+    public record SeasonEpisode(int seasonNumber, int episodeNumber) {
     }
 
     public static int linearEpisodeNumber(int sourceEpisodeNumber, int zeroBasedIndex) {

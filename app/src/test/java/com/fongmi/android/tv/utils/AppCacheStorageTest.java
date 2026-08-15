@@ -18,6 +18,8 @@ public class AppCacheStorageTest {
 
         assertTrue(setting.contains("AppCache.get(AppCache.KEY_TMDB_MATCH)"));
         assertTrue(setting.contains("AppCache.put(AppCache.KEY_TMDB_MATCH"));
+        assertTrue(setting.contains("AppCache.get(AppCache.KEY_TMDB_SEASON_MATCH)"));
+        assertTrue(setting.contains("AppCache.put(AppCache.KEY_TMDB_SEASON_MATCH"));
         assertFalse(setting.contains("Prefers.getString(\"tmdb_match_cache\")"));
         assertFalse(setting.contains("Prefers.put(\"tmdb_match_cache\""));
 
@@ -56,6 +58,7 @@ public class AppCacheStorageTest {
         assertTrue(fileUtil.contains("Path.clear(Path.cache())"));
         assertTrue(fileUtil.contains("AppCache.clearLegacyPreferences()"));
         assertTrue(appCache.contains(".remove(KEY_TMDB_MATCH)"));
+        assertTrue(appCache.contains(".remove(KEY_TMDB_SEASON_MATCH)"));
         assertTrue(appCache.contains(".remove(KEY_MEDIA_TITLE_LEARNING)"));
         assertTrue(appCache.contains("entry.getKey().startsWith(WEB_CACHE_PREFIX)"));
     }
@@ -65,6 +68,7 @@ public class AppCacheStorageTest {
         String backup = read(mainJava().resolve(Path.of("com", "fongmi", "android", "tv", "bean", "Backup.java")));
 
         assertFalse(backup.contains("\"tmdb_match_cache\""));
+        assertFalse(backup.contains("\"tmdb_season_match_cache\""));
         assertFalse(backup.contains("\"media_title_learning\""));
         assertTrue(backup.contains("if (key.startsWith(\"cache_\")) return false;"));
     }

@@ -331,7 +331,7 @@ public class TmdbDetailActivityLayoutTest {
         String nativeLayout = readLeanbackLayout("view_control_vod_action.xml");
         String fusionLayout = readLayout("activity_tmdb_detail.xml");
         List<String> nativeOrder = List.of("next", "prev", "episodes", "reset", "search", "change2", "fullscreen", "player", "decode", "playParams", "panDiagnostic", "codecCapability", "speed", "scale", "actionQuality", "lut", "karaoke", "immersiveAudio", "text", "audio", "video", "opening", "ending", "danmaku", "adFeedback", "title", "cast", "timer", "repeat");
-        List<String> fusionOrder = List.of("playerNext", "playerPrev", "playerEpisodes", "playerRefresh", "playerChangeSource", "playerFullscreenAction", "playerExternal", "playerDecode", "playerPlayParams", "playerCodecCapability", "playerSpeed", "playerScale", "playerQuality", "playerLut", "playerParse", "playerDisplay", "playerTextTrack", "playerAudioTrack", "playerVideoTrack", "playerOpening", "playerEnding", "playerDanmaku", "playerAdFeedback", "playerChapter", "playerRepeat");
+        List<String> fusionOrder = List.of("playerNext", "playerPrev", "playerEpisodes", "playerRefresh", "playerChangeSource", "playerFullscreenAction", "playerExternal", "playerDecode", "playerPlayParams", "playerMultiThreadProxy", "playerCodecCapability", "playerSpeed", "playerScale", "playerQuality", "playerLut", "playerParse", "playerDisplay", "playerTextTrack", "playerAudioTrack", "playerVideoTrack", "playerOpening", "playerEnding", "playerDanmaku", "playerAdFeedback", "playerChapter", "playerRepeat");
 
         assertAndroidIdOrder("native leanback player control order", nativeLayout, nativeOrder);
         assertAndroidIdOrder("fusion inline player control order", fusionLayout, fusionOrder);
@@ -1009,7 +1009,7 @@ public class TmdbDetailActivityLayoutTest {
         int bindTmdb = source.indexOf("private void bindTmdbEpisodes(List<Episode> sourceEpisodes, int tmdbSeason)", bindSeason);
         int fetchSeason = source.indexOf("private void fetchSeasonIfNeeded(int seasonNumber, boolean refresh)", bindTmdb);
         int fetchSeasonEnd = source.indexOf("private void refreshFirstSeasonIfStaleSplit", fetchSeason);
-        int sourceEpisodeResolver = source.indexOf("private int sourceSeasonNumber(Episode episode)", fetchSeasonEnd);
+        int sourceEpisodeResolver = source.indexOf("private int explicitSourceSeasonNumber(Episode episode)", fetchSeasonEnd);
         int sourceEpisodeResolverEnd = source.indexOf("private int sourceSeasonNumber(String text)", sourceEpisodeResolver);
 
         assertTrue(sourcePath + " is missing cached episode-season resolution",
@@ -1052,7 +1052,9 @@ public class TmdbDetailActivityLayoutTest {
                         && !applyLoadedBody.contains("clearSourceEpisodeSeasonCache();")
                         && applyLoadedBody.contains("clearEpisodeRenderCaches();"));
         assertTrue("full-list position and visibility calculations must reuse the cached season vector",
-                source.contains("List<Integer> sourceSeasons = sourceSeasonNumbers(flag.getEpisodes());")
+                sourceResolverBody.contains("sourceSeasonNumbers.add(explicitSourceSeasonNumber(episode));")
+                        && !sourceResolverBody.contains("sourceSeasonNumbers.add(sourceSeasonNumber(episode));")
+                        && source.contains("List<Integer> sourceSeasons = sourceSeasonNumbers(flag.getEpisodes());")
                         && source.contains("private int sourceSeasonNumberAt(List<Episode> episodes, int index, Episode episode)")
                         && source.contains("sourceSeasonNumberAt(episodes, index, episode)")
                         && source.contains("for (int i = 0; i < episodes.size(); i++) if (sourceSeasons.get(i) == selectedSeasonNumber)"));
@@ -2263,7 +2265,9 @@ public class TmdbDetailActivityLayoutTest {
         assertTrue("detail episodes should bind matched TMDB objects back onto source Episode items for playback cards and dialogs",
                 bindBody.contains("bindTmdbEpisodes(sourceEpisodes, tmdbSeason);")
                         && activity.contains("TmdbEpisode tmdbEpisode = tmdbEpisodes.get(position.number());")
-                        && activity.contains("episode.setTmdbEpisode(TmdbEpisodeMatcher.shouldApply(episode, tmdbEpisode, position.number()) ? tmdbEpisode : null);"));
+                        && activity.contains("TmdbEpisodeMatcher.shouldApplyMapped(episode, tmdbEpisode, position.season(), position.number())")
+                        && activity.contains("episode.setMappedTmdbEpisode(tmdbEpisode);")
+                        && activity.contains("episode.setTmdbEpisode(valid ? tmdbEpisode : null);"));
         assertTrue("season fetch completion should refresh against the active TMDB data season, not only the selected source season",
                 fetchBody.contains("seasonNumber == tmdbEpisodeDataSeason(selectedFlag == null ? null : selectedFlag.getEpisodes())"));
         assertTrue("stale split-season TMDB caches should trigger a one-shot fresh first-season probe for long single-season shows",

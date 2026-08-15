@@ -4,6 +4,8 @@
 
 本报告承接 `fongmi-related-repos-audit-2026-08-09.md`。前一轮已经逐项检查 2026-07-09 至 2026-08-09 的 394 个提交；本轮重新读取各仓库远端分支和提交图，重点处理 2026-08-10 的强推、重落基和新增提交。所有当前精确 revision 同时写入 `third_party/fongmi-repositories-lock.json`。
 
+> 当前集成状态（2026-08-12）：下文提交映射仍是准确的历史审计记录，但 Android Vulkan AImageReader 运行实现已经在后续实测后收敛为 `v5.5.6-202608072014` 单一路径，direct/compute/fragment 后端选择不再进入最终 native assets。
+
 ## 结论
 
 - `FongMi/TV@fongmi` 仍为 `1a19fee278fa2234da725d61a53bf59b69fe9127`，没有新的 App 提交可 cherry-pick。

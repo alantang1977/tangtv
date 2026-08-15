@@ -102,6 +102,8 @@ public class TmdbHeaderView {
 
         void onRematch();
 
+        default void onRematchLongClick() { onRematch(); }
+
         void onKeep();
     }
 
@@ -589,8 +591,14 @@ public class TmdbHeaderView {
             if (actionListener != null) actionListener.onChangeSourceLongClick();
             return true;
         });
-        headerRoot.findViewById(R.id.tmdbRematch).setOnClickListener(view -> {
+        View rematch = headerRoot.findViewById(R.id.tmdbRematch);
+        rematch.setOnClickListener(view -> {
             if (actionListener != null) actionListener.onRematch();
+        });
+        rematch.setOnLongClickListener(view -> {
+            if (actionListener == null) return false;
+            actionListener.onRematchLongClick();
+            return true;
         });
         headerRoot.findViewById(R.id.tmdbKeep).setOnClickListener(view -> {
             if (actionListener != null) actionListener.onKeep();

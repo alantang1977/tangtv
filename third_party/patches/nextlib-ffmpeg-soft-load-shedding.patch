@@ -366,13 +366,6 @@ index b4e2f3f..284d9d3 100644
  
      private native long ffmpegReset(long context);
  
-@@ -232,4 +252,4 @@ final class FfmpegVideoDecoder extends
-     private native int ffmpegReceiveFrame(
-             long context, int outputMode, VideoDecoderOutputBuffer outputBuffer, boolean decodeOnly);
- 
--}
-\ No newline at end of file
-+}
 diff --git a/media3ext/src/main/java/io/github/anilbeesetti/nextlib/media3ext/ffdecoder/FfmpegVideoRenderer.java b/media3ext/src/main/java/io/github/anilbeesetti/nextlib/media3ext/ffdecoder/FfmpegVideoRenderer.java
 index 0e0991b..2f9ab29 100644
 --- a/media3ext/src/main/java/io/github/anilbeesetti/nextlib/media3ext/ffdecoder/FfmpegVideoRenderer.java

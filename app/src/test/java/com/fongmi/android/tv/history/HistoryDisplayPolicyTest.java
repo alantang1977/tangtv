@@ -7,6 +7,7 @@ import org.junit.Test;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class HistoryDisplayPolicyTest {
 
@@ -70,6 +71,18 @@ public class HistoryDisplayPolicyTest {
         assertEquals(120_000, result.getPosition());
         assertEquals(300_000, result.getDuration());
         org.junit.Assert.assertTrue(result.isCrossSourcePlayback());
+    }
+
+    @Test
+    public void playbackCopyKeepsCurrentSourceIdentity() {
+        History source = history("tv", 88, 100, "site@@@vod@@@1");
+        source.setCid(1);
+
+        History result = source.forPlaybackKey("site@@@vod@@@1", 1);
+
+        assertEquals("site@@@vod@@@1", result.getKey());
+        assertEquals(1, result.getCid());
+        assertFalse(result.isCrossSourcePlayback());
     }
 
     private static History history(String mediaType, int tmdbId, long createTime, String key) {

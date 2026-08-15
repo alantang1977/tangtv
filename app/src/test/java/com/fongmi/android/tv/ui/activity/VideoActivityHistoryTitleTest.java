@@ -16,7 +16,7 @@ public class VideoActivityHistoryTitleTest {
         for (Path sourcePath : List.of(videoActivity("mobile"), videoActivity("leanback"))) {
             String source = Files.readString(sourcePath, StandardCharsets.UTF_8);
             String intentSelection = methodBody(source, "private void applyIntentPlaybackSelection(Vod item)");
-            String directTmdbLaunch = methodBody(source, "public static void startDirectTmdb(Activity activity, String key, String id, String name, String pic, String mark, ArrayList<String> episodeTitles, TmdbItem item, Vod tmdbVod, Vod detailVod, String tmdbDetailCacheKey, String playFlag, String playEpisodeName, String playEpisodeUrl, int playSeasonNumber");
+            String directTmdbLaunch = methodBody(source, "public static void startDirectTmdb(Activity activity, String key, String id, String name, String pic, String mark, ArrayList<String> episodeTitles, TmdbItem item, Vod tmdbVod, Vod detailVod, String tmdbDetailCacheKey, String playFlag, String playEpisodeName, String playEpisodeUrl, int playSeasonNumber, int playEpisodeNumber, History resumeHistory)");
             String saveHistory = methodBody(source, "private void saveHistory(boolean exit)");
             String updateHistory = methodBody(source, "private void updateHistory(Episode item)");
             String updateVod = methodBody(source, "private void updateVod(Vod item)");
@@ -180,30 +180,38 @@ public class VideoActivityHistoryTitleTest {
                 "private void loadDetailSync(Vod vod, TmdbItem item, JsonObject cachedDetail, List<TmdbPerson> cachedCast, int generation)");
         String captureSeason = methodBody(source, "private void captureSourceSeason(Vod sourceVod, String sourceTitle)");
         assertTrue("TMDB source-season capture must preserve explicit season zero for specials",
-                captureSeason.contains("if (season < 0) season =")
-                        && !captureSeason.contains("if (season <= 0 && sourceVod")
-                        && !captureSeason.contains("if (flagSeason <= 0)"));
+                captureSeason.contains("titleSeasonNumber = EpisodeSeasonPolicy.resolveSourceSeason(")
+                        && captureSeason.contains("addExplicitSeason(explicit, EpisodeSeasonPolicy.resolveExplicitSourceSeason(")
+                        && source.contains("if (season >= 0 && !seasons.contains(season))"));
         assertTrue("TMDB source-season capture must not treat source-line ordinals as seasons",
                 captureSeason.contains("EpisodeSeasonPolicy.resolveExplicitSourceSeason(flag == null ? \"\" : flag.getShow())"));
         assertTrue("TMDB source-season capture must prefer source episode names over bound metadata",
                 captureSeason.indexOf("EpisodeSeasonPolicy.resolveExplicitSourceSeason(episode == null ? \"\" : episode.getName())") >= 0
                         && captureSeason.indexOf("EpisodeSeasonPolicy.resolveExplicitSourceSeason(episode == null ? \"\" : episode.getName())")
                         < captureSeason.indexOf("TmdbEpisode tmdbEpisode ="));
+        assertTrue("bound TMDB metadata must remain a history fallback instead of becoming explicit source-season evidence",
+                captureSeason.contains("List<Integer> metadata = new ArrayList<>();")
+                        && captureSeason.contains("addExplicitSeason(metadata, tmdbEpisode.getSeasonNumber());")
+                        && captureSeason.contains("explicitSourceSeasons = List.copyOf(explicit);")
+                        && captureSeason.contains("metadata.size() == 1 ? metadata.get(0) : -1"));
         Path detailPath = mainJava().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "TmdbDetailActivity.java"));
         String detailSource = Files.readString(detailPath, StandardCharsets.UTF_8);
+        String detailExplicitSeason = methodBody(detailSource, "private int explicitSourceSeasonNumber(Episode episode)");
         String detailEpisodeSeason = methodBody(detailSource, "private int sourceSeasonNumber(Episode episode)");
         assertTrue("standalone detail must prefer source episode names over bound TMDB metadata",
-                detailEpisodeSeason.indexOf("EpisodeSeasonPolicy.resolveExplicitSourceSeason(episode.getName())") >= 0
-                        && detailEpisodeSeason.indexOf("EpisodeSeasonPolicy.resolveExplicitSourceSeason(episode.getName())")
+                detailExplicitSeason.contains("EpisodeSeasonPolicy.resolveExplicitSourceSeason(episode.getName())")
+                        && detailEpisodeSeason.indexOf("explicitSourceSeasonNumber(episode)") >= 0
+                        && detailEpisodeSeason.indexOf("explicitSourceSeasonNumber(episode)")
                         < detailEpisodeSeason.indexOf("episode.getTmdbEpisode()"));
         String detailTitleSeason = methodBody(detailSource, "private int sourceTitleSeasonNumber()");
         assertTrue("standalone detail must not treat the selected source-line ordinal as a season",
                 detailTitleSeason.contains("EpisodeSeasonPolicy.resolveExplicitSourceSeason(selectedFlag.getShow())"));
         assertTrue("TMDB detail loading must preserve a previously captured source season",
-                detailSync.contains("if (sourceSeasonNumber < 0 && vod != null)"));
+                detailSync.contains("resolveSeason(vod, item, detail);"));
         assertTrue("TMDB detail loading must not overwrite the captured season from only the VOD name",
                 !detailSync.contains("sourceSeasonNumber = vod == null ? -1 : new MediaTitleParser().seasonNumber(vod.getName());"));
-        assertTrue("TMDB adapter must use the season candidate policy", source.contains("episodeMetadataSeasonCandidates(sourceSeasonNumber)"));
+        assertTrue("TMDB adapter must use structured season resolution", source.contains("TmdbSeasonResolver.resolve(")
+                && source.contains("seasonResolution.getSelectedSeason()"));
         assertTrue("TMDB adapter must not hard-code season 1 for every source", !source.contains("tmdbService.season(item, 1,"));
     }
     private static Path videoActivity(String sourceSet) {

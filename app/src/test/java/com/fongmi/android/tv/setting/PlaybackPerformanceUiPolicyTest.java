@@ -79,6 +79,19 @@ public class PlaybackPerformanceUiPolicyTest {
         }
     }
 
+    @Test
+    public void dv7FallbackControlIsAvailableForExoAndMpv() {
+        assertTrue(ids(PlaybackPerformanceCatalog.forKernel(
+                PlayerSetting.EXO, false)).contains(
+                PlaybackPerformanceCatalog.DV7_HDR10_FALLBACK));
+        assertTrue(ids(PlaybackPerformanceCatalog.forKernel(
+                PlayerSetting.MPV, false)).contains(
+                PlaybackPerformanceCatalog.DV7_HDR10_FALLBACK));
+        assertFalse(ids(PlaybackPerformanceCatalog.forKernel(
+                PlayerSetting.IJK, false)).contains(
+                PlaybackPerformanceCatalog.DV7_HDR10_FALLBACK));
+    }
+
     private static Set<String> ids(
             List<PlaybackPerformanceOption> options) {
         Set<String> ids = new HashSet<>();

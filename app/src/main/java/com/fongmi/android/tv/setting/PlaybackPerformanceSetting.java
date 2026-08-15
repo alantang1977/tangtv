@@ -46,6 +46,8 @@ public class PlaybackPerformanceSetting {
     private static final String KEY_LOAD_ONLY_SELECTED_TRACKS = "perf_load_only_selected_tracks";
     private static final String KEY_SURFACE_FIXED_SIZE = "perf_surface_fixed_size";
     private static final String KEY_DECODER_FALLBACK = "perf_decoder_fallback";
+    private static final String KEY_DV7_HDR10_FALLBACK =
+            "perf_dv7_hdr10_fallback";
     private static final String KEY_SOFT_VIDEO_TUNE = "perf_soft_video_tune";
     private static final String KEY_HIGH_BUFFER = "perf_high_buffer";
     private static final String KEY_BANDWIDTH_METER = "perf_bandwidth_meter";
@@ -362,6 +364,15 @@ public class PlaybackPerformanceSetting {
         putCustom(KEY_DECODER_FALLBACK, value);
     }
 
+    public static boolean isDv7Hdr10FallbackEnabled() {
+        ensureInitialized();
+        return Prefers.getBoolean(KEY_DV7_HDR10_FALLBACK, true);
+    }
+
+    public static void putDv7Hdr10FallbackEnabled(boolean value) {
+        putCustom(KEY_DV7_HDR10_FALLBACK, value);
+    }
+
     public static boolean isSoftVideoTuneEnabled() {
         ensureInitialized();
         return Prefers.getBoolean(KEY_SOFT_VIDEO_TUNE, true);
@@ -442,6 +453,7 @@ public class PlaybackPerformanceSetting {
                 + preloadDetailText()
                 + "\nMediaCodec异步：" + onOff(isCodecAsyncQueueingEnabled()) + "，动态调度：" + onOff(isDynamicSchedulingEnabled())
                 + "\n解码耗时推进：" + onOff(isVideoDurationProgressEnabled()) + "，输入丢帧阈值：" + onOff(isLateDropInputEnabled())
+                + "\nDV7回退HDR10：" + onOff(isDv7Hdr10FallbackEnabled())
                 + "\n只加载选中轨道：" + onOff(isLoadOnlySelectedTracksEnabled()) + "，Surface固定尺寸：" + onOff(isSurfaceFixedSizeEnabled())
                 + "\n动态网络保护：" + ExoPerformanceSetting.getNetworkProtectionText()
                 + "\n音频直通：" + onOff(PlayerSetting.isAudioPassThrough()) + "，AAC优先：" + onOff(PlayerSetting.isPreferAAC())
@@ -459,6 +471,7 @@ public class PlaybackPerformanceSetting {
         put(KEY_LOAD_ONLY_SELECTED_TRACKS, true);
         put(KEY_SURFACE_FIXED_SIZE, true);
         put(KEY_DECODER_FALLBACK, true);
+        put(KEY_DV7_HDR10_FALLBACK, true);
         put(KEY_SOFT_VIDEO_TUNE, true);
         put(KEY_HIGH_BUFFER, true);
         put(KEY_BANDWIDTH_METER, true);

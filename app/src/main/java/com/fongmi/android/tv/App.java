@@ -15,6 +15,7 @@ import androidx.annotation.Nullable;
 import androidx.core.os.HandlerCompat;
 
 import com.fongmi.android.tv.server.Server;
+import com.fongmi.android.tv.server.proxy.MultiThreadProxy;
 import com.fongmi.android.tv.playback.PlaybackRemoteSyncer;
 import com.fongmi.android.tv.player.PlaybackMemoryMonitor;
 import com.fongmi.android.tv.player.PlaybackSystemConditionMonitor;
@@ -132,10 +133,25 @@ public class App extends Application implements Application.ActivityLifecycleCal
     private void startBackgroundServicesNow() {
         SpiderDebug.log("startup", "background services start cost=%sms", System.currentTimeMillis() - time);
         Server.get().start();
+        startMultiThreadProxy();
         PlaybackRemoteSyncer.start();
         RemoteAgent.get().start();
         NsdDeviceDiscovery.register();
         SpiderDebug.log("startup", "background services ready cost=%sms", System.currentTimeMillis() - time);
+    }
+
+    private void startMultiThreadProxy() {
+        try {
+            var snapshot = MultiThreadProxy.applyStored();
+            SpiderDebug.log("proxy",
+                    "multi-thread proxy enabled=%s ready=%s port=%s revision=%s",
+                    snapshot.config().enabled(),
+                    snapshot.ready(),
+                    snapshot.actualPort(),
+                    snapshot.configRevision());
+        } catch (Exception e) {
+            SpiderDebug.log("proxy", "multi-thread proxy start failed error=%s", e.getMessage());
+        }
     }
 
     public static void resumeBackgroundServices() {
@@ -147,6 +163,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static void stopBackgroundServices() {
         removeCallbacks(get().backgroundServicesStarter);
         DanmakuSearchListFocusFixer.stop();
+        MultiThreadProxy.stop();
         PlaybackRemoteSyncer.stop();
         RemoteAgent.get().stop();
         NsdDeviceDiscovery.unregister();

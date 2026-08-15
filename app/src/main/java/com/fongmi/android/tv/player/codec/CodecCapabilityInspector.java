@@ -187,7 +187,9 @@ public final class CodecCapabilityInspector {
             if (!TextUtils.isEmpty(actual)) builder.append("当前解码 ").append(actual).append("\n");
             if (details.hasDolbyVisionSource()) {
                 Format source = dolbyVisionSourceFormat(format, details);
-                builder.append("源格式 / 未选中（未使用 Dolby Vision 硬解，当前已回退）\n");
+                builder.append(details.dolbyVisionHdr10Fallback()
+                        ? "源格式 / 未选中（未使用 Dolby Vision 硬解，当前已回退）\n"
+                        : "Dolby Vision 路径 / 原生播放\n");
                 builder.append("源参数 ").append(dolbyVisionSourceText(details)).append("\n");
                 builder.append("源格式硬解查询 ").append(formatSupport(context, source)).append("\n");
             }

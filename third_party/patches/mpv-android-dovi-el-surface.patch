@@ -1,70 +1,57 @@
-diff --git a/filters/f_enhancement_pair.c b/filters/f_enhancement_pair.c
-index 18cea5446..32697e326 100644
---- a/filters/f_enhancement_pair.c
-+++ b/filters/f_enhancement_pair.c
-@@ -15,6 +15,8 @@
-  * License along with mpv.  If not, see <http://www.gnu.org/licenses/>.
-  */
- 
-+#include "config.h"
-+
- #include <libavutil/buffer.h>
- 
- #include "common/common.h"
-@@ -35,6 +37,10 @@ struct priv {
-     struct mp_decoder_wrapper *el_dec;
-     struct mp_pin *el_in; // el_dec->f->pins[0]
- 
-+#if HAVE_ANDROID
-+    struct mp_stream_info el_stream_info;
-+#endif
-+
-     // BL/EL frames decoded but not yet emitted as a pair.
-     struct mp_image **bl_pending;
-     int num_bl_pending;
-@@ -212,6 +218,22 @@ struct mp_filter *mp_enhancement_pair_create(struct mp_filter *parent,
-     mp_filter_add_pin(f, MP_PIN_OUT, "out");
- 
-     struct priv *p = f->priv;
-+#if HAVE_ANDROID
-+    struct mp_stream_info *parent_info = mp_filter_find_stream_info(parent);
-+    if (parent_info) {
-+        // AImageReader exposes one BufferQueue producer Surface. Reusing the
-+        // primary decoder's hwdec device for the enhancement layer makes two
-+        // MediaCodec instances connect to that same Surface, which Android
-+        // rejects with -EINVAL. Keep the base layer on zero-copy MediaCodec,
-+        // but make the EL decoder probe its copying fallback independently.
-+        p->el_stream_info = *parent_info;
-+        p->el_stream_info.hwdec_devs = NULL;
-+        f->stream_info = &p->el_stream_info;
-+        MP_VERBOSE(f, "Android Dolby Vision enhancement layer uses an "
-+                      "isolated decoder without the primary AImageReader "
-+                      "Surface.\n");
-+    }
-+#endif
-     p->el_dec = mp_decoder_wrapper_create(f, el_sh);
-     if (!p->el_dec || !mp_decoder_wrapper_reinit(p->el_dec)) {
-         MP_WARN(f, "Failed to set up enhancement-layer decoder; "
 diff --git a/player/loadfile.c b/player/loadfile.c
-index d6f44c8a9..f5adc49d3 100644
+index d6f44c8a..a0211382 100644
 --- a/player/loadfile.c
 +++ b/player/loadfile.c
-@@ -1610,7 +1610,17 @@ void update_vo_chain_el_state(struct MPContext *mpctx)
-     struct track *track = mpctx->current_track[0][STREAM_VIDEO];
+@@ -1602,4 +1602,6 @@ done:
+ // Match enhancement-layer selection and pairing to the active video output.
+-// Native Dolby Vision consumes the original bitstream directly; GPU output
+-// needs the dependent EL stream selected and paired with decoded BL frames.
++// Native Dolby Vision consumes the original bitstream directly. GPU metadata
++// mapping and decoding a second enhancement layer are separate capabilities:
++// Android AImageReader currently exposes only one producer Surface, so a VO
++// must explicitly advertise that it can consume an independently decoded EL.
+ void update_vo_chain_el_state(struct MPContext *mpctx)
+@@ -1612,6 +1614,16 @@ void update_vo_chain_el_state(struct MPContext *mpctx)
      struct sh_stream *el =
          track ? sh_stream_dependent_sibling(track->stream) : NULL;
 -    bool use_el = el && !is_android_dolby_vision_direct_output_active(mpctx);
+-
 +    bool direct_dovi =
 +        is_android_dolby_vision_direct_output_active(mpctx);
-+    bool gpu_dovi = mpctx->video_out &&
-+        (mpctx->video_out->driver->caps & VO_CAP_GPU_DOVI);
-+    bool use_el = el && !direct_dovi && gpu_dovi;
++    bool gpu_dovi_el = mpctx->video_out &&
++        (mpctx->video_out->driver->caps & VO_CAP_GPU_DOVI_EL);
++    bool use_el = el && !direct_dovi && gpu_dovi_el;
 +
-+    if (el && !direct_dovi && !gpu_dovi) {
++    if (el && !direct_dovi && !gpu_dovi_el) {
 +        MP_VERBOSE(mpctx, "Dolby Vision enhancement layer disabled: active "
-+                           "video output cannot consume it; rendering base "
-+                           "layer only.\n");
++                           "video output has no queue-safe EL decoder; "
++                           "rendering the base layer only.\n");
 +    }
- 
++
      if (el) {
          double pts = get_current_time(mpctx);
+diff --git a/video/out/vo.h b/video/out/vo.h
+index a1d4d22a..302ea423 100644
+--- a/video/out/vo.h
++++ b/video/out/vo.h
+@@ -217,4 +217,7 @@ enum {
+     VO_CAP_NATIVE_DOVI  = 1 << 8,
+     // VO can apply Dolby Vision metadata to raw GPU-mapped decoder output.
+     VO_CAP_GPU_DOVI     = 1 << 9,
++    // VO can safely consume a separately decoded Dolby Vision enhancement
++    // layer in addition to the base layer.
++    VO_CAP_GPU_DOVI_EL  = 1 << 10,
+ };
+diff --git a/video/out/vo_gpu_next.c b/video/out/vo_gpu_next.c
+index cd40793b..49dddd50 100644
+--- a/video/out/vo_gpu_next.c
++++ b/video/out/vo_gpu_next.c
+@@ -3178,5 +3178,8 @@ const struct vo_driver video_out_gpu_next = {
+             VO_CAP_FILM_GRAIN |
+             VO_CAP_VFLIP |
+             VO_CAP_GPU_DOVI |
++#if !HAVE_ANDROID
++            VO_CAP_GPU_DOVI_EL |
++#endif
+             0x0,
+     .preinit = preinit,

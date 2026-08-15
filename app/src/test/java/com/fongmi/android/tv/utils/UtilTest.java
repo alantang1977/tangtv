@@ -133,6 +133,14 @@ public class UtilTest {
     }
 
     @Test
+    public void getNumber_parsesSeasonEpisodeSuffixWithoutConcatenating() {
+        assertEquals(1, Util.getEpisodeNumber("一人之下6_01"));
+        assertEquals(20, Util.getEpisodeNumber("一人之下6_20.mp4"));
+        assertEquals(-1, Util.getEpisodeNumber("601-620"));
+        assertEquals(-1, Util.getEpisodeNumber("621-27"));
+    }
+
+    @Test
     public void getNumber_prioritizesExplicitFormats() {
         // 当同时存在多种格式时，应该优先使用显式格式
         assertEquals(5, Util.getEpisodeNumber("剧名2024第5集"));  // 第5集 优先于 2024

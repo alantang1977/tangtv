@@ -23,6 +23,17 @@ public class TmdbEpisodeWiringTest {
     }
 
     @Test
+    public void standaloneDetailEpisodeInfoTracksCurrentResolvedSeason() throws Exception {
+        String activity = read(mainJava().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "TmdbDetailActivity.java")));
+
+        int start = activity.indexOf("private TmdbEpisodeInfo tmdbEpisodeInfo()");
+        int end = activity.indexOf("private String releaseDate()", start);
+        String method = activity.substring(start, end);
+
+        assertTrue(method.contains("int sourceSeason = currentSeasonContextNumber();"));
+    }
+
+    @Test
     public void embeddedTmdbHeaderShowsEpisodeInfoInNativeAndFusionLayouts() throws Exception {
         String header = read(mainJava().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "custom", "TmdbHeaderView.java")));
         String layout = read(mainRes().resolve(Path.of("layout", "view_tmdb_header.xml")));
@@ -67,6 +78,33 @@ public class TmdbEpisodeWiringTest {
         assertTrue(leanback.contains("private boolean shouldShowVideoDetailRemark(boolean visible)"));
         assertTrue(leanback.contains("String episodeInfo = mTmdbUIAdapter.getEpisodeDetailText();"));
         assertTrue(leanback.contains("TextUtils.equals(mBinding.remark.getText(), episodeInfo)"));
+    }
+
+    @Test
+    public void manualSeasonChangesInvalidateStaleMetadataAndRefreshCardsImmediately() throws Exception {
+        String adapter = read(mainJava().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "helper", "TmdbUIAdapter.java")));
+        String detail = read(mainJava().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "TmdbDetailActivity.java")));
+        String leanback = read(flavorJava("leanback").resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java")));
+        String mobile = read(flavorJava("mobile").resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java")));
+
+        assertTrue(adapter.contains("private volatile int episodeMetadataGeneration;"));
+        assertTrue(adapter.contains("discard removed season source=%s tmdb=%d season=%s"));
+        assertTrue(adapter.contains("manual.getMode() == TmdbSeasonMatchCache.Mode.MANUAL_SEASON"));
+        assertTrue(adapter.contains("int metadataGeneration = ++episodeMetadataGeneration;"));
+        assertTrue(adapter.contains("loadEpisodeTitlesAsync(vod, tmdbItem, generation, metadataGeneration, selectedSeason);"));
+        assertTrue(adapter.contains("isCurrentEpisodeMetadataRequest(generation, metadataGeneration, selectedSeason)"));
+        assertTrue(adapter.contains("applyEpisodeTitles(vod, item, selectedSeason, generation, metadataGeneration)"));
+        assertTrue(detail.contains("private void refreshEpisodesAfterSeasonBinding()"));
+        assertTrue(detail.contains("clearBoundTmdbEpisodeMetadata();"));
+        assertTrue(detail.contains("private void clearBoundTmdbEpisodeMetadata()"));
+        assertTrue(detail.contains("episode.setTmdbEpisode(null);"));
+        assertTrue(detail.contains("rerenderEpisodeViewportOnly(false, true, true);"));
+        assertTrue(mobile.contains("if (mTmdbUIAdapter.clearManualSeasonBinding()) refreshTmdbEpisodeTitles();"));
+        assertTrue(mobile.contains("if (mTmdbUIAdapter.keepOriginalEpisodeList()) refreshTmdbEpisodeTitles();"));
+        assertTrue(mobile.contains("if (mTmdbUIAdapter.applyManualSeason(seasonNumber)) refreshTmdbEpisodeTitles();"));
+        assertTrue(leanback.contains("if (mTmdbUIAdapter.clearManualSeasonBinding()) refreshTmdbEpisodeTitles();"));
+        assertTrue(leanback.contains("if (mTmdbUIAdapter.keepOriginalEpisodeList()) refreshTmdbEpisodeTitles();"));
+        assertTrue(leanback.contains("if (mTmdbUIAdapter.applyManualSeason(seasonNumber)) refreshTmdbEpisodeTitles();"));
     }
 
     private static String read(Path path) throws Exception {

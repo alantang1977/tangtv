@@ -95,10 +95,15 @@ import com.fongmi.android.tv.player.mpv.MpvPreloadController;
 import com.fongmi.android.tv.player.mpv.MpvPreloadPolicy;
 import com.fongmi.android.tv.player.mpv.MpvResourcePressureController;
 import com.fongmi.android.tv.player.mpv.MpvResourcePressurePolicy;
+import com.fongmi.android.tv.server.proxy.MultiThreadProxy;
+import com.fongmi.android.tv.server.proxy.ProxyPlaybackPolicy;
+import com.fongmi.android.tv.server.proxy.ProxyRuntimeConfig;
+import com.fongmi.android.tv.server.proxy.ProxyStreamRegistration;
 import com.fongmi.android.tv.setting.DanmakuSetting;
 import com.fongmi.android.tv.setting.SiteHealthStore;
 import com.fongmi.android.tv.setting.ExoPerformanceSetting;
 import com.fongmi.android.tv.setting.MpvPerformanceSetting;
+import com.fongmi.android.tv.setting.MultiThreadProxySetting;
 import com.fongmi.android.tv.setting.PlaybackExperimentSetting;
 import com.fongmi.android.tv.setting.PlaybackLightweightAssessmentSetting;
 import com.fongmi.android.tv.setting.PlaybackPerformanceSetting;
@@ -203,6 +208,7 @@ public class PlayerManager implements ParseCallback {
     private VideoSize videoSize;
     private ParseJob parseJob;
     private PlaySpec spec;
+    private ProxyStreamRegistration multiThreadProxyRegistration;
     private Player player;
     private TrackSelectionParameters realtimeSubtitleTrackSelection;
     private String currentDanmakuUrl;
@@ -375,6 +381,7 @@ public class PlayerManager implements ParseCallback {
         ijkRuntimeTemporaryFallback = false;
         ijkRuntimeManualOverride = false;
         pendingIjkRuntimeFallbackReparse = false;
+        closeMultiThreadProxyRegistration();
         if (engine == null) return;
         engine.release();
         engine = null;
@@ -692,6 +699,10 @@ public class PlayerManager implements ParseCallback {
 
     public String getRuntimeDiagnostics() {
         return engine == null ? "" : engine.getRuntimeDiagnostics();
+    }
+
+    public String getGpuLoadDiagnostics() {
+        return engine == null ? "" : engine.getGpuLoadDiagnostics();
     }
 
     public PlayerEngine.VideoPlaybackDetails getVideoPlaybackDetails() {
@@ -1430,6 +1441,7 @@ public class PlayerManager implements ParseCallback {
         clearExoDecoderResourceRecovery(true);
         resetNetworkProtectionSession("clear");
         resetMpvOutputRuntime();
+        closeMultiThreadProxyRegistration();
         spec = null;
         clearPendingSwitchRestore();
         clearDanmaku("clear");
@@ -1488,7 +1500,7 @@ public void resetTrack(int type) {
         initTrack = false;
         waitingLutBeforePlay = false;
         applySubtitleStyle();
-        engine.start(target.checkUa(), position, wasPlayWhenReady);
+        startWithProxy(target, position, wasPlayWhenReady);
         if (speed != 1f) setSpeed(speed);
         setRepeatOne(repeat);
         App.post(runnable, Constant.TIMEOUT_PLAY);
@@ -2474,7 +2486,7 @@ public void resetTrack(int type) {
                     position == C.TIME_UNSET ? 0 : position,
                     wasPlayWhenReady,
                     decision.reason().label());
-            ijk.restart(spec.checkUa(), position, wasPlayWhenReady);
+            restartWithProxy(spec, position, wasPlayWhenReady);
         } catch (Throwable error) {
             PlaybackTrace.log("ijk-buffer", playbackTrace.current(),
                     "action=reload result=failed errorType=%s",
@@ -2516,7 +2528,7 @@ public void resetTrack(int type) {
                     recovery.queue().totalPackets(),
                     wasPlayWhenReady,
                     reloadGate.reason().label());
-            ijk.restart(spec.checkUa(), C.TIME_UNSET, wasPlayWhenReady);
+            restartWithProxy(spec, C.TIME_UNSET, wasPlayWhenReady);
         } catch (Throwable error) {
             PlaybackTrace.log("ijk-realtime", playbackTrace.current(),
                     "action=rebuild-session result=failed errorType=%s",
@@ -2565,7 +2577,7 @@ public void resetTrack(int type) {
                     Math.round(metrics.outputFps() * 1_000f),
                     wasPlayWhenReady,
                     reloadGate.reason().label());
-            ijk.restart(spec.checkUa(), position, wasPlayWhenReady);
+            restartWithProxy(spec, position, wasPlayWhenReady);
         } catch (Throwable error) {
             PlaybackTrace.log("ijk-decode", playbackTrace.current(),
                     "action=reload result=failed errorType=%s",
@@ -4611,6 +4623,10 @@ public void resetTrack(int type) {
         if (isExo()) {
             resetNetworkProtectionSession("performance-settings-changed");
             scheduleNetworkProtection(0);
+            if (engine instanceof ExoPlayerEngine exo
+                    && exo.requiresDv7Hdr10FallbackRebuild()) {
+                rebuildAndRestartExo("dv7-fallback-setting-changed");
+            }
             return;
         }
         if (!isMpv() || spec == null || TextUtils.isEmpty(spec.getUrl()) || !(engine instanceof MpvPlayerEngine mpv)) return;
@@ -4618,6 +4634,32 @@ public void resetTrack(int type) {
         mpv.setSurfaceDirectOverride(null);
         mpv.clearHwdecOverride();
         rebuildAndRestartMpv(null, "performance-settings-changed");
+    }
+
+    private boolean rebuildAndRestartExo(String reason) {
+        if (!isExo() || spec == null || TextUtils.isEmpty(spec.getUrl())) {
+            return false;
+        }
+        long position = Math.max(0, player.getCurrentPosition());
+        float speed = getSpeed();
+        boolean repeat = isRepeatOne();
+        boolean wasPlayWhenReady = player.getPlayWhenReady();
+        prepareSeq++;
+        App.removeCallbacks(runnable);
+        videoSize = null;
+        initTrack = false;
+        rebuildPlayer();
+        playWhenReady = wasPlayWhenReady;
+        applySubtitleStyle();
+        playbackTrace.mark(PlaybackTrace.Stage.PREPARE,
+                "player=" + playerType + " decode=" + engine.getDecode()
+                        + " exo=" + reason);
+        startWithProxy(spec, position, wasPlayWhenReady);
+        startNativeAudioSession(wasPlayWhenReady);
+        if (speed != 1f) setSpeed(speed);
+        setRepeatOne(repeat);
+        App.post(runnable, Constant.TIMEOUT_PLAY);
+        return true;
     }
 
     private boolean rebuildAndRestartMpv(Boolean surfaceDirectOverride, String reason) {
@@ -4637,7 +4679,7 @@ public void resetTrack(int type) {
         applyMpvAutoInitialControl();
         playbackTrace.mark(PlaybackTrace.Stage.PREPARE, "player=" + playerType + " decode=" + engine.getDecode() + " mpv-output=" + reason);
         if (SpiderDebug.isEnabled()) SpiderDebug.log("mpv-output", "rebuild reason=%s directOverride=%s position=%d play=%s speed=%s repeat=%s spec=%s", reason, surfaceDirectOverride, position, wasPlayWhenReady, speed, repeat, debugSpec());
-        engine.start(spec.checkUa(), position, wasPlayWhenReady);
+        startWithProxy(spec, position, wasPlayWhenReady);
         scheduleMpvAutoOutputEvaluation();
         startNativeAudioSession(wasPlayWhenReady);
         if (speed != 1f) setSpeed(speed);
@@ -4719,11 +4761,18 @@ public void resetTrack(int type) {
         if (width <= 0 || height <= 0) return false;
         boolean externalSubtitleActive = spec != null && spec.getSubs() != null && !spec.getSubs().isEmpty();
         boolean earlyEvaluation = !tracksReady;
+        if (earlyEvaluation
+                && !PlaybackPerformanceSetting
+                .isDv7Hdr10FallbackEnabled()) return false;
         if (earlyEvaluation && !MpvAutoOutputPolicy.canEvaluateWithoutTracks(width, height, externalSubtitleActive)) return false;
         boolean subtitleActive = MpvAutoOutputPolicy.requiresGpuSubtitle(externalSubtitleActive, mpvExplicitSubtitlePreference);
         boolean lutOrFilterActive = videoEffectsActive || videoEffectsDirty || lutAllowed && LutSetting.isEnabled() || MpvPerformanceSetting.isInterpolation();
         boolean customGpuProcessing = MpvConfigStore.hasGpuVideoProcessing();
-        MpvAutoOutputPolicy.Decision decision = MpvAutoOutputPolicy.evaluate(width, height, engine.isHard(), Util.isLeanback(), subtitleActive, lutOrFilterActive, customGpuProcessing);
+        boolean forceNativeDv7 = isDv7NativeAttemptRequested();
+        MpvAutoOutputPolicy.Decision decision = forceNativeDv7
+                ? new MpvAutoOutputPolicy.Decision(true,
+                "dv7-native-attempt")
+                : MpvAutoOutputPolicy.evaluate(width, height, engine.isHard(), Util.isLeanback(), subtitleActive, lutOrFilterActive, customGpuProcessing);
         mpvAutoOutputEvaluated = true;
         boolean currentlyDirect = isMpvSurfaceDirect();
         boolean effectiveEligible = MpvPerformanceSetting.isAutoSurfaceDirectEnabled() && decision.eligible();
@@ -4770,14 +4819,8 @@ public void resetTrack(int type) {
     }
 
     private boolean shouldLeaveAutoSurfaceDirectForSubtitle(List<Track> tracks) {
-        if (!isMpvSurfaceDirect() || MpvPerformanceSetting.getOutputMode() != MpvPerformanceSetting.OUTPUT_AUTO || tracks == null) return false;
-        for (Track track : tracks) {
-            if (track.getType() == C.TRACK_TYPE_TEXT && track.isSelected() && !track.isDisabled()) {
-                mpvAutoOutputEvaluated = true;
-                mpvOutputEvaluationSeq++;
-                return true;
-            }
-        }
+        // mediacodec_embed uses a separate transparent OSD Surface, so subtitle
+        // selection no longer requires rebuilding the video through gpu-next.
         return false;
     }
 
@@ -4807,6 +4850,7 @@ public void resetTrack(int type) {
 
     private boolean retryMpvSurfaceDirectFailure(PlaybackException error) {
         if (!isMpvSurfaceDirect() || mpvSurfaceFallbackTried || error == null) return false;
+        if (isDv7NativeAttemptRequested()) return false;
         String message = error.getMessage();
         boolean outputFailure = error.errorCode == PlaybackException.ERROR_CODE_VIDEO_FRAME_PROCESSING_FAILED
                 || error.errorCode == PlaybackException.ERROR_CODE_DECODING_FAILED
@@ -4871,6 +4915,15 @@ public void resetTrack(int type) {
                     PlaybackException.ERROR_CODE_VIDEO_FRAME_PROCESSING_FAILED -> true;
             default -> false;
         };
+    }
+
+    private boolean isDv7NativeAttemptRequested() {
+        if (!isMpv() || engine == null || !engine.isHard()
+                || PlaybackPerformanceSetting
+                .isDv7Hdr10FallbackEnabled()) return false;
+        PlayerEngine.VideoPlaybackDetails details =
+                engine.getVideoPlaybackDetails();
+        return details != null && details.dolbyVisionProfile() == 7;
     }
 
     private PlayerEngine buildEngine(int type, int decode) {
@@ -5057,6 +5110,10 @@ public void resetTrack(int type) {
         setMediaItemNow(timeout, true);
     }
 
+    public void reloadCurrentMediaItem() {
+        restartCurrentItemWithState();
+    }
+
     private void restartCurrentItemWithState() {
         if (spec == null || spec.getUrl() == null || engine == null || player == null) return;
         if (player.getCurrentMediaItem() == null || player.getPlaybackState() == Player.STATE_IDLE) {
@@ -5066,13 +5123,13 @@ public void resetTrack(int type) {
         if (!ensurePlayerAvailableForPlayback()) return;
         long position = Math.max(0, player.getCurrentPosition());
         boolean playWhenReady = player.getPlayWhenReady();
-        if (SpiderDebug.isEnabled()) SpiderDebug.log("player", "restart media item for subtitle position=%d play=%s spec=%s", position, playWhenReady, debugSpec());
+        if (SpiderDebug.isEnabled()) SpiderDebug.log("player", "restart media item position=%d play=%s spec=%s", position, playWhenReady, debugSpec());
         App.removeCallbacks(runnable);
         currentDanmakuUrl = null;
         setDanmakus(spec.getDanmakus());
         initTrack = false;
         waitingLutBeforePlay = false;
-        engine.restart(spec.checkUa(), position, playWhenReady);
+        restartWithProxy(spec, position, playWhenReady);
         App.post(runnable, Constant.TIMEOUT_PLAY);
     }
 
@@ -5141,13 +5198,76 @@ public void resetTrack(int type) {
         waitingLutBeforePlay = false;
         applySubtitleStyle();
         playbackTrace.mark(PlaybackTrace.Stage.PREPARE, "player=" + playerType + " decode=" + engine.getDecode());
-        engine.start(spec.checkUa(), playWhenReady);
+        startWithProxy(spec, playWhenReady);
         publishPlaybackTelemetry();
         schedulePlaybackTelemetry();
         scheduleMpvAutoOutputEvaluation();
         startNativeAudioSession(playWhenReady);
         App.post(runnable, timeout);
         if (notifyPrepare) callback.onPrepare();
+    }
+
+    private void startWithProxy(PlaySpec source, boolean playWhenReady) {
+        runWithProxy(source, playbackSpec -> engine.start(playbackSpec, playWhenReady));
+    }
+
+    private void startWithProxy(PlaySpec source, long position, boolean playWhenReady) {
+        runWithProxy(source, playbackSpec -> engine.start(playbackSpec, position, playWhenReady));
+    }
+
+    private void restartWithProxy(PlaySpec source, long position, boolean playWhenReady) {
+        runWithProxy(source, playbackSpec -> engine.restart(playbackSpec, position, playWhenReady));
+    }
+
+    private void runWithProxy(PlaySpec source, ProxyPlaybackAction action) {
+        ProxyStreamRegistration previousProxyRegistration = multiThreadProxyRegistration;
+        PreparedProxyPlayback prepared = prepareProxyPlayback(source);
+        try {
+            action.run(prepared.spec());
+            commitProxyPlayback(previousProxyRegistration, prepared.registration());
+        } catch (RuntimeException | Error failure) {
+            if (prepared.registration() != null) prepared.registration().close();
+            throw failure;
+        }
+    }
+
+    private PreparedProxyPlayback prepareProxyPlayback(PlaySpec source) {
+        PlaySpec playbackSpec = source.checkUa();
+        ProxyStreamRegistration nextProxyRegistration = null;
+        ProxyRuntimeConfig proxyConfig = MultiThreadProxySetting.get();
+        try {
+            MultiThreadProxy.apply(proxyConfig, MultiThreadProxySetting.getDomainRules());
+            if (ProxyPlaybackPolicy.shouldProxy(proxyConfig.enabled(), source.getUrl(), source.getFormat())) {
+                nextProxyRegistration = MultiThreadProxy.register(source.getUrl(), source.getHeaders());
+                playbackSpec = source.copyForPlayback(nextProxyRegistration.url(), Map.of());
+            }
+        } catch (IOException | RuntimeException e) {
+            if (nextProxyRegistration != null) nextProxyRegistration.close();
+            nextProxyRegistration = null;
+            if (SpiderDebug.isEnabled()) {
+                SpiderDebug.log("player", "multi-thread proxy bypass cause=%s", e.getClass().getSimpleName());
+            }
+        }
+        return new PreparedProxyPlayback(playbackSpec, nextProxyRegistration);
+    }
+
+    private void commitProxyPlayback(ProxyStreamRegistration previous, ProxyStreamRegistration next) {
+        multiThreadProxyRegistration = next;
+        if (previous != null) previous.close();
+    }
+
+    @FunctionalInterface
+    private interface ProxyPlaybackAction {
+        void run(PlaySpec playbackSpec);
+    }
+
+    private record PreparedProxyPlayback(PlaySpec spec, ProxyStreamRegistration registration) {
+    }
+
+    private void closeMultiThreadProxyRegistration() {
+        ProxyStreamRegistration registration = multiThreadProxyRegistration;
+        multiThreadProxyRegistration = null;
+        if (registration != null) registration.close();
     }
 
     private void prepareExoFrameSchedulingForNewPlayback() {
@@ -5573,7 +5693,7 @@ public void resetTrack(int type) {
         lutPipelineReadyForItem = true;
         if (SpiderDebug.isEnabled()) SpiderDebug.log("lut", "prepare current item with effects reason=%s position=%d play=%s spec=%s", reason, position, playWhenReady, debugSpec());
         startLutWarmupRecovery();
-        engine.restart(spec.checkUa(), position, playWhenReady);
+        restartWithProxy(spec, position, playWhenReady);
         if (speed != 1f) setSpeed(speed);
         lutPipelinePrepareInProgress = false;
         return false;
@@ -6455,7 +6575,7 @@ public void resetTrack(int type) {
                     decision.targetBitsPerSecond(),
                     position == C.TIME_UNSET ? 0 : position,
                     wasPlayWhenReady);
-            engine.restart(spec.checkUa(), position, wasPlayWhenReady);
+            restartWithProxy(spec, position, wasPlayWhenReady);
             if (speed != 1f) setSpeed(speed);
             setRepeatOne(repeat);
             App.post(runnable, Constant.TIMEOUT_PLAY);
@@ -6774,7 +6894,7 @@ public void resetTrack(int type) {
         PlaybackTrace.log("exo-rtsp-live", playbackTrace.current(),
                 "action=rebuild-session play=%s speed=%.3f repeat=%s",
                 wasPlayWhenReady, speed, repeat);
-        engine.restart(spec.checkUa(), C.TIME_UNSET, wasPlayWhenReady);
+        restartWithProxy(spec, C.TIME_UNSET, wasPlayWhenReady);
         if (speed != 1f) setSpeed(speed);
         setRepeatOne(repeat);
         App.post(runnable, Constant.TIMEOUT_PLAY);
@@ -7593,8 +7713,8 @@ public void resetTrack(int type) {
                 setDanmakus(recovery.target().getDanmakus());
                 waitingLutBeforePlay = false;
                 applySubtitleStyle();
-                engine.start(
-                        recovery.target().checkUa(),
+                startWithProxy(
+                        recovery.target(),
                         recovery.positionMs(),
                         recovery.playWhenReady());
                 setSpeed(recovery.speed());
@@ -7648,7 +7768,7 @@ public void resetTrack(int type) {
             initTrack = false;
             waitingLutBeforePlay = false;
             applySubtitleStyle();
-            engine.start(target.checkUa(), position, wasPlayWhenReady);
+            startWithProxy(target, position, wasPlayWhenReady);
             scheduleMpvAutoOutputEvaluation();
             if (speed != 1f) setSpeed(speed);
             setRepeatOne(repeat);
@@ -7679,7 +7799,7 @@ public void resetTrack(int type) {
             setDanmakus(target.getDanmakus());
             waitingLutBeforePlay = false;
             applySubtitleStyle();
-            engine.start(target.checkUa(), position, wasPlayWhenReady);
+            startWithProxy(target, position, wasPlayWhenReady);
             if (speed != 1f) setSpeed(speed);
             setRepeatOne(repeat);
             App.post(runnable, Constant.TIMEOUT_PLAY);
@@ -7727,7 +7847,7 @@ public void resetTrack(int type) {
             setDanmakus(target.getDanmakus());
             waitingLutBeforePlay = false;
             applySubtitleStyle();
-            engine.start(target.checkUa(), position, wasPlayWhenReady);
+            startWithProxy(target, position, wasPlayWhenReady);
             if (speed != 1f) setSpeed(speed);
             setRepeatOne(repeat);
             App.post(runnable, Constant.TIMEOUT_PLAY);

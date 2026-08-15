@@ -8,11 +8,11 @@ on:
         required: false
         type: string
       cnb_repo_url:
-        description: "CNB repo URL, blank = fish2035/webhtv-release"
+        description: "CNB repo URL, blank = tangtang.com.cn.kul/tangtv"
         required: false
         type: string
       cnb_repo_slug:
-        description: "CNB repo slug, blank = fish2035/webhtv-release"
+        description: "CNB repo slug, blank = tangtang.com.cn.kul/tangtv"
         required: false
         type: string
 
@@ -24,8 +24,8 @@ env:
   GH_REPO: ${{ github.repository }}
   CNB_API_ENDPOINT: https://api.cnb.cool
   CNB_WEB_ENDPOINT: https://cnb.cool
-  CNB_REPO_SLUG: ${{ inputs.cnb_repo_slug || 'fish2035/webhtv-release' }}
-  CNB_REPO_URL: ${{ inputs.cnb_repo_url || 'https://cnb.cool/fish2035/webhtv-release.git' }}
+  CNB_REPO_SLUG: ${{ inputs.cnb_repo_slug || 'tangtang.com.cn.kul/tangtv' }}
+  CNB_REPO_URL: ${{ inputs.cnb_repo_url || 'https://cnb.cool/tangtang.com.cn.kul/tangtv.git' }}
 
 jobs:
   sync:
@@ -69,6 +69,8 @@ jobs:
           CNB_TOKEN: ${{ secrets.CNB_TOKEN }}
           CNB_RELEASE_TAG: ${{ steps.meta.outputs.tag }}
           CNB_RELEASE_LATEST: "false"
+          CNB_REPO_SLUG: ${{ inputs.cnb_repo_slug || 'tangtang.com.cn.kul/tangtv' }}
+          CNB_REPO_URL: ${{ inputs.cnb_repo_url || 'https://cnb.cool/tangtang.com.cn.kul/tangtv.git' }}
         run: |
           export CNB_RELEASE_TITLE="$(jq -r '.name // empty' github-release.json)"
           export CNB_RELEASE_NOTES="$(jq -r '.body // empty' github-release.json)"

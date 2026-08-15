@@ -4,16 +4,16 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/build_media_deps.sh [--clean] [--with-nextlib] [--use-aliyun-mirrors]
+  scripts/build_media_deps.sh [--clean] [--with-nextlib|--nextlib-only] [--use-aliyun-mirrors]
 
 Builds the locked FongMi Media3 artifacts into third_party/maven so the app can
 depend on normal Maven coordinates instead of embedding external source trees.
 
 Options:
   --clean          Remove generated third_party/maven before publishing.
-  --with-nextlib   Also prepare the locked FongMi/nextlib source checkout.
-                  The app normally consumes nextlib-media3ext from Maven Central;
-                  local nextlib publishing needs Android NDK/CMake/FFmpeg setup.
+  --with-nextlib   Also build and publish the locked nextlib FFmpeg extension.
+                  This rebuilds FFmpeg/libarcdav3a for both Android ARM ABIs.
+  --nextlib-only   Build and publish only nextlib-media3ext.
   --use-aliyun-mirrors
                   Add temporary Aliyun Gradle/Google/Maven mirrors to the generated
                   Media3 checkout. Useful when Plugin Portal or Google Maven is
@@ -31,6 +31,7 @@ NEXTLIB_DIR="$SOURCE_DIR/nextlib"
 
 CLEAN=0
 WITH_NEXTLIB=0
+BUILD_MEDIA=1
 USE_ALIYUN_MIRRORS=0
 
 while [[ $# -gt 0 ]]; do
@@ -40,6 +41,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --with-nextlib)
       WITH_NEXTLIB=1
+      ;;
+    --nextlib-only)
+      WITH_NEXTLIB=1
+      BUILD_MEDIA=0
       ;;
     --use-aliyun-mirrors)
       USE_ALIYUN_MIRRORS=1
@@ -234,6 +239,23 @@ apply_media_patches() {
   done
 }
 
+apply_nextlib_patches() {
+  local patch_file
+  local patches=(
+    "$THIRD_PARTY_DIR/patches/nextlib-ffmpeg-soft-load-shedding.patch"
+    "$THIRD_PARTY_DIR/patches/nextlib-av3a.patch"
+  )
+  for patch_file in "${patches[@]}"; do
+    if [[ ! -f "$patch_file" ]]; then
+      echo "Missing nextlib patch: $patch_file" >&2
+      exit 1
+    fi
+    echo "Applying nextlib patch $(basename "$patch_file")"
+    git -C "$NEXTLIB_DIR" apply --check "$patch_file"
+    git -C "$NEXTLIB_DIR" apply "$patch_file"
+  done
+}
+
 apply_media_build_mirrors() {
   if [[ "$USE_ALIYUN_MIRRORS" != "1" ]]; then
     return 0
@@ -357,35 +379,94 @@ publish_media() {
   echo "Installed complete Media3 publication into $LOCAL_MAVEN"
 }
 
-prepare_nextlib() {
+verify_nextlib_aar() {
+  local aar="$1"
+  local temp_dir
+  local abi
+  [[ -f "$aar" ]] || {
+    echo "Missing nextlib AAR: $aar" >&2
+    return 1
+  }
+  temp_dir="$(mktemp -d "$ROOT_DIR/.gradle/nextlib-aar-verify.XXXXXX")"
+  unzip -q "$aar" -d "$temp_dir"
+  for abi in arm64-v8a armeabi-v7a; do
+    [[ -f "$temp_dir/jni/$abi/libmedia3ext.so" ]] || {
+      echo "Missing $abi libmedia3ext.so in $aar" >&2
+      return 1
+    }
+    [[ -f "$temp_dir/jni/$abi/libavcodec.so" ]] || {
+      echo "Missing $abi libavcodec.so in $aar" >&2
+      return 1
+    }
+    if ! grep -aFq "libarcdav3a AV3A" "$temp_dir/jni/$abi/libavcodec.so"; then
+      echo "Missing $abi libarcdav3a decoder marker in $aar" >&2
+      return 1
+    fi
+    if ! grep -aFq "AV3A Audio Vivid" "$temp_dir/jni/$abi/libavcodec.so"; then
+      echo "Missing $abi AV3A Audio Vivid marker in $aar" >&2
+      return 1
+    fi
+  done
+  rm -rf "$temp_dir"
+}
+
+publish_nextlib() {
   local repo branch commit version
-  repo="$(json_get fongmi_nextlib repo)"
-  branch="$(json_get fongmi_nextlib branch)"
-  commit="$(json_get fongmi_nextlib commit)"
-  version="$(json_get fongmi_nextlib version)"
-  require_value fongmi_nextlib.repo "$repo"
-  require_value fongmi_nextlib.branch "$branch"
-  require_value fongmi_nextlib.commit "$commit"
-  require_value fongmi_nextlib.version "$version"
+  repo="$(json_get nextlib repo)"
+  branch="$(json_get nextlib branch)"
+  commit="$(json_get nextlib commit)"
+  version="$(json_get nextlib version)"
+  require_value nextlib.repo "$repo"
+  require_value nextlib.branch "$branch"
+  require_value nextlib.commit "$commit"
+  require_value nextlib.version "$version"
 
   clone_or_update "$repo" "$branch" "$commit" "$NEXTLIB_DIR"
+  apply_nextlib_patches
   prepare_nextlib_compile_sdk
-  echo "Prepared FongMi/nextlib $version source at $NEXTLIB_DIR"
-  echo "The app consumes io.github.anilbeesetti:nextlib-media3ext:$version from Maven Central by default."
-  echo "Local nextlib publishing is intentionally not run here because it requires Android NDK/CMake and FFmpeg setup."
+  if ! grep -Fq "version = \"$version\"" "$NEXTLIB_DIR/build.gradle.kts"; then
+    echo "nextlib patch version does not match lock version $version" >&2
+    exit 1
+  fi
+
+  local publish_repo
+  local artifact_dir
+  local aar
+  publish_repo="$(mktemp -d "$ROOT_DIR/.gradle/nextlib-maven-publish.XXXXXX")"
+  echo "Building nextlib-media3ext $version with FFmpeg/libarcdav3a"
+  if ! (cd "$NEXTLIB_DIR" && ./gradlew --no-daemon --console=plain \
+      -Dmaven.repo.local="$publish_repo" \
+      :media3ext:publishMavenPublicationToMavenLocal); then
+    echo "nextlib publishing failed; staged output retained at $publish_repo" >&2
+    return 1
+  fi
+  artifact_dir="$publish_repo/io/github/anilbeesetti/nextlib-media3ext/$version"
+  aar="$artifact_dir/nextlib-media3ext-$version.aar"
+  verify_nextlib_aar "$aar"
+  mkdir -p "$LOCAL_MAVEN/io/github/anilbeesetti"
+  cp -R "$publish_repo"/io/github/anilbeesetti/nextlib-media3ext "$LOCAL_MAVEN/io/github/anilbeesetti/"
+  rm -rf "$publish_repo"
+  echo "Installed verified nextlib-media3ext $version into $LOCAL_MAVEN"
 }
 
 prepare_android_env
 mkdir -p "$THIRD_PARTY_DIR"
 if [[ "$CLEAN" == "1" ]]; then
-  echo "Cleaning $LOCAL_MAVEN"
-  rm -rf "$LOCAL_MAVEN"
+  if [[ "$BUILD_MEDIA" == "1" ]]; then
+    echo "Cleaning $LOCAL_MAVEN"
+    rm -rf "$LOCAL_MAVEN"
+  else
+    echo "Cleaning local nextlib publication"
+    rm -rf "$LOCAL_MAVEN/io/github/anilbeesetti/nextlib-media3ext"
+  fi
 fi
 mkdir -p "$LOCAL_MAVEN"
 
-publish_media
+if [[ "$BUILD_MEDIA" == "1" ]]; then
+  publish_media
+fi
 if [[ "$WITH_NEXTLIB" == "1" ]]; then
-  prepare_nextlib
+  publish_nextlib
 fi
 
-echo "Done. Local Media3 artifacts are available under $LOCAL_MAVEN"
+echo "Done. Local media dependencies are available under $LOCAL_MAVEN"

@@ -15,6 +15,7 @@ import java.util.Map;
 public final class AppCache {
 
     public static final String KEY_TMDB_MATCH = "tmdb_match_cache";
+    public static final String KEY_TMDB_SEASON_MATCH = "tmdb_season_match_cache";
     public static final String KEY_MEDIA_TITLE_LEARNING = "media_title_learning";
 
     private static final String DIR = "app_cache";
@@ -73,6 +74,7 @@ public final class AppCache {
             SharedPreferences prefs = Prefers.getPrefers();
             SharedPreferences.Editor editor = prefs.edit()
                     .remove(KEY_TMDB_MATCH)
+                    .remove(KEY_TMDB_SEASON_MATCH)
                     .remove(KEY_MEDIA_TITLE_LEARNING);
             for (Map.Entry<String, ?> entry : prefs.getAll().entrySet()) {
                 if (entry.getKey().startsWith(WEB_CACHE_PREFIX)) editor.remove(entry.getKey());

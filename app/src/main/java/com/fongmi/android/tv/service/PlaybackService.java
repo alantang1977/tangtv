@@ -153,6 +153,8 @@ private AudioHistory.Record audioHistoryRecord;
         EventBus.getDefault().register(this);
         Server.get().setService(this);
         setupNotification();
+        // Direct SessionToken controllers bypass MediaSessionService binding, so register the session for media notifications.
+        addSession(session);
         if (SpiderDebug.isEnabled()) SpiderDebug.log("playback-flow", "service onCreate end cost=%dms", System.currentTimeMillis() - start);
     }
 

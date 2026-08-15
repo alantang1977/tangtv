@@ -12,7 +12,6 @@ public final class MpvAutoOutputPolicy {
         if (!leanback) return new Decision(false, "not-tv");
         if (!hardDecode) return new Decision(false, "software-decode");
         if (!isHighResolution(width, height)) return new Decision(false, "below-high-resolution-threshold");
-        if (subtitleActive) return new Decision(false, "subtitle-active");
         if (lutOrFilterActive) return new Decision(false, "lut-or-filter-active");
         if (customGpuProcessing) return new Decision(false, "custom-gpu-processing");
         return new Decision(true, "eligible-high-resolution-hardware-decode");
@@ -24,11 +23,11 @@ public final class MpvAutoOutputPolicy {
     }
 
     public static boolean canEvaluateWithoutTracks(int width, int height, boolean externalSubtitleActive) {
-        return !externalSubtitleActive && isHighResolution(width, height);
+        return isHighResolution(width, height);
     }
 
     public static boolean requiresGpuSubtitle(boolean externalSubtitleActive, boolean userRequestedSubtitle) {
-        return externalSubtitleActive || userRequestedSubtitle;
+        return false;
     }
 
     public static boolean shouldLeaveSurfaceDirectForSubtitle(boolean automaticOutput, boolean currentlyDirect, boolean externalSubtitleActive, boolean userRequestedSubtitle) {

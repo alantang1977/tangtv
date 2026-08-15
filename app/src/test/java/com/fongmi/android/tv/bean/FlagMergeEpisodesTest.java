@@ -52,4 +52,21 @@ public class FlagMergeEpisodesTest {
         assertSame(tmdbEpisode, existing.getTmdbEpisode());
         assertEquals("第1集 Pilot", existing.getDisplayName());
     }
+
+    @Test
+    public void mergeEpisodes_preservesValidatedCrossSeasonMappingMarker() {
+        Flag target = new Flag();
+        Episode existing = Episode.create("11", "http://example.test/11");
+        target.getEpisodes().add(existing);
+
+        Episode enriched = Episode.create("11", "http://example.test/11");
+        TmdbEpisode tmdbEpisode = new TmdbEpisode(1, "Season 2 Episode 1", "", "", "", 0, 0, 0, 2);
+        enriched.setMappedTmdbEpisode(tmdbEpisode);
+
+        target.mergeEpisodes(Collections.singletonList(enriched), false);
+
+        assertSame(tmdbEpisode, existing.getTmdbEpisode());
+        assertTrue(existing.isTmdbEpisodeMapped());
+    }
+
 }

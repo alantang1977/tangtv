@@ -49,6 +49,44 @@ public class ExoUtilTest {
     }
 
     @Test
+    public void isFfmpegVideoFallbackOnly_yieldsToPlatformForHardDecode() {
+        assertTrue(ExoUtil.isFfmpegVideoFallbackOnly(ExoUtil.getRenderMode(PlayerEngine.HARD), false));
+    }
+
+    @Test
+    public void isFfmpegVideoFallbackOnly_honoursVideoSoftPrefer() {
+        assertFalse(ExoUtil.isFfmpegVideoFallbackOnly(ExoUtil.getRenderMode(PlayerEngine.HARD), true));
+    }
+
+    @Test
+    public void isFfmpegVideoFallbackOnly_letsFfmpegCompeteForSoftDecode() {
+        assertFalse(ExoUtil.isFfmpegVideoFallbackOnly(ExoUtil.getRenderMode(PlayerEngine.SOFT), false));
+    }
+
+    @Test
+    public void ffmpegVideoRenderers_useCompatRendererSoPlatformKeepsHighSpecTracks() throws Exception {
+        String source = readMainSource("player/exo/ExoUtil.java");
+
+        assertFalse(source.contains("new FfmpegVideoRenderer("));
+        assertTrue(source.contains("new CompatFfmpegVideoRenderer("));
+        assertTrue(source.contains("isFfmpegVideoFallbackOnly(videoRenderMode, videoPrefer)"));
+    }
+
+    @Test
+    public void ffmpegVideoRenderers_shareTheSelectorTheirMediaCodecRenderersUse() throws Exception {
+        String source = readMainSource("player/exo/ExoUtil.java");
+        int start = source.indexOf("private CompatFfmpegVideoRenderer buildFfmpegVideoRenderer(");
+        int end = source.indexOf("private MediaCodecSelector getVideoCodecSelector(", start);
+        assertTrue(start >= 0 && end > start);
+        String builder = source.substring(start, end);
+
+        assertTrue(source.contains("buildFfmpegVideoRenderer(allowedVideoJoiningTimeMs, eventHandler, eventListener, videoCodecSelector)"));
+        assertTrue(source.contains("isFfmpegVideoFallbackOnly(videoRenderMode, videoPrefer), mediaCodecSelector)"));
+        assertTrue(builder.contains("fallbackOnly, platformDecoderSelector)"));
+        assertFalse(builder.contains("MediaCodecSelector.DEFAULT"));
+    }
+
+    @Test
     public void automaticConstraintReasonLabel_avoidsUnsupportedAndroidStringBuilderApi() throws Exception {
         String source = readMainSource("player/exo/ExoAutomaticVideoConstraintPolicy.java");
 

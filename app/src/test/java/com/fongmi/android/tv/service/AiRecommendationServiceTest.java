@@ -267,6 +267,15 @@ public class AiRecommendationServiceTest {
     }
 
     @Test
+    public void requestSpec_capsOpenAiResponsesOutput() {
+        AiConfig config = AiConfig.objectFrom("{\"enabled\":true,\"protocol\":\"openai_responses\",\"endpoint\":\"https://api.example.com/v1\",\"apiKey\":\"sk-test\",\"model\":\"gpt-test\"}");
+
+        AiCompletionClient.RequestSpec spec = AiCompletionClient.requestSpec(config, "hello");
+
+        assertEquals(4096, spec.getBody().get("max_output_tokens").getAsInt());
+    }
+
+    @Test
     public void extractCompletionText_readsOpenAiChatChoiceMessage() {
         AiConfig config = AiConfig.objectFrom("{\"protocol\":\"openai_chat\"}");
         String body = "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"items\\\":[{\\\"title\\\":\\\"繁花\\\"}]}\"}}]}";

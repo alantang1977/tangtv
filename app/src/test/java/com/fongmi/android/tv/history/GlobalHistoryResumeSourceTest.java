@@ -30,6 +30,52 @@ public class GlobalHistoryResumeSourceTest {
     }
 
     @Test
+    public void directHistoryLaunchPinsClickedRecordAcrossLateTmdbMatch() throws Exception {
+        for (String mode : new String[]{"mobile", "leanback"}) {
+            String source = read("app/src/" + mode + "/java/com/fongmi/android/tv/ui/activity/VideoActivity.java");
+            int reloadStart = source.indexOf("private boolean reloadHistoryAfterTmdbMatch(TmdbItem matched)");
+            int reloadEnd = source.indexOf("private void resumeHistoryAfterTmdbMatch", reloadStart);
+            String reload = source.substring(reloadStart, reloadEnd);
+
+            assertTrue(mode + " history launch must pass the exact clicked record", source.contains("item.getEpisodeUrl(), item)"));
+            assertTrue(mode + " history launch must preserve the source config id", source.contains("intent.putExtra(EXTRA_RESUME_HISTORY_CID, resumeHistory.getCid())"));
+            assertTrue(mode + " history launch must preserve the source history key", source.contains("intent.putExtra(EXTRA_RESUME_HISTORY_KEY, resumeHistory.getKey())"));
+            assertTrue(mode + " late TMDB matching must not replace an explicit history selection", reload.contains("hasIntentResumeHistory()"));
+            assertFalse(mode + " plain resume requests must still allow late TMDB matching", reload.contains("isResumeFromHistory()"));
+        }
+    }
+
+    @Test
+    public void standaloneDetailHistoryKeepsTheClickedEpisodeIdentity() throws Exception {
+        String detail = read("app/src/main/java/com/fongmi/android/tv/ui/activity/TmdbDetailActivity.java");
+
+        assertTrue(detail.contains("public static void startFromHistory(Activity activity, History item)"));
+        assertTrue(detail.contains("public static void startFromResolvedHistory(Activity activity, History source, Vod target, Flag flag, Episode episode)"));
+        assertTrue(detail.contains("resumeHistory = getIntentResumeHistory();"));
+        assertTrue(detail.contains("resumeHistory.forPlaybackKey(getHistoryKey(), VodConfig.getCid())"));
+        assertTrue(detail.contains("isResumeFromHistory() ? getIntentResumeHistory() : null"));
+    }
+
+    @Test
+    public void historySourceLabelWaitsForVodConfigAndRefreshesWhenReady() throws Exception {
+        String history = read("app/src/main/java/com/fongmi/android/tv/bean/History.java");
+        assertTrue(history.contains("if (getCid() != VodConfig.getCid()) return ResUtil.getString(R.string.history_other_config);"));
+        assertTrue(history.contains("if (VodConfig.get().getSites().isEmpty()) return \"\";"));
+        assertTrue(history.contains("ResUtil.getString(R.string.history_source_unavailable)"));
+
+        for (String mode : new String[]{"mobile", "leanback"}) {
+            String activity = read("app/src/" + mode + "/java/com/fongmi/android/tv/ui/activity/HistoryActivity.java");
+            assertTrue(mode + " history page must observe VOD config completion", activity.contains("public void onConfigEvent(ConfigEvent event)"));
+            assertTrue(mode + " history page must refresh labels only after VOD config events", activity.contains("if (event.isVod() && mAdapter != null) {") && activity.contains("mAdapter.notifyDataSetChanged();"));
+        }
+
+        String defaults = read("app/src/main/res/values/strings.xml");
+        String chinese = read("app/src/main/res/values-zh-rCN/strings.xml");
+        assertTrue(defaults.contains("<string name=\"history_source_unavailable\">Source unavailable</string>"));
+        assertTrue(chinese.contains("<string name=\"history_other_config\">其他配置</string>"));
+        assertTrue(chinese.contains("<string name=\"history_source_unavailable\">接口已失效</string>"));
+    }
+    @Test
     public void resolvedPlaybackPreservesHistoryBackdrop() throws Exception {
         for (String mode : new String[]{"mobile", "leanback"}) {
             String source = read("app/src/" + mode + "/java/com/fongmi/android/tv/ui/activity/VideoActivity.java");
@@ -48,7 +94,7 @@ public class GlobalHistoryResumeSourceTest {
                     ? "shouldOpenLegacyTmdbDetail(target.getSiteKey(), target.getId(), false)"
                     : "shouldOpenLegacyTmdbDetail(target.getSiteKey(), target.getId())";
             int guard = method.indexOf(detailGuard);
-            int detailLaunch = method.indexOf("start(activity, target.getSiteKey(), target.getId(), target.getName(), target.getPic(), episode.getName())");
+            int detailLaunch = method.indexOf("TmdbDetailActivity.startFromResolvedHistory(activity, source, target, flag, episode)");
             int directLaunch = method.indexOf("new Intent(activity, VideoActivity.class)");
 
             assertTrue(mode + " resolved history must honor the configured detail mode", guard >= 0);

@@ -23,6 +23,7 @@ import com.fongmi.android.tv.ui.dialog.SpeedSettingDialog;
 import com.fongmi.android.tv.ui.dialog.SliderNumberDialog;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.PermissionUtil;
+import com.fongmi.android.tv.utils.Util;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.Locale;
@@ -73,6 +74,7 @@ public class SettingPersonalFragment extends BaseFragment {
         mBinding.searchColumn.setOnClickListener(this::setSearchColumn);
         mBinding.siteColumn.setOnClickListener(this::setSiteColumn);
         mBinding.searchResultSort.setOnClickListener(this::setSearchResultSort);
+        mBinding.resetApp.setOnClickListener(this::showResetAppDialog);
     }
 
     private void setText() {
@@ -222,6 +224,19 @@ public class SettingPersonalFragment extends BaseFragment {
     private void setSearchResultSort(View view) {
         Setting.putSearchResultSort((Setting.getSearchResultSort() + 1) % searchResultSort.length);
         setText();
+    }
+
+    private void showResetAppDialog(View view) {
+        new MaterialAlertDialogBuilder(requireActivity())
+                .setTitle(R.string.dialog_reset_app)
+                .setMessage(R.string.dialog_reset_app_data)
+                .setNegativeButton(R.string.dialog_negative, null)
+                .setPositiveButton(R.string.dialog_positive, (dialog, which) -> resetApp())
+                .show();
+    }
+
+    private void resetApp() {
+        if (!Util.resetApp()) Notify.show(R.string.reset_app_failed);
     }
 
     @Override

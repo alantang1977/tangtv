@@ -1,0 +1,69 @@
+diff --git a/libavcodec/mediacodecdec.c b/libavcodec/mediacodecdec.c
+index 3c9ae286e9..2611f297f6 100644
+--- a/libavcodec/mediacodecdec.c
++++ b/libavcodec/mediacodecdec.c
+@@ -34,6 +34,7 @@
+ #include "libavutil/pixdesc.h"
+ #include "libavutil/pixfmt.h"
+ #include "libavutil/internal.h"
++#include "libavutil/time.h"
+ 
+ #include "avcodec.h"
+ #include "codec_internal.h"
+@@ -76,6 +77,9 @@ typedef struct MediaCodecH264DecContext {
+ #endif
+ } MediaCodecH264DecContext;
+ 
++#define MEDIACODEC_PORT_RETRY_TIMEOUT_US 8000
++#define MEDIACODEC_PORT_STARVATION_TIMEOUT_US 250000
++
+ static av_cold int mediacodec_decode_close(AVCodecContext *avctx)
+ {
+     MediaCodecH264DecContext *s = avctx->priv_data;
+@@ -830,6 +834,7 @@ static int mediacodec_receive_frame(AVCodecContext *avctx, AVFrame *frame)
+ {
+     MediaCodecH264DecContext *s = avctx->priv_data;
+     const AVFrame *frame_props = NULL;
++    int64_t port_starvation_start_us = AV_NOPTS_VALUE;
+     int ret;
+     ssize_t index;
+ 
+@@ -855,7 +860,10 @@ static int mediacodec_receive_frame(AVCodecContext *avctx, AVFrame *frame)
+     while (1) {
+         if (s->ctx->current_input_buffer < 0 && !s->ctx->draining) {
+             /* poll for input space */
+-            index = ff_AMediaCodec_dequeueInputBuffer(s->ctx->codec, 0);
++            index = ff_AMediaCodec_dequeueInputBuffer(
++                s->ctx->codec,
++                port_starvation_start_us == AV_NOPTS_VALUE
++                    ? 0 : MEDIACODEC_PORT_RETRY_TIMEOUT_US);
+             if (index < 0) {
+                 /* no space, block for an output frame to appear */
+                 ret = ff_mediacodec_dec_receive(avctx, s->ctx, frame, true);
+@@ -865,11 +873,25 @@ static int mediacodec_receive_frame(AVCodecContext *avctx, AVFrame *frame)
+                  * return EAGAIN, which violate the design.
+                  */
+                 if (ff_AMediaCodec_infoTryAgainLater(s->ctx->codec, index) &&
+-                    ret == AVERROR(EAGAIN))
++                    ret == AVERROR(EAGAIN)) {
++                    int64_t now_us = av_gettime_relative();
++                    if (port_starvation_start_us == AV_NOPTS_VALUE) {
++                        port_starvation_start_us = now_us;
++                    } else if (now_us - port_starvation_start_us >=
++                               MEDIACODEC_PORT_STARVATION_TIMEOUT_US) {
++                        av_log(avctx, AV_LOG_WARNING,
++                               "MediaCodec input and output ports remained "
++                               "unavailable for %d ms; yielding decoder to "
++                               "avoid core-thread starvation\n",
++                               MEDIACODEC_PORT_STARVATION_TIMEOUT_US / 1000);
++                        return AVERROR(EAGAIN);
++                    }
+                     continue;
++                }
+                 return ret;
+             }
+             s->ctx->current_input_buffer = index;
++            port_starvation_start_us = AV_NOPTS_VALUE;
+         }
+ 
+         /* try to flush any buffered packet data */

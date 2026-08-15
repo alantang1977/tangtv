@@ -24,10 +24,23 @@
       }
     ]
   },
-  "fongmi_nextlib": {
-    "repo": "https://github.com/FongMi/nextlib.git",
-    "branch": "fongmi",
+  "nextlib": {
+    "repo": "https://github.com/anilbeesetti/nextlib.git",
+    "branch": "release/1.10.0-0.12.1",
     "commit": "6ff6cf9d0820382b3c233d018c52e4163b09d345",
-    "version": "1.10.0-0.12.1"
+    "version": "1.10.0-0.12.1-fongmi-softload-av3a-r1",
+    "upstream_version": "1.10.0-0.12.1",
+    "patches": [
+      "third_party/patches/nextlib-ffmpeg-soft-load-shedding.patch",
+      "third_party/patches/nextlib-av3a.patch"
+    ],
+    "ffmpeg_repo": "https://github.com/FongMi/FFmpeg.git",
+    "ffmpeg_commit": "04482c8d13ac27b2a9fe93f5d388929eef8af5f4",
+    "ndk": "28.2.13676358",
+    "cmake": "3.22.1",
+    "abis": [
+      "arm64-v8a",
+      "armeabi-v7a"
+    ]
   }
 }

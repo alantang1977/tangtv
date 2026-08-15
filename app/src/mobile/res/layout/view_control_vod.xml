@@ -222,12 +222,6 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1" />
 
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/playParamsQuick"
-                style="@style/Control"
-                android:layout_marginEnd="4dp"
-                android:text="@string/play_params" />
-
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/fullscreen"
                 android:layout_width="48dp"

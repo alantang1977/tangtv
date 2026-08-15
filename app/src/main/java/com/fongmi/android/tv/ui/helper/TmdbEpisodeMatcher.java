@@ -9,27 +9,41 @@ public final class TmdbEpisodeMatcher {
     }
 
     /**
-     * 验证 Episode 是否应该匹配给定的 TmdbEpisode
-     * 仅检查源文件集号与 TMDB 集号是否一致，忽略 position 回退
+     * 严格按源集号匹配；只有已经经过安全跨季映射的 Episode 才允许源集号与 TMDB 本季集号不同。
      */
     public static boolean shouldApply(Episode episode, TmdbEpisode tmdbEpisode) {
-        if (tmdbEpisode == null) return false;
-        // 如果源文件没有有效集号（如 00.mp4），拒绝匹配，避免按位置误匹配
-        if (episode == null || episode.getNumber() <= 0) return false;
-        // 源文件有集号时，检查它是否与 TMDB 集号一致
-        return episode.getNumber() == tmdbEpisode.getNumber();
+        if (episode == null || tmdbEpisode == null || episode.getNumber() <= 0 || tmdbEpisode.getNumber() <= 0) return false;
+        if (episode.getNumber() == tmdbEpisode.getNumber()) return true;
+        return episode.isTmdbEpisodeMapped()
+                && episode.getTmdbEpisode() == tmdbEpisode
+                && tmdbEpisode.getSeasonNumber() >= 0;
     }
 
     /**
-     * 验证 Episode 是否应该匹配给定的 TmdbEpisode
-     * mappedNumber 参数已废弃，保留用于向后兼容
+     * 保留旧调用的严格语义；mappedNumber 不能绕过源集号校验。
      */
     public static boolean shouldApply(Episode episode, TmdbEpisode tmdbEpisode, int mappedNumber) {
-        if (tmdbEpisode == null) return false;
-        // 如果源文件没有有效集号（如 00.mp4），拒绝匹配，避免按位置误匹配
-        if (episode == null || episode.getNumber() <= 0) return false;
-        // 源文件有集号时，检查它是否与 TMDB 集号一致
-        return episode.getNumber() == tmdbEpisode.getNumber();
+        if (episode == null || tmdbEpisode == null || episode.getNumber() <= 0 || mappedNumber <= 0) return false;
+        if (episode.getNumber() == tmdbEpisode.getNumber()) return tmdbEpisode.getNumber() == mappedNumber;
+        return episode.isTmdbEpisodeMapped()
+                && episode.getTmdbEpisode() == tmdbEpisode
+                && tmdbEpisode.getNumber() == mappedNumber
+                && tmdbEpisode.getSeasonNumber() >= 0;
+    }
+
+    /**
+     * 验证由源集号主键推导出的 TMDB 本季集号。调用方必须先通过
+     * EpisodeSeasonPolicy.mapFlatEpisodeNumber 取得明确映射，不能按列表位置猜测。
+     */
+    public static boolean shouldApplyMapped(Episode episode, TmdbEpisode tmdbEpisode, int mappedSeason, int mappedNumber) {
+        return episode != null
+                && tmdbEpisode != null
+                && episode.getNumber() > 0
+                && mappedSeason >= 0
+                && mappedNumber > 0
+                && tmdbEpisode.getSeasonNumber() == mappedSeason
+                && tmdbEpisode.getNumber() == mappedNumber
+                && tmdbEpisode.getSeasonNumber() >= 0;
     }
 
     public static boolean shouldApply(Episode episode, int number, String tmdbTitle) {

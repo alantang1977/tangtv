@@ -4,6 +4,8 @@
 
 审计窗口：2026-07-09 00:00:00 至 2026-08-09 23:59:59。提交按 committer date 纳入，同时核对 author date、父提交和实际 diff；合并提交、不同发布分支上的回移提交也分别检查，没有仅凭提交标题筛选。
 
+> 当前集成状态（2026-08-12）：本文的 direct/compute/fragment 内容记录的是当时上游审计事实。后续同机 HDR 实测确认新版互操作实现负载更高，当前 App 已固定为 `v5.5.6-202608072014` 的单一 AHardwareBuffer YCbCr→RGB GPU 转换路径，并删除后端选择项；不要把本文历史描述当作当前运行配置。
+
 ## 结论
 
 本轮共检查 394 个提交：FFmpeg 257、mpv 72、media 27、mpv-android 26、libplacebo 11、CatVodSpider 1。

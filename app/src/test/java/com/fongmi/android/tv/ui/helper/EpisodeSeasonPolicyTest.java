@@ -42,6 +42,28 @@ public class EpisodeSeasonPolicyTest {
     }
 
     @Test
+    public void sliceBySeasonCounts_ignoresSpecialsWhenOrdinarySeasonsCoverSourceEpisodes() {
+        List<Integer> episodes = java.util.stream.IntStream.rangeClosed(1, 18).boxed().toList();
+        List<Integer> seasons = List.of(0, 1, 2);
+        Map<Integer, Integer> counts = Map.of(0, 3, 1, 10, 2, 8);
+
+        assertEquals(List.of(1, 2), EpisodeSeasonPolicy.sliceableSeasons(seasons));
+        assertTrue(EpisodeSeasonPolicy.canSliceBySeasonCounts(episodes.size(), seasons, counts));
+        assertEquals(List.of(11, 12, 13, 14, 15, 16, 17, 18),
+                EpisodeSeasonPolicy.sliceBySeasonCounts(episodes, seasons, counts, 2));
+    }
+
+    @Test
+    public void flatEpisodeMapping_ignoresSpecialsWhenMappingAbsoluteNumbers() {
+        List<Integer> seasons = List.of(0, 1, 2);
+        Map<Integer, Integer> counts = Map.of(0, 3, 1, 10, 2, 8);
+        List<Integer> sourceNumbers = java.util.stream.IntStream.rangeClosed(1, 18).boxed().toList();
+
+        assertTrue(EpisodeSeasonPolicy.canMapFlatEpisodeNumbers(sourceNumbers, seasons, counts));
+        assertEquals(new EpisodeSeasonPolicy.SeasonEpisode(2, 1),
+                EpisodeSeasonPolicy.mapFlatEpisodeNumber(11, seasons, counts));
+    }
+    @Test
     public void shouldUseSingleSeasonEpisodeData_whenFirstTmdbSeasonCoversSourceEpisodes() {
         List<Integer> seasons = List.of(1, 2, 3);
         Map<Integer, Integer> counts = Map.of(1, 190, 2, 8, 3, 8);
@@ -55,6 +77,54 @@ public class EpisodeSeasonPolicyTest {
         Map<Integer, Integer> counts = Map.of(1, 40, 2, 40, 3, 40);
 
         assertFalse(EpisodeSeasonPolicy.shouldUseSingleSeasonEpisodeData(120, 1, seasons, counts));
+    }
+
+    @Test
+    public void flatEpisodeMapping_requiresCompleteContinuousSequence() {
+        List<Integer> seasons = List.of(1, 2);
+        Map<Integer, Integer> counts = Map.of(1, 10, 2, 12);
+
+        assertTrue(EpisodeSeasonPolicy.canMapFlatEpisodeNumbers(
+                java.util.stream.IntStream.rangeClosed(1, 22).boxed().toList(), seasons, counts));
+        assertFalse(EpisodeSeasonPolicy.canMapFlatEpisodeNumbers(
+                List.of(1, 2, 3, 5), seasons, Map.of(1, 2, 2, 2)));
+        assertFalse(EpisodeSeasonPolicy.canMapFlatEpisodeNumbers(
+                List.of(1, 2, 2, 4), seasons, Map.of(1, 2, 2, 2)));
+    }
+
+    @Test
+    public void flatEpisodeKeyMapping_acceptsGapsDuplicatesAndOutOfOrderNumbers() {
+        List<Integer> seasons = List.of(0, 1, 2);
+        Map<Integer, Integer> counts = Map.of(0, 3, 1, 2, 2, 2);
+        List<Integer> sourceNumbers = List.of(4, 1, 2, 2, 0, -1, 5);
+
+        assertTrue(EpisodeSeasonPolicy.canMapFlatEpisodeKeys(sourceNumbers, seasons, counts));
+        assertEquals(List.of(1, 2),
+                EpisodeSeasonPolicy.mappedSeasonsByEpisodeNumbers(sourceNumbers, seasons, counts));
+        assertEquals(new EpisodeSeasonPolicy.SeasonEpisode(2, 2),
+                EpisodeSeasonPolicy.mapFlatEpisodeNumber(4, seasons, counts));
+    }
+
+    @Test
+    public void flatEpisodeKeyMapping_skipsUnmappableNumbersWithoutGuessingByPosition() {
+        List<Integer> seasons = List.of(1, 2);
+        Map<Integer, Integer> counts = Map.of(1, 2, 2, 2);
+
+        assertFalse(EpisodeSeasonPolicy.canMapFlatEpisodeKeys(List.of(0, -1, 5), seasons, counts));
+        assertEquals(List.of(),
+                EpisodeSeasonPolicy.mappedSeasonsByEpisodeNumbers(List.of(0, -1, 5), seasons, counts));
+    }
+
+    @Test
+    public void flatEpisodeMapping_mapsAbsoluteNumberToSeasonLocalNumber() {
+        List<Integer> seasons = List.of(1, 2);
+        Map<Integer, Integer> counts = Map.of(1, 10, 2, 12);
+
+        assertEquals(new EpisodeSeasonPolicy.SeasonEpisode(1, 1), EpisodeSeasonPolicy.mapFlatEpisodeNumber(1, seasons, counts));
+        assertEquals(new EpisodeSeasonPolicy.SeasonEpisode(1, 10), EpisodeSeasonPolicy.mapFlatEpisodeNumber(10, seasons, counts));
+        assertEquals(new EpisodeSeasonPolicy.SeasonEpisode(2, 1), EpisodeSeasonPolicy.mapFlatEpisodeNumber(11, seasons, counts));
+        assertEquals(new EpisodeSeasonPolicy.SeasonEpisode(2, 12), EpisodeSeasonPolicy.mapFlatEpisodeNumber(22, seasons, counts));
+        assertEquals(null, EpisodeSeasonPolicy.mapFlatEpisodeNumber(23, seasons, counts));
     }
 
     @Test
@@ -153,6 +223,22 @@ public class EpisodeSeasonPolicyTest {
     }
 
     @Test
+    public void resolveAvailableSeasons_automaticKeyMappingUsesEpisodeNumbersWhenCountsAreIncomplete() {
+        assertEquals(List.of(1, 2), EpisodeSeasonPolicy.resolveAvailableSeasons(
+                List.of(-1, -1, -1, -1, -1, -1, -1), -1, 1,
+                List.of(1, 2), Map.of(1, 2, 2, 2),
+                List.of(4, 1, 2, 2, 0, -1, 5)));
+    }
+
+    @Test
+    public void resolveAvailableSeasons_doesNotExposeSingleTouchedSeasonFromKeys() {
+        assertEquals(List.of(), EpisodeSeasonPolicy.resolveAvailableSeasons(
+                List.of(-1, -1, -1, -1, -1), -1, 1,
+                List.of(1, 2), Map.of(1, 2, 2, 2),
+                List.of(1, 2, 0, -1, 5)));
+    }
+
+    @Test
     public void resolveAvailableSeasons_ambiguousPartialLineDoesNotExposeAllTmdbSeasons() {
         assertEquals(List.of(), EpisodeSeasonPolicy.resolveAvailableSeasons(
                 List.of(-1, -1, -1, -1, -1), -1, 1, List.of(1, 2), Map.of(1, 3, 2, 3)));
@@ -209,7 +295,7 @@ public class EpisodeSeasonPolicyTest {
     public void episodeMetadataSeasonCandidates_neverFallsBackToSeasonOneWhenSourceSeasonIsKnown() {
         assertEquals(List.of(2), EpisodeSeasonPolicy.episodeMetadataSeasonCandidates(2));
         assertEquals(List.of(0), EpisodeSeasonPolicy.episodeMetadataSeasonCandidates(0));
-        assertEquals(List.of(1, 0), EpisodeSeasonPolicy.episodeMetadataSeasonCandidates(-1));
+        assertEquals(List.of(), EpisodeSeasonPolicy.episodeMetadataSeasonCandidates(-1));
     }
 
     @Test

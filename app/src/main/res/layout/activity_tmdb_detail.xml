@@ -516,13 +516,24 @@
 
                         <TextView
                             android:id="@+id/episodeTitle"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:focusableInTouchMode="false"
+                            android:gravity="center_vertical"
+                            android:paddingStart="4dp"
+                            android:paddingEnd="8dp"
                             android:text="@string/detail_episode"
                             android:textColor="@android:color/white"
                             android:textSize="16sp"
                             android:textStyle="bold" />
+
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/episodeReverse"
@@ -1290,6 +1301,12 @@
                             style="@style/Control"
                             android:layout_marginEnd="8dp"
                             android:text="@string/play_params" />
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/playerMultiThreadProxy"
+                            style="@style/Control"
+                            android:layout_marginEnd="8dp"
+                            android:text="@string/multi_thread_proxy_button" />
 
                         <com.google.android.material.textview.MaterialTextView
                             android:id="@+id/playerCodecCapability"

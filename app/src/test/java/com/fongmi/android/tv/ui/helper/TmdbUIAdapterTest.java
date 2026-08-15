@@ -3,6 +3,7 @@ package com.fongmi.android.tv.ui.helper;
 import com.fongmi.android.tv.bean.Episode;
 import com.fongmi.android.tv.bean.TmdbEpisode;
 import com.fongmi.android.tv.bean.TmdbItem;
+import com.fongmi.android.tv.bean.TmdbSeasonMatchCache;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.utils.Task;
 
@@ -36,6 +37,25 @@ public class TmdbUIAdapterTest {
         assertTrue(TmdbUIAdapter.applyTmdbTitle(vod, item));
 
         assertEquals("刮削后的标题", vod.getName());
+    }
+
+    @Test
+    public void seasonCacheTitlePrefersStableSourceSignalsOverEnrichedVodTitle() {
+        assertEquals("explicit source", TmdbUIAdapter.selectSourceCacheTitle("explicit source", "intent source", "TMDB title"));
+        assertEquals("intent source", TmdbUIAdapter.selectSourceCacheTitle("", "intent source", "TMDB title"));
+        assertEquals("TMDB title", TmdbUIAdapter.selectSourceCacheTitle("", "", "TMDB title"));
+    }
+
+    @Test
+    public void staleSeasonBindingIsRemovedWhenMatchedMediaChanges() {
+        TmdbSeasonMatchCache cache = new TmdbSeasonMatchCache();
+        cache.put("site", "vod", "source title", 100, "tv", 2,
+                TmdbSeasonMatchCache.Mode.MANUAL_SEASON, "fingerprint", 8, 8);
+
+        TmdbItem rematched = new TmdbItem(200, "tv", "new match", "", "", "", "");
+
+        assertTrue(TmdbUIAdapter.removeStaleSeasonBinding(cache, "site", "vod", "source title", rematched));
+        assertFalse(TmdbUIAdapter.removeStaleSeasonBinding(cache, "site", "vod", "source title", rematched));
     }
 
     @Test
@@ -78,7 +98,7 @@ public class TmdbUIAdapterTest {
     public void episodeMetadataBindingIndexesTmdbEpisodesOnce() throws Exception {
         Path sourcePath = findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "helper", "TmdbUIAdapter.java"));
         String source = Files.readString(sourcePath, StandardCharsets.UTF_8);
-        int method = source.indexOf("private boolean applyEpisodeTitles(Vod vod, TmdbItem item)");
+        int method = source.indexOf("private boolean applyEpisodeTitles(Vod vod, TmdbItem item, int selectedSeason, int generation, int metadataGeneration)");
         int end = source.indexOf("static boolean shouldUseEpisodePosition", method);
         String body = method >= 0 && end > method ? source.substring(method, end) : "";
 
@@ -218,7 +238,7 @@ public class TmdbUIAdapterTest {
         int firstRefresh = source.indexOf("notifyVodChanged(vod, generation, RefreshEvent.Type.VOD_CORE);", backgroundDelay);
         int deferredLoads = source.indexOf("scheduleStartupBackgroundLoads(vod, item, detail, generation);", firstRefresh);
         int scheduler = source.indexOf("private void scheduleStartupBackgroundLoads", deferredLoads);
-        int episode = source.indexOf("loadEpisodeTitlesAsync(vod, item, generation);", scheduler);
+        int episode = source.indexOf("loadEpisodeTitlesAsync(vod, item, generation, metadataGeneration, selectedSeason);", scheduler);
         int related = source.indexOf("loadRelatedRecommendationsAsync(vod, item, detail, generation);", episode);
         int personal = source.indexOf("loadPersonalRecommendationsAsync(vod, item, detail, generation);", related);
         int notify = source.indexOf("private void notifyVodChanged");
@@ -252,9 +272,9 @@ public class TmdbUIAdapterTest {
         int coreLoaded = source.indexOf("loaded = true;", coreMethod);
         int coreEpisodeState = source.indexOf("episodeMetadataLoaded = vod == null || item == null || !item.isTv();", coreLoaded);
         int firstRefresh = source.indexOf("notifyVodChanged(vod, generation, RefreshEvent.Type.VOD_CORE);", coreEpisodeState);
-        int episodeMethod = source.indexOf("private void loadEpisodeTitlesAsync(Vod vod, TmdbItem item, int generation)");
-        int episodeComplete = source.indexOf("finishEpisodeMetadataLoad(vod, generation);", episodeMethod);
-        int completionMethod = source.indexOf("private void finishEpisodeMetadataLoad(Vod vod, int generation)", episodeComplete);
+        int episodeMethod = source.indexOf("private void loadEpisodeTitlesAsync(Vod vod, TmdbItem item, int generation, int metadataGeneration, int selectedSeason)");
+        int episodeComplete = source.indexOf("finishEpisodeMetadataLoad(vod, generation, metadataGeneration, selectedSeason);", episodeMethod);
+        int completionMethod = source.indexOf("private void finishEpisodeMetadataLoad(Vod vod, int generation, int metadataGeneration, Integer selectedSeason)", episodeComplete);
         int markComplete = source.indexOf("episodeMetadataLoaded = true;", completionMethod);
         int completionRefresh = source.indexOf("notifyVodChanged(vod, generation, RefreshEvent.Type.VOD_EPISODE_TITLES);", markComplete);
         int failureMethod = source.indexOf("private void notifyLoadComplete(Vod vod, int generation)");
@@ -878,6 +898,22 @@ public class TmdbUIAdapterTest {
             assertTrue(sourcePath + " must close recommendation work on destroy", source.contains("mPersonalRecommendationTasks.close();"));
         }
     }
+
+    @Test
+    public void episodeMetadataUsesStructuredSeasonResolutionWithoutBlindFallback() throws Exception {
+        Path sourcePath = findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "helper", "TmdbUIAdapter.java"));
+        String source = Files.readString(sourcePath, StandardCharsets.UTF_8);
+        int resolve = source.indexOf("TmdbSeasonResolver.resolve(");
+        int snapshot = source.indexOf("private Integer currentEpisodeMetadataSeason()");
+        int apply = source.indexOf("private boolean applyEpisodeTitles(Vod vod, TmdbItem item, int selectedSeason, int generation, int metadataGeneration)");
+        int selectedSeason = source.indexOf("Integer selectedSeason = seasonResolution.getSelectedSeason()", snapshot);
+
+        assertTrue("TMDB adapter must resolve the season after TV detail is available", resolve >= 0);
+        assertTrue("episode metadata must capture the structured selected season", snapshot > resolve && selectedSeason > snapshot && apply > snapshot);
+        assertFalse("unknown seasons must not try season 1 / specials candidates",
+                source.substring(apply).contains("episodeMetadataSeasonCandidates("));
+    }
+
 
     private static Path findMainJavaPath() {
         Path moduleRelative = Path.of("src", "main", "java");

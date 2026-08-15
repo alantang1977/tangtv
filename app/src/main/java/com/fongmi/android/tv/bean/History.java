@@ -771,12 +771,11 @@ public class History implements Diffable<History> {
     }
 
     public String getSiteName() {
-        if (getCid() == VodConfig.getCid()) {
-            if (SiteApi.PUSH.equals(getSiteKey())) return "";
-            Site site = VodConfig.get().getSite(getSiteKey());
-            if (!site.isEmpty()) return site.getDisplayName();
-        }
-        return ResUtil.getString(R.string.history_other_config);
+        if (getCid() != VodConfig.getCid()) return ResUtil.getString(R.string.history_other_config);
+        if (SiteApi.PUSH.equals(getSiteKey())) return "";
+        if (VodConfig.get().getSites().isEmpty()) return "";
+        Site site = VodConfig.get().getSite(getSiteKey());
+        return site.isEmpty() ? ResUtil.getString(R.string.history_source_unavailable) : site.getDisplayName();
     }
 
     public boolean isCurrentSourceAvailable() {
@@ -811,7 +810,7 @@ public class History implements Diffable<History> {
      */
     public History forPlaybackKey(String key, int cid) {
         History copy = copy();
-        copy.playbackSourceKey = getKey();
+        if (getCid() != cid || !TextUtils.equals(getKey(), key)) copy.playbackSourceKey = getKey();
         copy.setKey(key);
         copy.setCid(cid);
         return copy;

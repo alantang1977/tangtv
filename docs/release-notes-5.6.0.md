@@ -10,6 +10,8 @@
 
 - 播放器原生链升级至 MPV `0.41.0-940`、FongMi FFmpeg 9 和 libplacebo `7.375.0`，同步更新 MPV JNI 通信层。
 - 增强 Android MediaCodec、OpenGL 与 Vulkan 播放路径，完善 AImageReader/AHardwareBuffer、HDR 和 Dolby Vision 输出兼容。
+- Android Vulkan 硬解固定为实测负载更低的单一 AHardwareBuffer GPU 转换路径，移除未发布的 direct/stable/compute/fragment 后端选择与旧配置项。
+- 播放参数面板增加 MPV 渲染链 GPU 负载百分比；本地文件不再显示网络下载速度，也不再给出网速不足结论。
 - 完善 Dolby Vision 直出双 Surface 支持，视频直出时可继续显示字幕、OSD 与播放控制信息。
 - 增强 MMT/TLV、TTML、ARIB 字幕、Audio Vivid/AV3A、HDR10+ 元数据以及蓝光/DVD 镜像播放兼容。
 - 增强 MPV 网络播放的 Range、重试、短读和 HTTP/2 处理，改善远程媒体、直播及拖动体验。

@@ -1,0 +1,137 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.github.anilbeesetti",
+    "module": "nextlib-media3ext",
+    "version": "1.10.0-0.12.1-fongmi-softload-av3a-r1",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.4.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.2.10"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "nextlib-media3ext-1.10.0-0.12.1-fongmi-softload-av3a-r1.aar",
+          "url": "nextlib-media3ext-1.10.0-0.12.1-fongmi-softload-av3a-r1.aar",
+          "size": 6288216,
+          "sha512": "c3f3c5638e6dbbe757a208bffedfd081d0a48e10d50cf33cbc50a86d29d34aeb17632c2f387c2fbdf45f50763fa213cd3e15b69620309698ba3490943c5e7dcd",
+          "sha256": "10f74899b256c8f7620494aa53237826bb5d4910e9c31d61fa0255f1fcaf43e8",
+          "sha1": "c9c9052f76a24645c466548d3285cfcfa5314ede",
+          "md5": "96394bbb43d02c285eea736cb674c341"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "androidx.media3",
+          "module": "media3-exoplayer",
+          "version": {
+            "requires": "1.10.0"
+          }
+        },
+        {
+          "group": "com.google.errorprone",
+          "module": "error_prone_annotations",
+          "version": {
+            "requires": "2.48.0"
+          }
+        },
+        {
+          "group": "androidx.annotation",
+          "module": "annotation",
+          "version": {
+            "requires": "1.9.1"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.2.10"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "nextlib-media3ext-1.10.0-0.12.1-fongmi-softload-av3a-r1.aar",
+          "url": "nextlib-media3ext-1.10.0-0.12.1-fongmi-softload-av3a-r1.aar",
+          "size": 6288216,
+          "sha512": "c3f3c5638e6dbbe757a208bffedfd081d0a48e10d50cf33cbc50a86d29d34aeb17632c2f387c2fbdf45f50763fa213cd3e15b69620309698ba3490943c5e7dcd",
+          "sha256": "10f74899b256c8f7620494aa53237826bb5d4910e9c31d61fa0255f1fcaf43e8",
+          "sha1": "c9c9052f76a24645c466548d3285cfcfa5314ede",
+          "md5": "96394bbb43d02c285eea736cb674c341"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "nextlib-media3ext-1.10.0-0.12.1-fongmi-softload-av3a-r1-sources.jar",
+          "url": "nextlib-media3ext-1.10.0-0.12.1-fongmi-softload-av3a-r1-sources.jar",
+          "size": 20500,
+          "sha512": "8bb7364184a7130174b64686afa7c8816e81f4bdea4f1103fac95d264b803077a629fa7979fe36ed32180c2c1eeb7caf9fd3ccccb89189116eea392f8dc809c3",
+          "sha256": "8924d59253ee31d36579d2043c7538fd8275e683d0ad07befacca9da12637fd3",
+          "sha1": "fff302eeffed3717e78421868c280b9e83f73f94",
+          "md5": "b31ae7c4cf416dcdd572b98a2c10d12e"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseJavaDocPublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "nextlib-media3ext-1.10.0-0.12.1-fongmi-softload-av3a-r1-javadoc.jar",
+          "url": "nextlib-media3ext-1.10.0-0.12.1-fongmi-softload-av3a-r1-javadoc.jar",
+          "size": 328836,
+          "sha512": "f7b4e8e40b6cdad5bab691969de0e4b8abcc7720fdb1df57b79dc4409a61c30aeb22d4a388698478129e7158affd4256fc702bd625a4d20330d78d313cf83e90",
+          "sha256": "fec4d75645d279c75dd18dee54d276cb1c65192566602f87b271a72faee3f186",
+          "sha1": "35ffd146804aab0a0ebaa275098978135b663973",
+          "md5": "ea725f8f9b30486f4180eb8576281a82"
+        }
+      ]
+    }
+  ]
+}

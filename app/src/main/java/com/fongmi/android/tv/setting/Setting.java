@@ -23,6 +23,7 @@ import com.fongmi.android.tv.bean.DanmakuMatchCache;
 import com.fongmi.android.tv.bean.ShortDramaConfig;
 import com.fongmi.android.tv.bean.TmdbConfig;
 import com.fongmi.android.tv.bean.TmdbMatchCache;
+import com.fongmi.android.tv.bean.TmdbSeasonMatchCache;
 import com.fongmi.android.tv.bean.Update;
 import com.fongmi.android.tv.utils.AppCache;
 import com.fongmi.android.tv.utils.WebViewUtil;
@@ -880,6 +881,13 @@ public class Setting {
         AppCache.put(AppCache.KEY_TMDB_MATCH, App.gson().toJson(cache));
     }
 
+    public static TmdbSeasonMatchCache getTmdbSeasonMatchCache() {
+        return TmdbSeasonMatchCache.objectFrom(AppCache.get(AppCache.KEY_TMDB_SEASON_MATCH));
+    }
+
+    public static void putTmdbSeasonMatchCache(TmdbSeasonMatchCache cache) {
+        AppCache.put(AppCache.KEY_TMDB_SEASON_MATCH, App.gson().toJson(cache));
+    }
     public static DanmakuMatchCache getDanmakuMatchCache() {
         return DanmakuMatchCache.objectFrom(Prefers.getString("danmaku_match_cache"));
     }
