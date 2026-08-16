@@ -14,8 +14,8 @@ def releaseKeyPassword = localProps['keyPassword'] ?: localProps['storePassword'
 def fastRelease = (project.findProperty('fastRelease') ?: 'false').toString().toBoolean()
 def buildTimestamp = new Date().format('yyyyMMddHHmm', TimeZone.getTimeZone('Asia/Shanghai'))
 def buildTime = fastRelease ? "fast-${buildTimestamp}" : buildTimestamp
-def releaseTag = (System.getenv('WEBHTV_RELEASE_TAG') ?: '').replace('\\', '\\\\').replace('"', '\\"')
-def apkSuffix = (System.getenv('WEBHTV_APK_SUFFIX') ?: '').replaceAll('[^A-Za-z0-9._-]', '')
+def releaseTag = (System.getenv('TAMGTV_RELEASE_TAG') ?: '').replace('\\', '\\\\').replace('"', '\\"')
+def apkSuffix = (System.getenv('TANGTV_APK_SUFFIX') ?: '').replaceAll('[^A-Za-z0-9._-]', '')
 
 android {
     namespace = 'com.fongmi.android.tv'
