@@ -75,4 +75,5 @@ jobs:
           export CNB_RELEASE_TITLE="$(jq -r '.name // empty' github-release.json)"
           export CNB_RELEASE_NOTES="$(jq -r '.body // empty' github-release.json)"
           export CNB_RELEASE_PRERELEASE="$(jq -r '.isPrerelease // false' github-release.json)"
+          chmod +x .github/scripts/sync-cnb-release.sh
           .github/scripts/sync-cnb-release.sh
