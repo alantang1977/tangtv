@@ -9,7 +9,6 @@ import androidx.viewbinding.ViewBinding;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.databinding.ActivityCrashBinding;
 import com.fongmi.android.tv.ui.base.BaseActivity;
-import com.fongmi.android.tv.utils.AppVersion;
 import com.github.catvod.utils.Prefers;
 
 import java.util.Objects;
@@ -58,9 +57,7 @@ public class CrashActivity extends BaseActivity {
     private void showError() {
         new AlertDialog.Builder(this)
                 .setTitle(R.string.crash_details_title)
-                .setMessage(getString(R.string.crash_details_message,
-                        AppVersion.fullName(),
-                        CustomActivityOnCrash.getAllErrorDetailsFromIntent(this, getIntent())))
+                .setMessage(CustomActivityOnCrash.getAllErrorDetailsFromIntent(this, getIntent()))
                 .setPositiveButton(R.string.crash_details_close, null)
                 .show();
     }

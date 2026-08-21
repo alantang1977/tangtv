@@ -30,7 +30,6 @@ import com.fongmi.android.tv.ui.adapter.EpisodeGroupAdapter;
 import com.fongmi.android.tv.ui.adapter.FlagAdapter;
 import com.fongmi.android.tv.ui.base.ViewType;
 import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
-import com.fongmi.android.tv.ui.helper.EpisodeRangePolicy;
 import com.fongmi.android.tv.utils.EpisodeTitleCompact;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.Util;
@@ -48,7 +47,6 @@ public class EpisodeListDialog extends AppCompatDialogFragment implements FlagAd
     private List<Flag> flags;
     private int episodeSpanCount = 4;
     private boolean reverse;
-    private boolean tmdbCard;
 
     public static EpisodeListDialog create() {
         return new EpisodeListDialog();
@@ -61,11 +59,6 @@ public class EpisodeListDialog extends AppCompatDialogFragment implements FlagAd
 
     public EpisodeListDialog reverse(boolean reverse) {
         this.reverse = reverse;
-        return this;
-    }
-
-    public EpisodeListDialog tmdbCard(boolean tmdbCard) {
-        this.tmdbCard = tmdbCard;
         return this;
     }
 
@@ -145,7 +138,6 @@ public class EpisodeListDialog extends AppCompatDialogFragment implements FlagAd
         binding.episode.setLayoutManager(new GridLayoutManager(requireContext(), episodeSpanCount));
         binding.episode.addItemDecoration(episodeDecoration = new SpaceItemDecoration(episodeSpanCount, 8));
         binding.episode.setAdapter(episodeAdapter = new EpisodeAdapter(this, ViewType.GRID));
-        episodeAdapter.setUseTmdbCard(tmdbCard);
         binding.episode.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
@@ -162,22 +154,16 @@ public class EpisodeListDialog extends AppCompatDialogFragment implements FlagAd
     private void setGroups(Flag flag) {
         if (flag == null) return;
         List<Episode> episodes = flag.getEpisodes();
-        int maxGroupSize = tmdbCard ? EpisodeRangePolicy.CARD_PAGE_MAX_SIZE : 0;
-        groupAdapter.addAll(EpisodeGroupAdapter.build(episodes.size(), getSelectedEpisodePosition(episodes), reverse, maxGroupSize));
+        groupAdapter.addAll(EpisodeGroupAdapter.build(episodes.size(), getSelectedEpisodePosition(episodes), reverse));
         setEpisodes(episodes);
         binding.group.scrollToPosition(groupAdapter.getPosition());
         binding.episode.scrollToPosition(episodeAdapter.getPosition());
     }
 
     private void setEpisodes(List<Episode> episodes) {
-        setEpisodeItems(episodes);
-        selectEpisodeGroupByPosition(episodeAdapter.getPosition());
-    }
-
-    private void setEpisodeItems(List<Episode> episodes) {
-        episodeAdapter.setUseTmdbCard(tmdbCard);
         updateEpisodeSpan(episodes);
         episodeAdapter.addAll(episodes);
+        selectEpisodeGroupByPosition(episodeAdapter.getPosition());
     }
 
     private void updateEpisodeSpan(List<Episode> episodes) {
@@ -190,7 +176,6 @@ public class EpisodeListDialog extends AppCompatDialogFragment implements FlagAd
     }
 
     private int getEpisodeSpan(List<Episode> episodes) {
-        if (tmdbCard) return 2;
         EpisodeTitleCompact.apply(episodes);
         int maxLen = 0;
         for (Episode item : episodes) maxLen = Math.max(maxLen, item.getDisplayName().length());

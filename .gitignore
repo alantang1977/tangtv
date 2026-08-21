@@ -8,13 +8,6 @@ out/
 !third_party/mpv-native-overrides/aimagereader-stable/video/out/
 !third_party/mpv-native-overrides/aimagereader-stable/video/out/hwdec/
 !third_party/mpv-native-overrides/aimagereader-stable/video/out/hwdec/hwdec_aimagereader_vk_stable.c
-!third_party/mpv-native-overrides/aimagereader-v556/video/out/
-!third_party/mpv-native-overrides/aimagereader-v556/video/out/hwdec/
-third_party/mpv-native-overrides/aimagereader-v556/video/out/hwdec/*
-!third_party/mpv-native-overrides/aimagereader-v556/video/out/hwdec/hwdec_aimagereader_vk.c
-!third_party/mpv-native-overrides/aimagereader-v556/video/out/hwdec/hwdec_aimagereader_vk.h
-!third_party/mpv-native-overrides/aimagereader-v556/video/out/hwdec/hwdec_aimagereader.comp
-!third_party/mpv-native-overrides/aimagereader-v556/video/out/hwdec/hwdec_aimagereader_comp.h
 Release/
 *.apk
 *.aab
@@ -34,8 +27,4 @@ nostr_副本*.html
 __pycache__/
 *.pyc
 third_party/sources/
-app/signing/
-.gradle-user-home/
 plans/
-.tokensave
-.codebase-memory

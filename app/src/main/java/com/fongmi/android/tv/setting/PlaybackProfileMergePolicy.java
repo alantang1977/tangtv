@@ -8,10 +8,7 @@ public final class PlaybackProfileMergePolicy {
 
     private static final int[] CONSOLIDATED_PROFILES = {
             PlaybackPerformanceSetting.PROFILE_AUTO,
-            PlaybackPerformanceSetting.PROFILE_RECOMMENDED,
-            PlaybackPerformanceSetting.PROFILE_COMPATIBLE,
-            PlaybackPerformanceSetting.PROFILE_LIGHTWEIGHT,
-            PlaybackPerformanceSetting.PROFILE_ORIGINAL
+            PlaybackPerformanceSetting.PROFILE_LIGHTWEIGHT
     };
 
     private PlaybackProfileMergePolicy() {
@@ -52,14 +49,11 @@ public final class PlaybackProfileMergePolicy {
     }
 
     public static int effectiveProfile(int rawProfile, boolean mergeEnabled) {
-        return switch (rawProfile) {
-            case PlaybackPerformanceSetting.PROFILE_AUTO,
-                 PlaybackPerformanceSetting.PROFILE_RECOMMENDED,
-                 PlaybackPerformanceSetting.PROFILE_COMPATIBLE,
-                 PlaybackPerformanceSetting.PROFILE_CUSTOM,
-                 PlaybackPerformanceSetting.PROFILE_LIGHTWEIGHT,
-                 PlaybackPerformanceSetting.PROFILE_ORIGINAL -> rawProfile;
-            default -> PlaybackPerformanceSetting.PROFILE_AUTO;
+        return switch (consolidationAction(rawProfile)) {
+            case APPLY_AUTO -> PlaybackPerformanceSetting.PROFILE_AUTO;
+            case APPLY_LIGHTWEIGHT ->
+                    PlaybackPerformanceSetting.PROFILE_LIGHTWEIGHT;
+            case KEEP -> rawProfile;
         };
     }
 

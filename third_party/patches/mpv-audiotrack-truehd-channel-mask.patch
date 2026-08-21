@@ -1,0 +1,20 @@
+diff --git a/audio/out/ao_audiotrack.c b/audio/out/ao_audiotrack.c
+--- a/audio/out/ao_audiotrack.c
++++ b/audio/out/ao_audiotrack.c
+@@ -714,6 +714,15 @@ static int init(struct ao *ao)
+     };
+     static_assert(MP_ARRAY_SIZE(layout_map) == MP_ARRAY_SIZE(layouts), "");
+     if (p->format == AudioFormat.ENCODING_IEC61937) {
+-        p->channel_config = AudioFormat.CHANNEL_OUT_STEREO;
++        // Android documents a stereo channel mask for IEC61937, but the
++        // mature VLC AudioTrack backend uses 7.1 for TrueHD because several
++        // Android TV firmwares reject or down-route its 8-channel carrier
++        // when it is declared as stereo.
++        if (ao->format == AF_FORMAT_S_TRUEHD) {
++            MP_VERBOSE(ao, "Using 7.1 IEC61937 carrier mask for TrueHD\n");
++            p->channel_config = AudioFormat.CHANNEL_OUT_7POINT1_SURROUND;
++        } else {
++            p->channel_config = AudioFormat.CHANNEL_OUT_STEREO;
++        }
+     } else {
+         struct mp_chmap_sel sel = {0};

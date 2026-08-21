@@ -25,17 +25,10 @@ public class FolderFragment extends BaseFragment {
     private Class mType;
 
     public static FolderFragment newInstance(String key, Class type, int y) {
-        return newInstance(key, type, y, -1, null, -1);
-    }
-
-    public static FolderFragment newInstance(String key, Class type, int y, int historyResumeCid, String historyResumeKey, int historyResumeTargetCid) {
         Bundle args = new Bundle();
         args.putInt("y", y);
         args.putString("key", key);
         args.putParcelable("type", type);
-        args.putInt("historyResumeCid", historyResumeCid);
-        args.putString("historyResumeKey", historyResumeKey);
-        args.putInt("historyResumeTargetCid", historyResumeTargetCid);
         FolderFragment fragment = new FolderFragment();
         fragment.setArguments(args);
         return fragment;
@@ -51,18 +44,6 @@ public class FolderFragment extends BaseFragment {
 
     private int getY() {
         return getArguments().getInt("y");
-    }
-
-    public int getHistoryResumeCid() {
-        return getArguments().getInt("historyResumeCid", -1);
-    }
-
-    public String getHistoryResumeKey() {
-        return getArguments().getString("historyResumeKey");
-    }
-
-    public int getHistoryResumeTargetCid() {
-        return getArguments().getInt("historyResumeTargetCid", -1);
     }
 
     private VodFragment getParent() {
@@ -81,7 +62,7 @@ public class FolderFragment extends BaseFragment {
     @Override
     protected void initView() {
         mType = getType();
-        getChildFragmentManager().beginTransaction().replace(R.id.container, TypeFragment.newInstance(getKey(), mType.getTypeId(), mType.getStyle(), getExtend(), mType.isFolder(), getY(), getHistoryResumeCid(), getHistoryResumeKey(), getHistoryResumeTargetCid())).commit();
+        getChildFragmentManager().beginTransaction().replace(R.id.container, TypeFragment.newInstance(getKey(), mType.getTypeId(), mType.getStyle(), getExtend(), mType.isFolder(), getY())).commit();
     }
 
     private HashMap<String, String> getExtend() {
@@ -91,7 +72,7 @@ public class FolderFragment extends BaseFragment {
     }
 
     public void openFolder(String typeId, HashMap<String, String> extend) {
-        TypeFragment next = TypeFragment.newInstance(getKey(), typeId, mType.getStyle(), extend, mType.isFolder(), getY(), getHistoryResumeCid(), getHistoryResumeKey(), getHistoryResumeTargetCid());
+        TypeFragment next = TypeFragment.newInstance(getKey(), typeId, mType.getStyle(), extend, mType.isFolder(), getY());
         FragmentTransaction ft = getChildFragmentManager().beginTransaction();
         Optional.ofNullable(getChild()).ifPresent(ft::hide);
         ft.add(R.id.container, next);

@@ -9,8 +9,6 @@ import android.view.View;
 
 public class MiniProgressView extends View {
 
-    private static final int PROGRESS_BLUE = Color.rgb(33, 150, 243);
-
     private final Paint trackPaint;
     private final Paint playedPaint;
 
@@ -28,11 +26,11 @@ public class MiniProgressView extends View {
     public MiniProgressView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         trackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        trackPaint.setColor(PROGRESS_BLUE);
-        trackPaint.setAlpha(72);
+        trackPaint.setColor(Color.WHITE);
+        trackPaint.setAlpha(48);
         playedPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        playedPaint.setColor(PROGRESS_BLUE);
-        playedPaint.setAlpha(240);
+        playedPaint.setColor(Color.WHITE);
+        playedPaint.setAlpha(230);
     }
 
     public void setProgress(long position, long duration) {

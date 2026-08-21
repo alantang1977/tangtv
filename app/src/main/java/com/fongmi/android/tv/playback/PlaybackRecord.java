@@ -50,7 +50,6 @@ public class PlaybackRecord {
     public long durationMs;
     public double progress;
     public float speed;
-    public boolean speedOverride;
     public boolean completed;
     public String appVersion;
     public String client;
@@ -108,7 +107,6 @@ public class PlaybackRecord {
         record.durationMs = duration(history, player);
         record.progress = progress(record.positionMs, record.durationMs);
         record.speed = speed(history, player);
-        record.speedOverride = history.hasUserSpeed();
         record.state = state(player);
         record.completed = completed(record.state, record.positionMs, record.durationMs);
         record.dedupeKey = dedupeKey(record);
@@ -177,7 +175,6 @@ public class PlaybackRecord {
         if (policy.includes("durationMs")) record.durationMs = durationMs;
         if (policy.includes("progress")) record.progress = progress;
         if (policy.includes("speed")) record.speed = speed;
-        if (policy.includes("speedOverride")) record.speedOverride = speedOverride;
         if (policy.includes("completed")) record.completed = completed;
         if (policy.includes("appVersion")) record.appVersion = appVersion;
         if (policy.includes("client")) record.client = client;
@@ -214,7 +211,6 @@ public class PlaybackRecord {
         if (!deletion && policy.includes("durationMs")) object.addProperty("durationMs", durationMs);
         if (!deletion && policy.includes("progress")) object.addProperty("progress", progress);
         if (!deletion && policy.includes("speed")) object.addProperty("speed", speed);
-        if (!deletion && policy.includes("speedOverride")) object.addProperty("speedOverride", speedOverride);
         if (!deletion && policy.includes("completed")) object.addProperty("completed", completed);
         if (policy.includes("appVersion")) object.addProperty("appVersion", appVersion);
         if (policy.includes("client")) object.addProperty("client", client);
@@ -250,7 +246,6 @@ public class PlaybackRecord {
         record.durationMs = durationMs;
         record.progress = progress;
         record.speed = speed;
-        record.speedOverride = speedOverride;
         record.completed = completed;
         record.appVersion = appVersion;
         record.client = client;
@@ -285,7 +280,6 @@ public class PlaybackRecord {
         durationMs = 0;
         progress = 0;
         speed = 0;
-        speedOverride = false;
         completed = false;
         appVersion = "";
         client = "";

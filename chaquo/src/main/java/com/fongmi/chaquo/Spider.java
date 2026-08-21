@@ -30,89 +30,77 @@ public class Spider extends com.github.catvod.crawler.Spider {
     @Override
     public void init(Context context, String extend) {
         PyObject dependence = app.callAttr("getDependence", obj);
-        if (dependence != null) {
-            for (PyObject item : dependence.asList()) {
-                download(item + ".py");
-                close(item);
-            }
-            close(dependence);
-        }
+        if (dependence != null) for (PyObject item : dependence.asList()) download(item + ".py");
         obj.put("siteKey", siteKey);
         app.callAttr("init", obj, extend);
     }
 
     @Override
     public String homeContent(boolean filter) {
-        return toStr(app.callAttr("homeContent", obj, filter));
+        return app.callAttr("homeContent", obj, filter).toString();
     }
 
     @Override
     public String homeVideoContent() {
-        return toStr(app.callAttr("homeVideoContent", obj));
+        return app.callAttr("homeVideoContent", obj).toString();
     }
 
     @Override
     public String categoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend) {
-        return toStr(app.callAttr("categoryContent", obj, tid, pg, filter, gson.toJson(extend)));
+        return app.callAttr("categoryContent", obj, tid, pg, filter, gson.toJson(extend)).toString();
     }
 
     @Override
     public String detailContent(List<String> ids) {
-        return toStr(app.callAttr("detailContent", obj, gson.toJson(ids)));
+        return app.callAttr("detailContent", obj, gson.toJson(ids)).toString();
     }
 
     @Override
     public String searchContent(String key, boolean quick) {
-        return toStr(app.callAttr("searchContent", obj, key, quick));
+        return app.callAttr("searchContent", obj, key, quick).toString();
     }
 
     @Override
     public String searchContent(String key, boolean quick, String pg) {
-        return toStr(app.callAttr("searchContent", obj, key, quick, pg));
+        return app.callAttr("searchContent", obj, key, quick, pg).toString();
     }
 
     @Override
     public String playerContent(String flag, String id, List<String> vipFlags) {
-        return toStr(app.callAttr("playerContent", obj, flag, id, gson.toJson(vipFlags)));
+        return app.callAttr("playerContent", obj, flag, id, gson.toJson(vipFlags)).toString();
     }
 
     @Override
     public String liveContent(String url) {
-        return toStr(app.callAttr("liveContent", obj, url));
+        return app.callAttr("liveContent", obj, url).toString();
     }
 
     @Override
     public boolean manualVideoCheck() {
-        return toBool(app.callAttr("manualVideoCheck", obj));
+        return app.callAttr("manualVideoCheck", obj).toBoolean();
     }
 
     @Override
     public boolean isVideoFormat(String url) {
-        return toBool(app.callAttr("isVideoFormat", obj, url));
+        return app.callAttr("isVideoFormat", obj, url).toBoolean();
     }
 
     @Override
     public Object[] proxy(Map<String, String> params) throws Exception {
-        PyObject container = app.callAttr("localProxy", obj, gson.toJson(params));
-        try {
-            List<PyObject> list = container.asList();
-            boolean base64 = list.size() > 4 && list.get(4).toInt() == 1;
-            boolean header = list.size() > 3 && list.get(3) != null;
-            Object[] result = new Object[4];
-            result[0] = list.get(0).toInt();
-            result[1] = list.get(1).toString();
-            result[2] = getStream(list.get(2), base64);
-            result[3] = header ? getHeader(list.get(3)) : null;
-            for (PyObject item : list) close(item);
-            return result;
-        } finally {
-            close(container);
-        }
+        List<PyObject> list = app.callAttr("localProxy", obj, gson.toJson(params)).asList();
+        boolean base64 = list.size() > 4 && list.get(4).toInt() == 1;
+        boolean header = list.size() > 3 && list.get(3) != null;
+        Object[] result = new Object[4];
+        result[0] = list.get(0).toInt();
+        result[1] = list.get(1).toString();
+        result[2] = getStream(list.get(2), base64);
+        result[3] = header ? getHeader(list.get(3)) : null;
+        return result;
     }
 
     @Override
     public String action(String action) {
-        return toStr(app.callAttr("action", obj, action));
+        return app.callAttr("action", obj, action).toString();
     }
 
     @Override
@@ -145,30 +133,5 @@ public class Spider extends com.github.catvod.crawler.Spider {
         String path = Path.py(name).getAbsolutePath();
         String url = UriUtil.resolve(api, name);
         app.callAttr("download", path, url);
-    }
-
-    private static String toStr(PyObject o) {
-        if (o == null) return null;
-        try {
-            return o.toString();
-        } finally {
-            close(o);
-        }
-    }
-
-    private static boolean toBool(PyObject o) {
-        try {
-            return o != null && o.toBoolean();
-        } finally {
-            close(o);
-        }
-    }
-
-    private static void close(PyObject o) {
-        if (o == null) return;
-        try {
-            o.close();
-        } catch (Throwable ignored) {
-        }
     }
 }

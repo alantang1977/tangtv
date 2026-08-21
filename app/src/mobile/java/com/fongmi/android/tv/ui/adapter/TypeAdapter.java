@@ -13,7 +13,6 @@ import com.fongmi.android.tv.databinding.AdapterTypeBinding;
 import com.fongmi.android.tv.utils.ResUtil;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class TypeAdapter extends RecyclerView.Adapter<TypeAdapter.ViewHolder> {
@@ -51,18 +50,17 @@ public class TypeAdapter extends RecyclerView.Adapter<TypeAdapter.ViewHolder> {
     }
 
     public void setSelected(int position) {
-        if (position < 0 || position >= mItems.size()) return;
         for (Class item : mItems) item.setSelected(false);
         mItems.get(position).setSelected(true);
         notifyItemRangeChanged(0, mItems.size());
     }
 
-    public List<Class> getItems() {
-        return Collections.unmodifiableList(mItems);
-    }
-
     public Class get(int position) {
         return mItems.get(position);
+    }
+
+    public List<Class> getItems() {
+        return mItems;
     }
 
     @Override

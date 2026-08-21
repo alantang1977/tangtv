@@ -168,7 +168,7 @@ public final class CspWarmupDialog {
     }
 
     private static CharSequence siteLabel(Site site) {
-        String name = site.getDisplayName();
+        String name = TextUtils.isEmpty(site.getName()) ? site.getKey() : site.getName();
         return TextUtils.isEmpty(site.getApi()) ? name : name + " · " + site.getApi();
     }
 

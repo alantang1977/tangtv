@@ -60,43 +60,6 @@ public class Migrations {
     public static final Migration MIGRATION_36_37 = new Migration(36, 37) {
         @Override
         public void migrate(@NonNull SupportSQLiteDatabase database) {
-            database.execSQL("ALTER TABLE History ADD COLUMN typeName TEXT DEFAULT NULL");
-            database.execSQL("ALTER TABLE History ADD COLUMN area TEXT DEFAULT NULL");
-            database.execSQL("ALTER TABLE History ADD COLUMN actor TEXT DEFAULT NULL");
-            database.execSQL("ALTER TABLE History ADD COLUMN director TEXT DEFAULT NULL");
-            database.execSQL("ALTER TABLE History ADD COLUMN year TEXT DEFAULT NULL");
-        }
-    };
-
-    public static final Migration MIGRATION_37_38 = new Migration(37, 38) {
-        @Override
-        public void migrate(@NonNull SupportSQLiteDatabase database) {
-            database.execSQL("ALTER TABLE History ADD COLUMN speedOverride INTEGER NOT NULL DEFAULT 0");
-            database.execSQL("UPDATE History SET speedOverride = 1 WHERE speed > 0 AND ABS(speed - 1.0) > 0.001");
-        }
-    };
-
-    public static final Migration MIGRATION_38_39 = new Migration(38, 39) {
-        @Override
-        public void migrate(@NonNull SupportSQLiteDatabase database) {
-            database.execSQL("ALTER TABLE History ADD COLUMN tmdbId INTEGER NOT NULL DEFAULT 0");
-            database.execSQL("ALTER TABLE History ADD COLUMN mediaType TEXT DEFAULT ''");
-            database.execSQL("ALTER TABLE History ADD COLUMN legacyKey TEXT DEFAULT ''");
-            database.execSQL("UPDATE History SET legacyKey = `key`");
-        }
-    };
-
-    public static final Migration MIGRATION_39_40 = new Migration(39, 40) {
-        @Override
-        public void migrate(@NonNull SupportSQLiteDatabase database) {
-            database.execSQL("ALTER TABLE History ADD COLUMN tmdbSeasonNumber INTEGER NOT NULL DEFAULT 0");
-            database.execSQL("ALTER TABLE History ADD COLUMN tmdbEpisodeNumber INTEGER NOT NULL DEFAULT 0");
-        }
-    };
-
-    public static final Migration MIGRATION_40_41 = new Migration(40, 41) {
-        @Override
-        public void migrate(@NonNull SupportSQLiteDatabase database) {
             database.execSQL("CREATE TABLE IF NOT EXISTS PlaybackDeleteTombstone (`id` TEXT NOT NULL, `configKey` TEXT NOT NULL, `scope` TEXT NOT NULL, `historyKey` TEXT NOT NULL, `siteKey` TEXT NOT NULL, `vodId` TEXT NOT NULL, `deletedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))");
             database.execSQL("CREATE INDEX IF NOT EXISTS `index_PlaybackDeleteTombstone_deletedAt` ON `PlaybackDeleteTombstone` (`deletedAt`)");
         }

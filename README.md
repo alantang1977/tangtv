@@ -191,19 +191,17 @@ bash gradlew :app:assembleMobileArm64_v8aDebug :app:assembleLeanbackArmeabi_v7aD
 
 | ABI | MPV | FFmpeg | libplacebo | 网络后端 | 说明 |
 | --- | --- | --- | --- | --- | --- |
-| `arm64-v8a` | `0.41.0-940-gcca559b41` | `04482c8d13ac`（9.0-fongmi） | `7.375.0` / `b694a21bf2dc` | curl 8.21.0 + nghttp2 1.69.0 | 2026-08-12 已按新 lock 与单一低负载 AImageReader 路径重编，完成能力、ELF、APK 资产和 arm64 真机启动校验 |
-| `armeabi-v7a` | `0.41.0-940-gcca559b41` | `04482c8d13ac`（9.0-fongmi） | `7.375.0` / `b694a21bf2dc` | curl 8.21.0 + nghttp2 1.69.0 | 2026-08-12 已按同一 lock 与相同路径独立重编，完成能力、ELF 与 32 位电视 Debug 打包校验 |
+| `arm64-v8a` | `0.41.0-940-gcca559b41` | `04482c8d13ac`（9.0-fongmi） | `7.375.0` / `b694a21bf2dc` | curl 8.21.0 + nghttp2 1.69.0 | 截至 2026-08-17，当前 assets 已通过能力、ELF 与打包规则校验 |
+| `armeabi-v7a` | `0.41.0-940-gcca559b41` | `04482c8d13ac`（9.0-fongmi） | `7.375.0` / `b694a21bf2dc` | curl 8.21.0 + nghttp2 1.69.0 | 截至 2026-08-17，当前 assets 已通过能力、ELF 与打包规则校验 |
 
 替换或升级 MPV native 时必须遵守：
 
 - `libmpv.so`、FFmpeg（codec/device/filter/format/util/swresample/swscale）、静态链接进 MPV 的 libplacebo、curl、nghttp2、MbedTLS 和 `libc++_shared.so` 必须按同一 ABI、同一 lock 成套构建，不能再混用旧 `libmpv.so` 与新依赖作为正式方案。
 - 当前 native lock 使用 MPV `cca559b41ceb0bb7731cf6ef2e1f33276cd30c42`、FFmpeg 9.0-fongmi `04482c8d13ac27b2a9fe93f5d388929eef8af5f4`、libplacebo `b694a21bf2dc176c1e98b8a13c6421a0de5f3da5`（7.375.0/API 375）、mpv-android `99a60ad2141d5ace94453590903c2c6b9a0a2443` 和 NDK r29/API 24。curl 使用 MbedTLS 3.6.7，只启用 HTTP/HTTPS 与 HTTP/2，不包含 HTTP/3、ngtcp2、nghttp3 或 quiche。
 - 最新 FongMi MPV 分支已经内建重写后的 AImageReader/AHardwareBuffer OpenGL/Vulkan 后端、异步 fence、HDR/Dolby Vision、双 Surface OSD 和 Android helper scheme；旧的 `fd679c81` 不是新分支祖先，原 `mpv-aimagereader-transient-buffer.patch` 已删除，不能在新分支上重复叠加。
-- Android Vulkan 硬解已固定为 `v5.5.6-202608072014` 验证过的单一 AHardwareBuffer YCbCr→RGB GPU 转换架构。构建时用 `aimagereader-v556` 源码/预生成 SPIR-V 覆盖上游互操作实现（保留当前接口、sync-fd 与计时适配），并应用 `mpv-android-vulkan-single-backend.patch` 删除 direct/stable/compute/fragment 选择和旧配置项；`mpv-aimagereader-release-acquire-flow.patch` 只稳定 MediaCodec 释放与 AImageReader 领取顺序，不代表另一种“stable”渲染后端。
-- `mpv-aimagereader-gpu-timing.patch` 把 AImageReader 独立转换提交的 GPU 时间计入 `vo-passes`，播放参数面板据此显示当前 MPV 渲染链的单一负载百分比。该数值用于同机同片源对比，不是系统全 GPU 占用率或整机功耗。
 - curl 与 nghttp2 静态链接进 `libmpv.so`，APK 不新增独立网络 `.so`。它增强 MPV 直接远程 HTTP/HTTPS 输入；App 自己处理的本地 HLS 代理、`stream_cb` 和 FFmpeg/lavf 路径仍按各自实现工作，不能把启用 curl 理解为所有播放请求都强制走同一后端。
 - FFmpeg 文件名、ELF `SONAME` 和所有 `DT_NEEDED` 都要从 `libav*`/`libsw*` 等长改为 `libmv*`/`libmw*`，不能只重命名文件，否则会和 `nextlib-media3ext` 内置 FFmpeg 发生 Android linker 复用冲突。
-- WebHTV 的完整 native 补丁/override 顺序以 `third_party/mpv-native-build.md` 和 `scripts/build_mpv_native.sh` 为准。修改 AImageReader override、MPV/FFmpeg 补丁、光盘控制补丁或 `stream_cb.h` 后必须重建对应 native；其中 `stream_cb.h` 变化还必须同时重建 `libplayer.so`。
+- WebHTV 当前补丁集还包含 FFmpeg MediaCodec 端口饥饿回退、DV7 HDR10 基底层、TrueHD AudioTrack channel mask、可选 OSD Surface、MediaCodec timestamped release/时序诊断、Vulkan `direct/legacy/stable` 和 AImageReader 稳定释放流程。完整顺序以 `scripts/build_mpv_native.sh` 和 `third_party/mpv-native-build.md` 为准；修改光盘控制补丁、`stream_cb.h` 或 JNI 源码后必须同时重建 `libmpv.so` 与 `libplayer.so`。
 - 更新后用 NDK `llvm-readelf -d` 确认没有残留 `libav*.so`/`libsw*.so` 依赖，再分别回归 OpenGL、Vulkan、硬解/软解、LUT、字幕、线路切换、连续起播/退出和 Blu-ray ISO。Android 15 必须同时检查 crash buffer 中是否出现 destroyed mutex。
 
 从固定源码重新生成 MPV/FFmpeg `.so`：
@@ -220,7 +218,7 @@ scripts/build_mpv_native.sh --abi all --install
 # 按需执行：scripts/build_mpv_player_jni.sh --abi all --install
 ```
 
-脚本读取 `third_party/mpv-native-lock.json`，自动下载固定 commit、构建 FFmpeg 9/字体/字幕/光盘/归档/网络/Vulkan 依赖，应用 WebHTV 的补丁和 `aimagereader-v556` override，修改 ELF 依赖名、strip 并校验。当前 lock 与两套已提交 assets 一致；libass 的 fontconfig/libxml2 字体回退栈静态链接进 `libmpv.so`，不会向 APK 内置中文字体或增加独立 `.so`。普通 Gradle 和 GitHub Actions 不会现场编译 MPV；Android Release Action 只运行 `scripts/verify_mpv_native_assets.sh --require-elf`，检查 shader 源/预生成头契约、文件集合、ABI、版本字符串、单一低负载 AImageReader 路径、已删除后端字符串、HTTP/2、字体提供器、HDR/Dolby Vision、光盘/Range/Matroska 标记、`SONAME` 和 `DT_NEEDED`。
+脚本读取 `third_party/mpv-native-lock.json`，自动下载固定 commit、构建 FFmpeg 9/字体/字幕/光盘/归档/网络/Vulkan 依赖，按脚本声明的完整顺序应用 FFmpeg、MPV、MediaCodec、Vulkan 和 AImageReader 补丁，修改 ELF 依赖名、strip 并校验。上游版本由 lock 锁定，最终可复现输入还包括构建脚本、`third_party/patches/`、native overrides 和 JNI 源码。libass 的 fontconfig/libxml2 字体回退栈静态链接进 `libmpv.so`，不会向 APK 内置中文字体或增加独立 `.so`。普通 Gradle 和 GitHub Actions 不会现场编译 MPV；Android Release Action 只运行 `scripts/verify_mpv_native_assets.sh --require-elf`，检查文件集合、ABI、版本字符串、HTTP/2、可选 OSD Surface、MediaCodec timestamped release、AImageReader/Vulkan/HDR/Dolby Vision、光盘/Range/Matroska 标记、`SONAME` 和 `DT_NEEDED`。
 
 只校验当前仓库已经提交的 MPV native assets：
 
@@ -295,7 +293,7 @@ bash scripts/build_ijk_native.sh --abi armeabi-v7a --install
 bash gradlew :app:assembleLeanbackArmeabi_v7aRelease -PfastRelease=true
 ```
 
-脚本会拉取锁定 commit 的 IJK/FFmpeg 4.0 与 OpenSSL `openssl-3.2` 源码、应用补丁、检查三项输出并按 `--install` 写入对应 ABI 目录。arm64 与 armeabi-v7a 均已在 macOS 使用 NDK 28.2.13676358 重建成功，并与 DVD 继续使用 r28c；MPV/JNI 已独立升级到 r29。32 位不再需要 NDK 21。只需打包 App 时不必运行该脚本，两套 ARM ABI 也不需要 `yasm`。完整命令和 API 21、`pkg-config` 隔离说明见 `webhome-devkit/docs/应用完整开发文档.md`。
+脚本会拉取锁定的 IJK/FFmpeg 4.0 与 OpenSSL `openssl-3.2` 源码、应用补丁、检查三项输出并按 `--install` 写入对应 ABI 目录。arm64 与 armeabi-v7a 均已在 macOS 使用 NDK 28.2.13676358 重建成功，并与 DVD 继续使用 r28c；MPV/JNI 已独立升级到 r29。32 位不再需要 NDK 21。只需打包 App 时不必运行该脚本，两套 ARM ABI 也不需要 `yasm`。完整命令和 API 21、`pkg-config` 隔离说明见 `webhome-devkit/docs/应用完整开发文档.md`。
 
 ### APK 输出路径
 
@@ -326,9 +324,9 @@ adb install -r app/build/outputs/apk/mobileArm64_v8a/debug/app-mobile-arm64_v8a-
 
 ### GitHub 手动发布
 
-仓库内置 `.github/workflows/android-release.yml`,只支持在 GitHub Actions 页面手动触发,不会在每次 push 代码时自动打包。默认 tag 会从 `app/build.gradle` 读取当前 `versionName`,并使用当前提交的提交时间生成可重入 tag:稳定版生成 `v<versionName>-yyyyMMddHHmm`;在 `fongmi-sync` 分支选择 `auto` 通道时生成测试版 `v<versionName>-beta-yyyyMMddHHmm`,APK/JSON 文件名同步追加 `-beta`。
+仓库内置 `.github/workflows/android-release.yml`,只支持在 GitHub Actions 页面手动触发,不会在每次 push 代码时自动打包。默认 tag 会从 `app/build.gradle` 读取当前 `versionName`:稳定版生成 `v<versionName>-yyyyMMddHHmm`;在 `fongmi-sync` 分支选择 `auto` 通道时生成测试版 `v<versionName>-beta-yyyyMMddHHmm`,APK/JSON 文件名同步追加 `-beta`。
 
-工作流会构建 4 个 release APK,生成同名更新清单 JSON 并发布到 GitHub Release。JSON 默认使用 GitHub Release 固定版本直链，不依赖 CNB 可用性。每次发布还会把当前通道的 4 个 JSON 与最近一次另一通道的 JSON 汇总后覆盖上传到固定的 `update-channel` 预发布 Release；手机版和电视版的稳定版、测试版清单都优先从该 GitHub Release 下载路径获取并使用同一套加速源，GitHub Releases API 仅作为最终兜底。CNB 同步默认关闭，仅在确认内容权利、平台政策和流量用途后作为可选镜像手动开启。正式发布前建议在 GitHub Secrets 配置:
+工作流会构建 4 个 release APK,生成同名更新清单 JSON 并发布到 GitHub Release。JSON 默认使用 GitHub Release 固定版本直链，不依赖 CNB 可用性。CNB 同步默认关闭，仅在确认内容权利、平台政策和流量用途后作为可选镜像手动开启。正式发布前建议在 GitHub Secrets 配置:
 
 ```text
 RELEASE_KEYSTORE_BASE64  # release keystore 的 base64 内容
@@ -363,12 +361,12 @@ keyPassword=your_key_password
 - `app/libs/*.aar`:内置 Hook、TVBus、Thunder、ForceTech、JianPian 播放能力依赖。
 - `third_party/maven`:已生成的 `androidx.media3:*:1.11.0-alpha01-fongmi` 本地 Maven 产物，以及定制 `nextlib-media3ext`。
 - `third_party/media-lock.json`:记录 Media3、nextlib、FFmpeg、NDK 与 CMake 的精确构建输入，配套脚本为 `scripts/build_media_deps.sh`。
-- `third_party/patches/media3-*.patch`:在锁定的 FongMi Media3 源码上叠加本项目补丁；`media3-upstream-playback-fixes-2026-08.patch` 选择性移植 AV1/HEVC HDR 元数据、scrub、DASH、LL-HLS、MP4 IT.35、MediaSession 和 detached Surface 等上游修复，`media3-danmaku-live.patch` 提供 WebSocket 实时弹幕的批量接收、有界队列、TTL、每帧处理上限和聚合统计。
+- `third_party/patches/media3-*.patch`:在锁定的 FongMi Media3 源码上叠加本项目补丁；`media3-upstream-playback-fixes-2026-08.patch` 选择性移植 AV1/HEVC HDR 元数据、scrub、DASH、LL-HLS、MP4 IT.35、MediaSession 和 detached Surface 等上游修复，`media3-danmaku-live.patch` 提供 WebSocket 实时弹幕的批量接收、有界队列、TTL、每帧处理上限和聚合统计，`media3-dolby-vision-matroska.patch` 将 MKV `BlockAdditional` 中的 Dolby Vision RPU 追加到对应 HEVC sample，供 Exo 的 DV7 转换链处理。
 - `third_party/patches/nextlib-*.patch`:在 `anilbeesetti/nextlib@6ff6cf9d0820382b3c233d018c52e4163b09d345` 上叠加 FFmpeg 软解负载控制和 AV3A/libarcdav3a 支持。
-- `third_party/mpv-native-lock.json`、`third_party/mpv-native-overrides/`、`third_party/patches/mpv-*.patch`:固定 MPV/FFmpeg/libplacebo 原生栈，并维护单一低负载 Vulkan AImageReader 实现；配套脚本为 `scripts/build_mpv_native.sh` 和 `scripts/verify_mpv_native_assets.sh`。
 - `third_party/mpv-player-jni`:MPV `libplayer.so` JNI 桥接源码，修改后用 `scripts/build_mpv_player_jni.sh` 重建。
 - `app/src/*/assets/mpv-libs/*`:随 APK 打包的 MPV native 库和 JNI 桥接库。
 - `nextlib-media3ext`:`io.github.anilbeesetti:nextlib-media3ext:1.10.0-0.12.1-fongmi-softload-av3a-r1`，提供 FFmpeg renderer；内置 FongMi FFmpeg `04482c8d13ac27b2a9fe93f5d388929eef8af5f4` 和静态链接的 `libarcdav3a`，Exo 可软解 `audio/av3a`，并在输出设备不接受源多声道 PCM 时下混到立体声。
+- `ExoplayerHdrUtils`:`com.suyashbelekar:exoplayerhdrutils:0.4.0`，提供基于 libdovi 的实时 HEVC RPU 转换。Exo 默认只在设备不能硬解原始 DV7、但能硬解 P8.1 时使用 mode 2 转换并移除增强层；原生 DV7 可用时保持原码流。P8.1 模式会锁定整次播放且禁止自动 HDR10 降级，无效转换数据会直接触发播放错误；只有用户选择 HDR10 模式时才整次使用 HDR10 基底层。
 
 `settings.gradle` 中的依赖顺序是仓库本地 `third_party/maven`、Maven Central、Google Maven、`app/libs` 和 JitPack。`app/build.gradle` 会强制所有 `androidx.media3` 依赖使用 `1.11.0-alpha01-fongmi`，避免传递依赖拉回官方版本。
 
@@ -412,8 +410,8 @@ catvod/       CatVod 抽象层、Spider 接口、网络和代理工具
 quickjs/      JavaScript Spider 运行时
 chaquo/       Python Spider 运行时
 webhome-devkit/ WebHome 开发套件(文档、主页/扩展示例、模板、AI skills)
-scripts/      Media3、MPV native/JNI、IJK/DVD 的构建与资产校验脚本
-third_party/  本地 Maven、native 锁、补丁、override、nextlib 与 MPV JNI 源码
+scripts/      Media3 和 MPV JNI 本地依赖构建脚本
+third_party/  Media3 本地 Maven、nextlib 源码、MPV JNI 源码和版本锁定文件
 Release/      release 构建的 APK 输出
 other/        Logo 图片和辅助工具
 ```

@@ -44,7 +44,7 @@ public class DanmakuSetting {
     }
 
     public static boolean isShow() {
-        return Prefers.getBoolean("danmaku_show", true);
+        return Prefers.getBoolean("danmaku_show");
     }
 
     public static void putShow(boolean danmakuShow) {

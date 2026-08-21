@@ -44,8 +44,8 @@ public class PlaybackProfileMergePolicyTest {
     }
 
     @Test
-    public void mergedModePreservesDevProfilesAndDefaultsUnknownToAuto() {
-        assertEquals(PlaybackPerformanceSetting.PROFILE_RECOMMENDED,
+    public void mergedModeMapsRecommendedAndUnknownToAuto() {
+        assertEquals(PlaybackPerformanceSetting.PROFILE_AUTO,
                 PlaybackProfileMergePolicy.effectiveProfile(
                         PlaybackPerformanceSetting.PROFILE_RECOMMENDED,
                         true));
@@ -55,19 +55,19 @@ public class PlaybackProfileMergePolicyTest {
                 PlaybackProfileMergePolicy.effectiveProfile(
                         PlaybackPerformanceSetting.PROFILE_CUSTOM,
                         true));
-        assertEquals(PlaybackPerformanceSetting.PROFILE_COMPATIBLE,
+        assertEquals(PlaybackPerformanceSetting.PROFILE_LIGHTWEIGHT,
                 PlaybackProfileMergePolicy.effectiveProfile(
                         PlaybackPerformanceSetting.PROFILE_COMPATIBLE,
                         true));
     }
 
     @Test
-    public void legacyMergeStateAlsoPreservesDevProfiles() {
-        assertEquals(PlaybackPerformanceSetting.PROFILE_RECOMMENDED,
+    public void legacyMergeStateCannotRestoreRemovedProfiles() {
+        assertEquals(PlaybackPerformanceSetting.PROFILE_AUTO,
                 PlaybackProfileMergePolicy.effectiveProfile(
                         PlaybackPerformanceSetting.PROFILE_RECOMMENDED,
                         false));
-        assertEquals(PlaybackPerformanceSetting.PROFILE_COMPATIBLE,
+        assertEquals(PlaybackPerformanceSetting.PROFILE_LIGHTWEIGHT,
                 PlaybackProfileMergePolicy.effectiveProfile(
                         PlaybackPerformanceSetting.PROFILE_COMPATIBLE,
                         false));
@@ -95,22 +95,16 @@ public class PlaybackProfileMergePolicyTest {
     }
 
     @Test
-    public void profileListKeepsAllDevPresets() {
+    public void profileListAlwaysContainsOnlyAutoAndLightweight() {
         assertArrayEquals(new int[]{
                         PlaybackPerformanceSetting.PROFILE_AUTO,
-                        PlaybackPerformanceSetting.PROFILE_RECOMMENDED,
-                        PlaybackPerformanceSetting.PROFILE_COMPATIBLE,
-                        PlaybackPerformanceSetting.PROFILE_LIGHTWEIGHT,
-                        PlaybackPerformanceSetting.PROFILE_ORIGINAL},
+                        PlaybackPerformanceSetting.PROFILE_LIGHTWEIGHT},
                 PlaybackProfileMergePolicy.selectableProfiles(true));
         assertArrayEquals(new int[]{
                         PlaybackPerformanceSetting.PROFILE_AUTO,
-                        PlaybackPerformanceSetting.PROFILE_RECOMMENDED,
-                        PlaybackPerformanceSetting.PROFILE_COMPATIBLE,
-                        PlaybackPerformanceSetting.PROFILE_LIGHTWEIGHT,
-                        PlaybackPerformanceSetting.PROFILE_ORIGINAL},
+                        PlaybackPerformanceSetting.PROFILE_LIGHTWEIGHT},
                 PlaybackProfileMergePolicy.selectableProfiles(false));
-        assertEquals(2, PlaybackProfileMergePolicy.positionOf(
+        assertEquals(1, PlaybackProfileMergePolicy.positionOf(
                 PlaybackPerformanceSetting.PROFILE_COMPATIBLE, true));
         assertEquals(-1, PlaybackProfileMergePolicy.positionOf(
                 PlaybackPerformanceSetting.PROFILE_CUSTOM, true));

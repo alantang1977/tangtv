@@ -25,12 +25,8 @@ public class Server {
         return service;
     }
 
-    public synchronized void setService(PlaybackService service) {
+    public void setService(PlaybackService service) {
         this.service = service;
-    }
-
-    public synchronized void clearService(PlaybackService expected) {
-        if (service == expected) service = null;
     }
 
     public boolean isRunning() {
@@ -80,25 +76,14 @@ public class Server {
     }
 
     public void stop() {
-        Nano expected = nano;
         Task.execute(() -> {
             synchronized (this) {
-                if (manage || service != null || nano != expected) return;
-                stopNow();
+                if (manage || service != null) return;
+                if (nano != null) nano.stop();
+                nano = null;
+                if (routeRegistration != null) routeRegistration.close();
+                routeRegistration = null;
             }
         });
-    }
-
-    public synchronized void shutdown() {
-        manage = false;
-        service = null;
-        stopNow();
-    }
-
-    private void stopNow() {
-        if (nano != null) nano.stop();
-        nano = null;
-        if (routeRegistration != null) routeRegistration.close();
-        routeRegistration = null;
     }
 }

@@ -1,6 +1,5 @@
 package com.fongmi.android.tv.setting;
 
-import com.fongmi.android.tv.player.VideoAspectMode;
 import com.github.catvod.utils.Prefers;
 
 public class LiveSetting {
@@ -41,11 +40,11 @@ public class LiveSetting {
     }
 
     public static int getScale() {
-        return VideoAspectMode.sanitize(Prefers.getInt("scale_live", PlayerSetting.getScale()));
+        return Prefers.getInt("scale_live", PlayerSetting.getScale());
     }
 
     public static void putScale(int scale) {
-        Prefers.put("scale_live", VideoAspectMode.sanitize(scale));
+        Prefers.put("scale_live", scale);
     }
 
     public static int getListStyle() {

@@ -16,7 +16,7 @@ import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
-import androidx.media3.common.MediaItem;
+import androidx.media3.common.C;
 import androidx.media3.common.MediaMetadata;
 import androidx.media3.common.Format;
 import androidx.media3.common.Player;
@@ -32,7 +32,6 @@ import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.player.PlaybackAutoContext;
 import com.fongmi.android.tv.player.PlaybackTelemetry;
 import com.fongmi.android.tv.player.PlayerManager;
-import com.fongmi.android.tv.player.VideoAspectMode;
 import com.fongmi.android.tv.player.engine.PlaySpec;
 import com.fongmi.android.tv.player.exo.ExoOutputModeManager;
 import com.fongmi.android.tv.player.exo.ExoOutputModePolicy;
@@ -40,15 +39,11 @@ import com.fongmi.android.tv.player.exo.ExoUtil;
 import com.fongmi.android.tv.service.PlaybackService;
 import com.fongmi.android.tv.setting.PlaybackPerformanceSetting;
 import com.fongmi.android.tv.setting.PlayerSetting;
-import com.fongmi.android.tv.subtitle.RealtimeSubtitleController;
 import com.fongmi.android.tv.ui.base.BaseActivity;
-import com.fongmi.android.tv.ui.dialog.VideoAspectModeDialog;
 import com.fongmi.android.tv.ui.custom.CustomSeekView;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.github.catvod.crawler.SpiderDebug;
 import com.google.common.util.concurrent.ListenableFuture;
-
-import java.util.function.IntConsumer;
 
 public abstract class PlaybackActivity extends BaseActivity implements MediaController.Listener, Player.Listener, ServiceConnection {
 
@@ -60,12 +55,12 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     private boolean audioOnly;
     private boolean redirect;
     private boolean playbackExiting;
-    private String preparedPlaybackKey;
+    private boolean nativeOutputPending;
     private boolean bound;
     private boolean stop;
     private boolean lock;
     private int render = -1;
-    private int requestedAspectMode = VideoAspectMode.ORIGINAL;
+    private int requestedResizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT;
     private ExoOutputModeManager exoOutputModeManager;
 
     protected MediaController controller() {
@@ -77,23 +72,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     }
 
     protected PlayerManager player() {
-        return mService == null ? null : mService.player();
-    }
-
-    protected boolean isServiceReady() {
-        return mService != null && mService.player() != null && !mService.player().isReleased();
-    }
-
-    protected View.OnClickListener guarded(Runnable action) {
-        return v -> {
-            if (isServiceReady()) action.run();
-        };
-    }
-
-    protected View.OnClickListener guardedView(java.util.function.Consumer<View> action) {
-        return v -> {
-            if (isServiceReady()) action.accept(v);
-        };
+        return mService.player();
     }
 
     protected boolean isRedirect() {
@@ -102,9 +81,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
 
     protected void setRedirect(boolean redirect) {
         this.redirect = redirect;
-        if (mService == null) return;
-        if (redirect) mService.clearNavigationCallback(getNavigationCallback());
-        else mService.setNavigationCallback(getNavigationCallback(), getPlaybackKey());
+        if (mService != null) mService.setNavigationCallback(redirect ? null : getNavigationCallback(), getPlaybackKey());
     }
 
     protected boolean isPlaybackExiting() {
@@ -171,8 +148,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
 
     protected boolean isOwner() {
         String key = getPlaybackKey();
-        PlayerManager manager = player();
-        return key == null || (manager != null && key.equals(manager.getKey()));
+        return key == null || (mService != null && key.equals(player().getKey()));
     }
 
     protected boolean isIdle() {
@@ -201,17 +177,13 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     protected void onPrepare() {
     }
 
-    protected void onPlayerRebuilt() {
-    }
-
     protected void onTracksChanged() {
     }
 
     protected void onTitlesChanged() {
     }
 
-    protected boolean onSourceHttpError(int statusCode, String msg) {
-        return false;
+    protected void onPlayerRebuilt() {
     }
 
     protected void onControllerReady(Player controller) {
@@ -239,59 +211,16 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     protected void onSurfaceAttached() {
     }
 
-    protected void onFirstFrameRendered() {
-    }
-
-    protected void onSeekStarted() {
-    }
-
-    protected void showResizeModeDialog(int currentMode, IntConsumer action) {
-        if (action == null) return;
-        VideoAspectModeDialog.show(this, currentMode, action);
-    }
-
     protected void applyResizeMode(int resizeMode) {
-        int mode = VideoAspectMode.sanitize(resizeMode);
-        requestedAspectMode = mode;
-        applyResizeModeNow(mode);
+        requestedResizeMode = resizeMode;
+        int effectiveResizeMode = effectiveResizeMode(resizeMode);
+        logSurfaceState("applyResizeMode before mode=" + resizeMode + " effective=" + effectiveResizeMode);
         PlayerView view = getExoView();
-        view.post(() -> {
-            if (requestedAspectMode == mode && !isFinishing() && !isDestroyed()) applyResizeModeNow(mode);
-        });
-    }
-
-    private void applyResizeModeNow(int resizeMode) {
-        PlayerView view = getExoView();
-        VideoAspectMode.Spec spec = VideoAspectMode.resolve(resizeMode, viewportAspectRatio(view), PlayerSetting.getCustomAspectRatio());
-        int effectiveResizeMode = effectiveResizeMode(spec.resizeMode());
-        logSurfaceState("applyResizeMode before mode=" + resizeMode + " effective=" + effectiveResizeMode + " aspect=" + spec.targetAspectRatio());
-        if (mService != null) player().setVideoAspect(spec.targetAspectRatio(), spec.stretch());
         view.setResizeMode(effectiveResizeMode);
-        AspectRatioFrameLayout content = view.findViewById(androidx.media3.ui.R.id.exo_content_frame);
-        float contentAspectRatio = spec.hasTargetAspectRatio() ? spec.targetAspectRatio() : sourceAspectRatio();
-        if (!VideoAspectMode.isValidRatio(contentAspectRatio)) contentAspectRatio = 0f;
-        if (content != null) content.setAspectRatio(contentAspectRatio);
         view.requestLayout();
         View surface = view.getVideoSurfaceView();
         if (surface != null) surface.requestLayout();
-        logSurfaceState("applyResizeMode after mode=" + resizeMode + " effective=" + effectiveResizeMode + " aspect=" + contentAspectRatio);
-    }
-
-    private float viewportAspectRatio(PlayerView view) {
-        View container = view.getParent() instanceof View parent ? parent : view;
-        int width = container.getWidth();
-        int height = container.getHeight();
-        if (width <= 0 || height <= 0) {
-            width = getResources().getDisplayMetrics().widthPixels;
-            height = getResources().getDisplayMetrics().heightPixels;
-        }
-        return width > 0 && height > 0 ? (float) width / height : 0f;
-    }
-
-    private float sourceAspectRatio() {
-        if (mService == null || player() == null || player().getPlayer() == null) return 0f;
-        VideoSize size = player().getPlayer().getVideoSize();
-        return size.width > 0 && size.height > 0 ? size.width * size.pixelWidthHeightRatio / size.height : 0f;
+        logSurfaceState("applyResizeMode after mode=" + resizeMode + " effective=" + effectiveResizeMode);
     }
 
     private int effectiveResizeMode(int resizeMode) {
@@ -304,16 +233,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     protected void onReclaim() {
     }
 
-    protected boolean shouldBindPlaybackService() {
-        return true;
-    }
-
-    protected boolean shouldPauseOnBackground() {
-        return PlayerSetting.isBackgroundOff();
-    }
-
     protected boolean seekTo(long deltaMs) {
-        onSeekStarted();
         long targetMs = Math.max(0, player().getPosition() + deltaMs);
         long durationMs = player().getDuration();
         boolean seekToEnd = durationMs > 0 && targetMs >= durationMs;
@@ -323,6 +243,11 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     }
 
     protected void startPlayer(String key, Result result, boolean useParse, long timeout, MediaMetadata metadata) {
+        startPlayer(key, result, useParse, timeout, metadata, C.TIME_UNSET);
+    }
+
+    protected void startPlayer(String key, Result result, boolean useParse, long timeout,
+                               MediaMetadata metadata, long startPositionMs) {
         if (rejectUnsupportedDrm(key, result)) {
             return;
         } else if (result.getDrm() != null && !FrameworkMediaDrm.isCryptoSchemeSupported(result.getDrm().getUUID())) {
@@ -332,15 +257,12 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         } else if (result.getRealUrl().isEmpty()) {
             onError(ResUtil.getString(R.string.error_play_url));
         } else if (result.needParse() || useParse) {
-            preparedPlaybackKey = null;
             attachSurface();
-            player().parse(key, result, useParse, metadata, PlayerSetting.isAutoPlay());
+            player().parse(key, result, useParse, metadata, PlayerSetting.isAutoPlay(), startPositionMs);
         } else {
-            preparedPlaybackKey = null;
             attachSurface();
-            player().start(PlaySpec.from(result, key, metadata), timeout, PlayerSetting.isAutoPlay());
+            player().start(PlaySpec.from(result, key, metadata), timeout, PlayerSetting.isAutoPlay(), startPositionMs);
         }
-        syncKeepScreenOn();
     }
 
     private boolean rejectUnsupportedDrm(String key, Result result) {
@@ -355,11 +277,12 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     }
 
     private void bindPlaybackService() {
-        if (bound || shouldRejectPlaybackConnection()) return;
+        if (bound) return;
         long start = System.currentTimeMillis();
         if (SpiderDebug.isEnabled()) SpiderDebug.log("playback-flow", "bind service start key=%s", getPlaybackKey());
         startService(new Intent(this, PlaybackService.class));
         bindService(new Intent(this, PlaybackService.class).setAction(PlaybackService.LOCAL_BIND_ACTION), this, BIND_AUTO_CREATE);
+        buildControllerAsync();
         bound = true;
         if (SpiderDebug.isEnabled()) SpiderDebug.log("playback-flow", "bind service requested cost=%dms key=%s", System.currentTimeMillis() - start, getPlaybackKey());
     }
@@ -378,66 +301,24 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         });
     }
 
-    private void buildControllerAsync(SessionToken token) {
-        if (mControllerFuture != null || shouldRejectPlaybackConnection()) return;
-        if (token == null) {
-            handleControllerConnectionFailure(new IllegalStateException("Playback session token is unavailable"));
-            return;
-        }
+    private void buildControllerAsync() {
         long start = System.currentTimeMillis();
-        try {
-            mControllerFuture = new MediaController.Builder(this, token).setListener(this).buildAsync();
-            mControllerFuture.addListener(this::handleControllerConnected, ContextCompat.getMainExecutor(this));
-            if (SpiderDebug.isEnabled()) SpiderDebug.log("playback-flow", "controller build requested cost=%dms key=%s", System.currentTimeMillis() - start, getPlaybackKey());
-        } catch (RuntimeException e) {
-            handleControllerConnectionFailure(e);
-        }
+        SessionToken token = new SessionToken(this, new ComponentName(this, PlaybackService.class));
+        mControllerFuture = new MediaController.Builder(this, token).setListener(this).buildAsync();
+        mControllerFuture.addListener(this::onControllerConnected, ContextCompat.getMainExecutor(this));
+        if (SpiderDebug.isEnabled()) SpiderDebug.log("playback-flow", "controller build requested cost=%dms key=%s", System.currentTimeMillis() - start, getPlaybackKey());
     }
 
-    private void handleControllerConnectionFailure(Exception e) {
-        SpiderDebug.log("playback-flow", e);
-        releaseController();
-        if (!shouldRejectPlaybackConnection()) finishPlayback();
-    }
-
-    protected void onControllerConnected() {
-    }
-
-    protected void onControllerReadyReconciled() {
-    }
-
-    private void reconcileControllerReadyState() {
-        PlayerManager manager = player();
-        if (mController == null || manager == null) return;
-        MediaItem managerItem = manager.getCurrentMediaItem();
-        MediaItem controllerItem = mController.getCurrentMediaItem();
-        String managerMediaId = managerItem == null ? null : managerItem.mediaId;
-        String controllerMediaId = controllerItem == null ? null : controllerItem.mediaId;
-        if (!PlaybackStateReconciliation.shouldReplayReady(getPlaybackKey(), preparedPlaybackKey, manager.getKey(), managerMediaId, controllerMediaId, manager.getPlaybackState(), mController.getPlaybackState())) return;
-        onControllerReadyReconciled();
-    }
-
-    private void handleControllerConnected() {
-        if (shouldRejectPlaybackConnection() || mControllerFuture == null) return;
+    private void onControllerConnected() {
         long start = System.currentTimeMillis();
         try {
             mController = mControllerFuture.get();
             getSeekView().setPlayer(mController);
-            getSeekView().setSeekListener(this::onSeekStarted);
             onControllerReady(mController);
             mController.addListener(this);
-            reconcileControllerReadyState();
-        } catch (Exception e) {
-            handleControllerConnectionFailure(e);
-            return;
+        } catch (Exception ignored) {
         }
         if (SpiderDebug.isEnabled()) SpiderDebug.log("playback-flow", "controller connected cost=%dms key=%s", System.currentTimeMillis() - start, getPlaybackKey());
-        syncKeepScreenOn();
-        if (mController != null) onControllerConnected();
-    }
-
-    private boolean shouldRejectPlaybackConnection() {
-        return playbackExiting || isFinishing() || isDestroyed();
     }
 
     private PendingIntent buildSessionIntent() {
@@ -458,30 +339,23 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     }
 
     private void attachSurface() {
-        attachSurface(true);
-    }
-
-    private void attachSurface(boolean restoreExoShutter) {
         if (mService == null) return;
         int targetRender = getRender();
         logSurfaceState("attach start target=" + targetRender);
-        if (restoreExoShutter) syncShutter(true);
-        else hideVideoShutter();
+        syncShutter(true);
         if (render != targetRender) {
             if (SpiderDebug.isEnabled()) SpiderDebug.log("playback-flow", "switch render from=%d to=%d", render, targetRender);
             if (getExoView().getPlayer() != null) getExoView().setPlayer(null);
             getExoView().setRender(targetRender);
             render = targetRender;
-            if (restoreExoShutter) syncShutter(true);
-            else hideVideoShutter();
+            syncShutter(true);
             logSurfaceState("attach after setRender target=" + targetRender);
         }
         if (getExoView().getPlayer() == null) {
             getExoView().setPlayer(player().getPlayer());
             logSurfaceState("attach after setPlayer");
             syncVideoSurfaceSize(null);
-            if (restoreExoShutter) syncShutter();
-            else hideVideoShutter();
+            syncShutter();
             if (player().isNativePlayer()) getExoView().post(this::syncShutter);
         }
         publishRenderTarget(getExoView().getVideoSurfaceView());
@@ -519,7 +393,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         String playerText = mService == null ? "none" : player().getPlayerText();
         boolean nativePlayer = mService != null && player().isNativePlayer();
         int targetRender = mService == null ? -1 : getRender();
-        Log.d(SIZE_TAG, "playback " + step
+        String message = "playback " + step
                 + " key=" + getPlaybackKey()
                 + " player=" + playerText
                 + " native=" + nativePlayer
@@ -528,7 +402,12 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
                 + " resize=" + view.getResizeMode()
                 + " playerView=" + viewSize(view)
                 + " content=" + viewSize(content)
-                + " surface=" + surfaceName(surface) + ":" + viewSize(surface));
+                + " surface=" + surfaceName(surface) + ":" + viewSize(surface)
+                + " holder=" + surfaceHolderSize(surface)
+                + " rotation=" + (getDisplay() == null ? -1 : getDisplay().getRotation())
+                + " orientation=" + getResources().getConfiguration().orientation;
+        Log.d(SIZE_TAG, message);
+        if (SpiderDebug.isEnabled()) SpiderDebug.log("surface-size", "%s", message);
     }
 
     private static String viewSize(View view) {
@@ -540,6 +419,12 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         return view == null ? "null" : view.getClass().getSimpleName();
     }
 
+    private static String surfaceHolderSize(View view) {
+        if (!(view instanceof SurfaceView surfaceView)) return "n/a";
+        android.graphics.Rect frame = surfaceView.getHolder().getSurfaceFrame();
+        return frame.width() + "x" + frame.height() + "/valid=" + surfaceView.getHolder().getSurface().isValid();
+    }
+
     private void syncShutter() {
         syncShutter(false);
     }
@@ -549,18 +434,21 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         boolean nativePlayer = player().isNativePlayer();
         View shutter = getExoView().findViewById(androidx.media3.ui.R.id.exo_shutter);
         if (nativePlayer) {
-            getExoView().setShutterBackgroundColor(Color.TRANSPARENT);
-            if (shutter != null) shutter.setVisibility(View.GONE);
+            boolean keepClosed = nativeOutputPending
+                    || player().shouldKeepVideoShutterClosed();
+            View videoSurface = getExoView().getVideoSurfaceView();
+            // Native MPV uses SurfaceView, which is composed above the normal
+            // PlayerView shutter. Alpha hides its buffer without replacing or
+            // detaching the Surface while automatic output is being decided.
+            if (videoSurface != null) videoSurface.setAlpha(keepClosed ? 0f : 1f);
+            getExoView().setShutterBackgroundColor(keepClosed ? Color.BLACK : Color.TRANSPARENT);
+            if (shutter != null) shutter.setVisibility(keepClosed ? View.VISIBLE : View.GONE);
         } else if (restoreExo) {
+            View videoSurface = getExoView().getVideoSurfaceView();
+            if (videoSurface != null) videoSurface.setAlpha(1f);
             getExoView().setShutterBackgroundColor(Color.BLACK);
             if (shutter != null) shutter.setVisibility(View.VISIBLE);
         }
-    }
-
-    private void hideVideoShutter() {
-        View shutter = getExoView().findViewById(androidx.media3.ui.R.id.exo_shutter);
-        getExoView().setShutterBackgroundColor(Color.TRANSPARENT);
-        if (shutter != null) shutter.setVisibility(View.GONE);
     }
 
     private void detachSurface() {
@@ -578,19 +466,6 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         render = -1;
     }
 
-    protected void reattachVideoSurfaceAfterReparent() {
-        if (mService == null) return;
-        PlayerView view = getExoView();
-        view.setKeepContentOnPlayerReset(true);
-        hideVideoShutter();
-        detachSurface();
-        boolean posted = view.post(() -> {
-            if (mService != null && !isFinishing() && !isDestroyed()) attachSurface(false);
-            view.setKeepContentOnPlayerReset(false);
-        });
-        if (!posted) view.setKeepContentOnPlayerReset(false);
-    }
-
     protected void setRender() {
         render = -1;
         detachSurface();
@@ -599,6 +474,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
 
     private int getRender() {
         if (mService != null && player().isNativePlayer()) return 0;
+        if (mService != null && player().requiresTextureRenderForLut()) return PlayerSetting.RENDER_TEXTURE;
         return PlayerSetting.getRender();
     }
 
@@ -609,10 +485,8 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
 
     private void releaseService(boolean owner) {
         mService.removePlayerCallback(mPlayerCallback);
-        mService.clearNavigationCallback(getNavigationCallback());
-        if (owner && mService.isKeepAlive()) {
-            mService.resetSessionActivity();
-        } else if (mService.hasExternalClient() || mService.hasPlayerCallback()) {
+        if (owner) mService.setNavigationCallback(null, null);
+        if (mService.hasExternalClient() || mService.hasPlayerCallback()) {
             if (owner) mService.suspend();
             mService.resetSessionActivity();
         } else if (owner) {
@@ -626,9 +500,8 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     }
 
     private void releaseController() {
-        getSeekView().setPlayer(null);
-        if (mController != null) mController.removeListener(this);
         if (mControllerFuture != null) MediaController.releaseFuture(mControllerFuture);
+        if (mController != null) mController.removeListener(this);
         mControllerFuture = null;
         mController = null;
     }
@@ -640,22 +513,6 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         getSeekView().setProgressPlayer(null);
         unbindService(this);
         mService = null;
-    }
-
-    private void syncKeepScreenOn() {
-        if (shouldKeepScreenOn()) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-    }
-
-    private boolean shouldKeepScreenOn() {
-        if (!isOwner()) return false;
-        PlayerManager manager = player();
-        if (manager == null || manager.isReleased() || manager.isEmpty()) return false;
-        Player active = mController != null ? mController : manager.getPlayer();
-        int state = active.getPlaybackState();
-        if (state == Player.STATE_IDLE || state == Player.STATE_ENDED) return false;
-        if (active.isPlaying()) return true;
-        return active.getPlayWhenReady() && (state == Player.STATE_BUFFERING || state == Player.STATE_READY);
     }
 
     private String lifecycleState() {
@@ -684,12 +541,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
 
         @Override
         public void onPrepare() {
-            if (isOwner()) {
-                MediaItem item = player().getCurrentMediaItem();
-                preparedPlaybackKey = item == null ? null : item.mediaId;
-                PlaybackActivity.this.onPrepare();
-                reconcileControllerReadyState();
-            }
+            if (isOwner()) PlaybackActivity.this.onPrepare();
         }
 
         @Override
@@ -703,11 +555,6 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         }
 
         @Override
-        public boolean onSourceHttpError(int statusCode, String msg) {
-            return isOwner() && PlaybackActivity.this.onSourceHttpError(statusCode, msg);
-        }
-
-        @Override
         public void onError(String msg) {
             if (isOwner()) PlaybackActivity.this.onError(msg);
         }
@@ -718,12 +565,37 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         }
 
         @Override
+        public void onPlayerRenderRequired() {
+            if (!isOwner()) return;
+            int targetRender = getRender();
+            if (render == targetRender) return;
+            if (SpiderDebug.isEnabled()) SpiderDebug.log("playback-flow", "LUT switch render from=%d to=%d", render, targetRender);
+            setRender();
+            applyResizeMode(requestedResizeMode);
+        }
+
+        @Override
+        public void onPlayerOutputPending() {
+            if (!isOwner()) return;
+            nativeOutputPending = true;
+            syncShutter();
+        }
+
+        @Override
+        public void onPlayerOutputReady() {
+            if (!isOwner()) return;
+            nativeOutputPending = false;
+            syncShutter();
+        }
+
+        @Override
         public void onPlayerRebuild(Player player, boolean resetVideoSurface) {
             if (isOwner()) {
+                nativeOutputPending = player().shouldKeepVideoShutterClosed();
                 getSeekView().setProgressPlayer(player);
                 if (resetVideoSurface) resetVideoSurfaceForDecoderSwitch();
                 setRender();
-                applyResizeMode(requestedAspectMode);
+                applyResizeMode(requestedResizeMode);
                 PlaybackActivity.this.onPlayerRebuilt();
             }
         }
@@ -733,9 +605,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     protected void initView(Bundle savedInstanceState) {
         long start = System.currentTimeMillis();
         super.initView(savedInstanceState);
-        if (!shouldBindPlaybackService()) return;
         ExoUtil.setPlayerView(getExoView());
-        RealtimeSubtitleController.get().bind(getExoView());
         exoOutputModeManager = new ExoOutputModeManager(getWindow());
         if (deferPlaybackServiceBinding()) bindPlaybackServiceAfterFirstFrame();
         else bindPlaybackService();
@@ -744,16 +614,11 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
 
     @Override
     public void onIsPlayingChanged(boolean isPlaying) {
-        syncKeepScreenOn();
         if (!isOwner()) return;
-        syncShutter();
+        if (isPlaying) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        else if (!isBuffering()) getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (SpiderDebug.isEnabled()) SpiderDebug.log("playback-lifecycle", "playing changed isPlaying=%s state=%d %s", isPlaying, mController == null ? -1 : mController.getPlaybackState(), lifecycleState());
         onPlayingChanged(isPlaying);
-    }
-
-    @Override
-public void onPlayWhenReadyChanged(boolean playWhenReady, int reason) {
-        syncKeepScreenOn();
     }
 
     @Override
@@ -764,16 +629,12 @@ public void onPlayWhenReadyChanged(boolean playWhenReady, int reason) {
     @Override
     public void onPlaybackStateChanged(int state) {
         if (SpiderDebug.isEnabled()) SpiderDebug.log("playback-lifecycle", "state changed state=%d %s", state, lifecycleState());
-        syncKeepScreenOn();
-        if (!isOwner()) return;
-        syncShutter();
-        onStateChanged(state);
+        if (isOwner()) onStateChanged(state);
     }
 
     @Override
     public void onVideoSizeChanged(@NonNull VideoSize size) {
         if (!isOwner()) return;
-        syncShutter();
         logSurfaceState("onVideoSizeChanged size=" + size.width + "x" + size.height + " ratio=" + size.pixelWidthHeightRatio);
         publishRenderTarget(getExoView().getVideoSurfaceView());
         syncVideoSurfaceSize(size);
@@ -867,19 +728,9 @@ public void onPlayWhenReadyChanged(boolean playWhenReady, int reason) {
     }
 
     @Override
-    public void onRenderedFirstFrame() {
-        if (isOwner()) onFirstFrameRendered();
-    }
-
-    @Override
     public void onServiceConnected(ComponentName name, IBinder binder) {
-        if (shouldRejectPlaybackConnection()) return;
         long start = System.currentTimeMillis();
-        PlaybackService connectedService = ((PlaybackService.LocalBinder) binder).getService();
-        if (shouldRejectPlaybackConnection()) return;
-        mService = connectedService;
-        buildControllerAsync(mService.getSessionToken());
-        if (shouldRejectPlaybackConnection()) return;
+        mService = ((PlaybackService.LocalBinder) binder).getService();
         mService.replaceBinding(this::closePiP);
         mService.setSessionActivity(buildSessionIntent());
         mService.setPlaybackForeground(true);
@@ -887,7 +738,6 @@ public void onPlayWhenReadyChanged(boolean playWhenReady, int reason) {
         mService.addPlayerCallback(mPlayerCallback);
         getSeekView().setProgressPlayer(player().getPlayer());
         player().setLutAllowed(isLutAllowed());
-        syncKeepScreenOn();
         player().setDanmakuForeground(true);
         publishRenderTarget(getExoView().getVideoSurfaceView());
         applyExoOutputMode();
@@ -899,10 +749,8 @@ public void onPlayWhenReadyChanged(boolean playWhenReady, int reason) {
     @Override
     public void onServiceDisconnected(ComponentName name) {
         if (SpiderDebug.isEnabled()) SpiderDebug.log("playback-lifecycle", "service disconnected name=%s %s", name, lifecycleState());
-        releaseController();
         getSeekView().setProgressPlayer(null);
         mService = null;
-        preparedPlaybackKey = null;
     }
 
     @Override
@@ -920,7 +768,6 @@ public void onPlayWhenReadyChanged(boolean playWhenReady, int reason) {
             detachSurface();
             onReclaim();
         }
-        syncKeepScreenOn();
     }
 
     @Override
@@ -939,7 +786,7 @@ public void onPlayWhenReadyChanged(boolean playWhenReady, int reason) {
         restoreExoOutputMode();
         if (SpiderDebug.isEnabled()) SpiderDebug.log("playback-lifecycle", "activity stop backgroundOff=%s %s", PlayerSetting.isBackgroundOff(), lifecycleState());
         super.onStop();
-        if (isOwner() && !isAudioOnly() && shouldPauseOnBackground() && mController != null) mController.pause();
+        if (isOwner() && !isAudioOnly() && PlayerSetting.isBackgroundOff() && mController != null) mController.pause();
     }
 
     @Override
@@ -951,7 +798,6 @@ public void onPlayWhenReadyChanged(boolean playWhenReady, int reason) {
     @Override
     protected void onDestroy() {
         if (SpiderDebug.isEnabled()) SpiderDebug.log("playback-lifecycle", "activity destroy beforeRelease %s", lifecycleState());
-        RealtimeSubtitleController.get().unbind(getExoView());
         restoreExoOutputMode();
         super.onDestroy();
         if (isChangingConfigurations()) {

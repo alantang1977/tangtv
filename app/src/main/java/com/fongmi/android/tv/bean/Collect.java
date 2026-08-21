@@ -38,10 +38,6 @@ public class Collect implements Parcelable, Diffable<Collect> {
         return item;
     }
 
-    public static Collect create(Site site) {
-        return new Collect(site, new ArrayList<>());
-    }
-
     public static Collect create(List<Vod> list) {
         return new Collect(list.get(0).getSite(), list);
     }

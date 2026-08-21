@@ -29,10 +29,8 @@
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/episodes"
             style="@style/Control"
-            android:layout_marginEnd="12dp"
-            android:text="@string/play_episodes"
-            android:visibility="gone"
-            tools:visibility="visible" />
+            android:layout_marginEnd="8dp"
+            android:text="@string/play_episodes" />
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/reset"
@@ -41,17 +39,10 @@
             android:text="@string/play_reset" />
 
         <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/search"
-            style="@style/Control"
-            android:layout_marginEnd="8dp"
-            android:text="@string/play_search" />
-
-        <com.google.android.material.textview.MaterialTextView
             android:id="@+id/change2"
             style="@style/Control"
             android:layout_marginEnd="8dp"
-            android:text="@string/play_change"
-            android:visibility="gone" />
+            android:text="@string/play_change" />
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/fullscreen"
@@ -76,11 +67,6 @@
             style="@style/Control"
             android:layout_marginEnd="8dp"
             android:text="@string/play_params" />
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/multiThreadProxy"
-            style="@style/Control"
-            android:layout_marginEnd="8dp"
-            android:text="@string/multi_thread_proxy_button" />
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/panDiagnostic"
@@ -109,14 +95,6 @@
             style="@style/Control"
             android:layout_marginEnd="8dp"
             android:text="@string/play_scale" />
-
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/actionQuality"
-            style="@style/Control"
-            android:layout_marginEnd="12dp"
-            android:text="@string/detail_quality"
-            android:visibility="gone"
-            tools:visibility="visible" />
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/lut"
@@ -176,14 +154,6 @@
             style="@style/Control"
             android:layout_marginEnd="8dp"
             android:text="@string/danmaku"
-            android:visibility="gone"
-            tools:visibility="visible" />
-
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/adFeedback"
-            style="@style/Control"
-            android:layout_marginEnd="8dp"
-            android:text="@string/play_ad_feedback"
             android:visibility="gone"
             tools:visibility="visible" />
 

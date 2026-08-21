@@ -2,7 +2,6 @@ package com.fongmi.android.tv.ui.dialog;
 
 import android.app.Dialog;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,7 +17,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentManager;
 import androidx.viewbinding.ViewBinding;
 
 import com.fongmi.android.tv.App;
@@ -31,7 +29,6 @@ import com.fongmi.android.tv.player.PlayerManager;
 import com.fongmi.android.tv.player.lut.LutPreset;
 import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.setting.Setting;
-import com.fongmi.android.tv.ui.activity.TmdbDetailActivity;
 import com.fongmi.android.tv.ui.adapter.ParseAdapter;
 import com.fongmi.android.tv.ui.base.ViewType;
 import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
@@ -48,10 +45,9 @@ public class ControlDialog extends BaseBottomSheetDialog implements ParseAdapter
 
     private final String[] scale;
     private DialogControlBinding binding;
-    private Controls controls;
-    private Listener listener;
+    private ActivityVideoBinding parent;
+    private List<TextView> scales;
     private List<TextView> speeds;
-    private List<TextView> displays;
     private PlayerManager player;
     private History history;
     private boolean parse;
@@ -67,158 +63,7 @@ public class ControlDialog extends BaseBottomSheetDialog implements ParseAdapter
     }
 
     public ControlDialog parent(ActivityVideoBinding parent) {
-        this.controls = new Controls(
-                parent.getRoot(),
-                parent.video,
-                parent.control.fullscreen,
-                parent.control.action.player,
-                parent.control.action.decode,
-                parent.control.action.playParams,
-                parent.control.action.speed,
-                parent.control.action.scale,
-                parent.control.action.lut,
-                parent.control.action.reset,
-                parent.control.action.repeat,
-                parent.control.action.text,
-                parent.control.action.audio,
-                parent.control.action.video,
-                parent.control.action.opening,
-                parent.control.action.ending,
-                parent.control.action.danmaku,
-                parent.control.action.title,
-                parent.control.action.episodes
-        );
-        return this;
-    }
-
-    public ControlDialog inline(TmdbDetailActivity activity) {
-        this.controls = new Controls(
-                activity.findViewById(android.R.id.content),
-                activity.findViewById(R.id.playerPanel),
-                activity.inlineControlDialogControl(R.id.fullscreen),
-                activity.inlineControlDialogAction(R.id.player),
-                activity.inlineControlDialogAction(R.id.decode),
-                null,
-                activity.inlineControlDialogAction(R.id.speed),
-                activity.inlineControlDialogAction(R.id.scale),
-                activity.inlineControlDialogLutView(),
-                activity.inlineControlDialogAction(R.id.reset),
-                activity.inlineControlDialogAction(R.id.repeat),
-                activity.inlineControlDialogAction(R.id.text),
-                activity.inlineControlDialogAction(R.id.audio),
-                activity.inlineControlDialogAction(R.id.video),
-                activity.inlineControlDialogAction(R.id.opening),
-                activity.inlineControlDialogAction(R.id.ending),
-                activity.inlineControlDialogAction(R.id.danmaku),
-                activity.inlineControlDialogAction(R.id.chapter),
-                null
-        );
-        this.player = activity.inlineControlDialogPlayer();
-        this.history = activity.inlineControlDialogHistory();
-        this.parse = activity.inlineControlDialogUseParse();
-        this.listener = new Listener() {
-            @Override
-            public ActivityVideoBinding getControlBinding() {
-                return null;
-            }
-
-            @Override
-            public PlayerManager getControlPlayer() {
-                return player;
-            }
-
-            @Override
-            public History getControlHistory() {
-                return history;
-            }
-
-            @Override
-            public boolean isControlParseEnabled() {
-                return parse;
-            }
-
-            @Override
-            public boolean isControlAudioContent() {
-                return false;
-            }
-
-            @Override
-            public void onScale(int tag) {
-                activity.inlineControlDialogScale(tag);
-            }
-
-            @Override
-            public void onEpisodeColumn(int column) {
-            }
-
-            @Override
-            public void onCompactEpisodeTitleChanged() {
-            }
-
-            @Override
-            public void onParse(Parse item) {
-                activity.inlineControlDialogParse(item);
-            }
-
-            @Override
-            public void onLutSelected(LutPreset preset) {
-            }
-
-            @Override
-            public void onLutImport() {
-            }
-
-            @Override
-            public void onLutDir() {
-            }
-
-            @Override
-            public void onLutPanel() {
-                dismiss();
-                App.post(activity::inlineControlDialogLut, 200);
-            }
-
-            @Override
-            public void onTrackPanel(int type) {
-                activity.inlineControlDialogTrack(type);
-            }
-
-            @Override
-            public void onTitlePanel() {
-                activity.inlineControlDialogTitle();
-            }
-
-            @Override
-            public void onDanmakuPanel() {
-                activity.inlineControlDialogDanmaku();
-            }
-
-            @Override
-            public void onDisplayChanged() {
-                activity.inlineControlDialogDisplayChanged();
-            }
-
-            @Override
-            public void onCodecCapabilityPanel() {
-                CodecCapabilityDialog.show(activity, player);
-            }
-
-            @Override
-            public void onPlayParamsPanel() {
-            }
-
-            @Override
-            public void onImmersiveAudioModeChanged() {
-            }
-
-            @Override
-            public void onKaraokeModeChanged() {
-            }
-
-            @Override
-            public void onKaraokeTrackPanel() {
-            }
-        };
+        this.parent = parent;
         return this;
     }
 
@@ -239,7 +84,6 @@ public class ControlDialog extends BaseBottomSheetDialog implements ParseAdapter
 
     public ControlDialog show(FragmentActivity activity) {
         for (Fragment f : activity.getSupportFragmentManager().getFragments()) if (f instanceof ControlDialog) return this;
-        if (listener == null && activity instanceof Listener) listener = (Listener) activity;
         show(activity.getSupportFragmentManager(), null);
         return this;
     }
@@ -270,8 +114,8 @@ public class ControlDialog extends BaseBottomSheetDialog implements ParseAdapter
     @Override
     protected ViewBinding getBinding(@NonNull LayoutInflater inflater, @Nullable ViewGroup container) {
         binding = DialogControlBinding.inflate(inflater, container, false);
+        scales = Arrays.asList(binding.scale0, binding.scale1, binding.scale2, binding.scale3, binding.scale4);
         speeds = Arrays.asList(binding.speed05, binding.speed075, binding.speed10, binding.speed125, binding.speed15, binding.speed175, binding.speed20, binding.speed25, binding.speed30, binding.speed50);
-        displays = Arrays.asList(binding.displayTime, binding.displayTraffic, binding.displaySize, binding.displayProgress, binding.displayMini, binding.displayTitle, binding.displayParams);
         return binding;
     }
 
@@ -285,12 +129,11 @@ public class ControlDialog extends BaseBottomSheetDialog implements ParseAdapter
         scrollBasePaddingBottom = binding.controlScroll.getPaddingBottom();
         setControlPadding();
         setSheetBackground();
-        binding.decode.setText(controls.decode.getText());
-        binding.playParams.setSelected(controls.playParams != null && controls.playParams.isSelected());
+        binding.decode.setText(parent.control.action.decode.getText());
         setLut();
-binding.ending.setText(controls.ending.getText());
-        binding.opening.setText(controls.opening.getText());
-        binding.repeat.setSelected(controls.repeat.isSelected());
+        binding.ending.setText(parent.control.action.ending.getText());
+        binding.opening.setText(parent.control.action.opening.getText());
+        binding.repeat.setSelected(parent.control.action.repeat.isSelected());
         binding.immersiveAudio.setSelected(PlayerSetting.isImmersiveAudioMode());
         setImmersiveAudioVisible();
         binding.timer.setSelected(Timer.get().isRunning());
@@ -300,7 +143,6 @@ binding.ending.setText(controls.ending.getText());
         setEpisodeColumn();
         setPlayer();
         setParse();
-        setDisplaySettings();
         binding.controlScroll.post(() -> binding.controlScroll.scrollTo(0, 0));
     }
 
@@ -316,36 +158,27 @@ binding.ending.setText(controls.ending.getText());
         binding.immersiveAudio.setOnClickListener(v -> setImmersiveAudio());
         binding.speed.addOnChangeListener(this::setSpeed);
         for (TextView view : speeds) view.setOnClickListener(this::setSpeedPreset);
-        binding.scale.setOnClickListener(view -> VideoAspectModeDialog.show(requireActivity(), getScale(), this::setScale));
-        for (int i = 0; i < displays.size(); i++) {
-            int index = i;
-            displays.get(i).setOnClickListener(v -> toggleDisplaySetting(index));
-        }
-        binding.reset.setOnClickListener(v -> dismiss(controls.reset));
-        binding.fullscreen.setOnClickListener(v -> dismiss(controls.fullscreen));
+        for (TextView view : scales) view.setOnClickListener(this::setScale);
+        binding.reset.setOnClickListener(v -> dismiss(parent.control.action.reset));
         binding.text.setOnClickListener(v -> onTrack(binding.text));
         binding.audio.setOnClickListener(v -> onTrack(binding.audio));
         binding.video.setOnClickListener(v -> onTrack(binding.video));
         binding.episodeColumn1.setOnClickListener(v -> setEpisodeColumn(1));
         binding.episodeColumn2.setOnClickListener(v -> setEpisodeColumn(2));
         binding.compactEpisodeTitle.setOnClickListener(v -> setCompactEpisodeTitle());
-        binding.title.setOnClickListener(v -> listener().onTitlePanel());
-        binding.player.setOnClickListener(v -> click(binding.player, controls.player));
-        binding.danmaku.setOnClickListener(v -> listener().onDanmakuPanel());
-        binding.repeat.setOnClickListener(v -> active(binding.repeat, controls.repeat));
-        binding.decode.setOnClickListener(v -> click(binding.decode, controls.decode));
-        binding.playParams.setOnClickListener(v -> {
-            dismissAllowingStateLoss();
-            listener().onPlayParamsPanel();
-        });
-        binding.codecCapability.setOnClickListener(v -> listener().onCodecCapabilityPanel());
+        binding.title.setOnClickListener(v -> ((Listener) requireActivity()).onTitlePanel());
+        binding.player.setOnClickListener(v -> dismiss(parent.control.action.player));
+        binding.danmaku.setOnClickListener(v -> ((Listener) requireActivity()).onDanmakuPanel());
+        binding.repeat.setOnClickListener(v -> active(binding.repeat, parent.control.action.repeat));
+        binding.decode.setOnClickListener(v -> click(binding.decode, parent.control.action.decode));
+        binding.codecCapability.setOnClickListener(v -> ((Listener) requireActivity()).onCodecCapabilityPanel());
         binding.panDiagnostic.setOnClickListener(v -> onPanDiagnostic());
         binding.lut.setOnClickListener(v -> onLut());
-        binding.ending.setOnClickListener(v -> click(binding.ending, controls.ending));
-        binding.opening.setOnClickListener(v -> click(binding.opening, controls.opening));
-        binding.player.setOnLongClickListener(v -> longClick(binding.player, controls.player));
-        binding.ending.setOnLongClickListener(v -> longClick(binding.ending, controls.ending));
-        binding.opening.setOnLongClickListener(v -> longClick(binding.opening, controls.opening));
+        binding.ending.setOnClickListener(v -> click(binding.ending, parent.control.action.ending));
+        binding.opening.setOnClickListener(v -> click(binding.opening, parent.control.action.opening));
+        binding.player.setOnLongClickListener(v -> longClick(binding.player, parent.control.action.player));
+        binding.ending.setOnLongClickListener(v -> longClick(binding.ending, parent.control.action.ending));
+        binding.opening.setOnLongClickListener(v -> longClick(binding.opening, parent.control.action.opening));
     }
 
     private void onTimer(View view) {
@@ -356,13 +189,8 @@ binding.ending.setText(controls.ending.getText());
         FragmentActivity activity = getActivity();
         PlayerManager current = player;
         if (activity == null || current == null) return;
-        FragmentManager fragmentManager = activity.getSupportFragmentManager();
-        if (activity.isFinishing() || activity.isDestroyed() || fragmentManager.isStateSaved() || current.isReleased()) return;
         dismissAllowingStateLoss();
-        App.post(() -> {
-            if (activity.isFinishing() || activity.isDestroyed() || fragmentManager.isStateSaved() || current.isReleased()) return;
-            PanNetworkDiagnosticDialog.show(activity, current);
-        }, 140);
+        App.post(() -> PanNetworkDiagnosticDialog.show(activity, current), 140);
     }
 
     private void setImmersiveAudio() {
@@ -372,25 +200,11 @@ binding.ending.setText(controls.ending.getText());
     }
 
     private void onTrack(View view) {
-        listener().onTrackPanel(Integer.parseInt(view.getTag().toString()));
+        ((Listener) requireActivity()).onTrackPanel(Integer.parseInt(view.getTag().toString()));
     }
 
     private void setSheetBackground() {
         binding.sheetWall.setVisibility(View.GONE);
-    }
-
-    private void setDisplaySettings() {
-        boolean[] checked = PlayerSetting.getDisplayChecked();
-        for (int i = 0; i < displays.size(); i++) displays.get(i).setSelected(i < checked.length && checked[i]);
-    }
-
-    private void toggleDisplaySetting(int index) {
-        boolean[] checked = PlayerSetting.getDisplayChecked();
-        if (index < 0 || index >= checked.length) return;
-        checked[index] = !checked[index];
-        PlayerSetting.putDisplayChecked(checked);
-        setDisplaySettings();
-        listener().onDisplayChanged();
     }
 
     private void setSpeed(@NonNull Slider slider, float value, boolean fromUser) {
@@ -399,10 +213,11 @@ binding.ending.setText(controls.ending.getText());
     }
 
     private void applySpeed(float speed) {
-        controls.speed.setText(player.setSpeed(speed));
+        PlayerSetting.putDefaultSpeed(speed);
+        parent.control.action.speed.setText(player.setSpeed(speed));
         setSpeedPresets();
         binding.speed.setValue(Math.max(player.getSpeed(), 0.5f));
-        if (history != null) history.setUserSpeed(player.getSpeed());
+        if (history != null) history.setSpeed(player.getSpeed());
     }
 
     private void setSpeedPreset(View view) {
@@ -415,15 +230,10 @@ binding.ending.setText(controls.ending.getText());
     }
 
     private void setScaleText() {
-        int mode = getScale();
-        binding.scale.setText(scale[mode]);
-        binding.scale.setSelected(false);
-    }
-
-    private int getScale() {
-        CharSequence current = controls.scale.getText();
-        for (int mode = 0; mode < scale.length; mode++) if (TextUtils.equals(scale[mode], current)) return mode;
-        return history != null && history.getScale() != -1 ? history.getScale() : PlayerSetting.getScale();
+        for (int i = 0; i < scales.size(); i++) {
+            scales.get(i).setText(scale[i]);
+            scales.get(i).setSelected(scales.get(i).getText().equals(parent.control.action.scale.getText()));
+        }
     }
 
     private void setParse() {
@@ -434,13 +244,14 @@ binding.ending.setText(controls.ending.getText());
         binding.parse.setAdapter(new ParseAdapter(this, ViewType.DARK));
     }
 
-    private void setScale(int mode) {
-        listener().onScale(mode);
-        setScaleText();
+    private void setScale(View view) {
+        for (TextView textView : scales) textView.setSelected(false);
+        ((Listener) requireActivity()).onScale(Integer.parseInt(view.getTag().toString()));
+        view.setSelected(true);
     }
 
     private void setEpisodeColumn(int column) {
-        listener().onEpisodeColumn(column);
+        ((Listener) requireActivity()).onEpisodeColumn(column);
         setEpisodeColumn();
     }
 
@@ -449,7 +260,7 @@ binding.ending.setText(controls.ending.getText());
         binding.episodeColumn1.setSelected(column == 1);
         binding.episodeColumn2.setSelected(column == 2);
         binding.compactEpisodeTitle.setSelected(Setting.isCompactEpisodeTitle());
-        boolean visible = controls.episodes != null && controls.episodes.getVisibility() == View.VISIBLE;
+        boolean visible = parent.control.action.episodes.getVisibility() == View.VISIBLE;
         binding.episodeColumnText.setVisibility(visible ? View.VISIBLE : View.GONE);
         binding.episodeColumnRow.setVisibility(visible ? View.VISIBLE : View.GONE);
     }
@@ -457,7 +268,7 @@ binding.ending.setText(controls.ending.getText());
     private void setCompactEpisodeTitle() {
         Setting.putCompactEpisodeTitle(!Setting.isCompactEpisodeTitle());
         binding.compactEpisodeTitle.setSelected(Setting.isCompactEpisodeTitle());
-        listener().onCompactEpisodeTitleChanged();
+        ((Listener) requireActivity()).onCompactEpisodeTitleChanged();
     }
 
     private void active(View view, TextView target) {
@@ -471,7 +282,7 @@ binding.ending.setText(controls.ending.getText());
     }
 
     private void onLut() {
-        listener().onLutPanel();
+        ((Listener) requireActivity()).onLutPanel();
     }
 
     private boolean longClick(TextView view, TextView target) {
@@ -486,36 +297,33 @@ binding.ending.setText(controls.ending.getText());
     }
 
     public void setPlayer() {
-if (binding == null || controls == null || player == null) return;
+        if (binding == null || !resolveHostDependencies()) return;
         binding.speed.setValue(Math.max(player.getSpeed(), 0.5f));
         setSpeedPresets();
-        binding.player.setText(controls.player.getText());
-        binding.reset.setText(controls.reset.getText());
+        binding.player.setText(parent.control.action.player.getText());
+        binding.reset.setText(parent.control.action.reset.getText());
         setLut();
         setEpisodeColumn();
-        binding.decode.setVisibility(controls.decode.getVisibility());
-        binding.danmaku.setVisibility(controls.danmaku.getVisibility());
+        binding.decode.setVisibility(parent.control.action.decode.getVisibility());
+        binding.danmaku.setVisibility(parent.control.action.danmaku.getVisibility());
         setImmersiveAudioVisible();
         setTrackVisible();
     }
 
     public void setLut() {
-        if (binding == null || controls == null) return;
-        binding.lut.setText(controls.lut.getText());
+        if (binding == null || !resolveHostDependencies()) return;
+        binding.lut.setText(parent.control.action.lut.getText());
     }
 
     private boolean resolveHostDependencies() {
         FragmentActivity activity = getActivity();
         if (activity instanceof Listener listener) {
-            if (controls == null) {
-                ActivityVideoBinding host = listener.getControlBinding();
-                if (host != null) parent(host);
-            }
+            if (parent == null) parent = listener.getControlBinding();
             if (player == null) player = listener.getControlPlayer();
             if (history == null) history = listener.getControlHistory();
             parse = listener.isControlParseEnabled();
         }
-        return controls != null && player != null;
+        return parent != null && player != null;
     }
 
     public void setParseVisible(boolean visible) {
@@ -524,9 +332,9 @@ if (binding == null || controls == null || player == null) return;
     }
 
     public void setTrackVisible() {
-        binding.text.setVisibility(controls.text.getVisibility());
-        binding.audio.setVisibility(controls.audio.getVisibility());
-        binding.video.setVisibility(controls.videoTrack.getVisibility());
+        binding.text.setVisibility(parent.control.action.text.getVisibility());
+        binding.audio.setVisibility(parent.control.action.audio.getVisibility());
+        binding.video.setVisibility(parent.control.action.video.getVisibility());
         boolean visible = binding.text.getVisibility() != View.GONE || binding.audio.getVisibility() != View.GONE || binding.video.getVisibility() != View.GONE || binding.title.getVisibility() != View.GONE || binding.danmaku.getVisibility() != View.GONE;
         binding.trackText.setVisibility(visible ? View.VISIBLE : View.GONE);
         binding.trackRow.setVisibility(visible ? View.VISIBLE : View.GONE);
@@ -587,13 +395,13 @@ if (binding == null || controls == null || player == null) return;
     }
 
     private int getPortAvailableHeight(int fallback) {
-        if (controls == null || controls.video.getHeight() <= 0) return Math.round(fallback * 0.58f);
+        if (parent == null || parent.video.getHeight() <= 0) return Math.round(fallback * 0.58f);
         int[] video = new int[2];
         int[] root = new int[2];
-        controls.video.getLocationOnScreen(video);
-        controls.root.getLocationOnScreen(root);
-        int rootBottom = root[1] + controls.root.getHeight();
-        int videoBottom = video[1] + controls.video.getHeight();
+        parent.video.getLocationOnScreen(video);
+        parent.getRoot().getLocationOnScreen(root);
+        int rootBottom = root[1] + parent.getRoot().getHeight();
+        int videoBottom = video[1] + parent.video.getHeight();
         return Math.max(ResUtil.dp2px(260), rootBottom - videoBottom - getNavigationBottomInset());
     }
 
@@ -605,63 +413,14 @@ if (binding == null || controls == null || player == null) return;
     }
 
     public void setTitleVisible() {
-        binding.title.setVisibility(controls.title.getVisibility());
+        binding.title.setVisibility(parent.control.action.title.getVisibility());
         setTrackVisible();
     }
 
     @Override
     public void onItemClick(Parse item) {
-        listener().onParse(item);
+        ((Listener) requireActivity()).onParse(item);
         binding.parse.getAdapter().notifyItemRangeChanged(0, binding.parse.getAdapter().getItemCount());
-    }
-
-    private Listener listener() {
-        return listener != null ? listener : (Listener) requireActivity();
-    }
-
-    private static final class Controls {
-
-        private final View root;
-        private final View video;
-        private final View fullscreen;
-        private final TextView player;
-        private final TextView decode;
-        private final TextView playParams;
-        private final TextView speed;
-        private final TextView scale;
-        private final TextView lut;
-        private final TextView reset;
-        private final TextView repeat;
-        private final TextView text;
-        private final TextView audio;
-        private final TextView videoTrack;
-        private final TextView opening;
-        private final TextView ending;
-        private final TextView danmaku;
-        private final TextView title;
-        private final TextView episodes;
-
-        private Controls(View root, View video, View fullscreen, TextView player, TextView decode, TextView playParams, TextView speed, TextView scale, TextView lut, TextView reset, TextView repeat, TextView text, TextView audio, TextView videoTrack, TextView opening, TextView ending, TextView danmaku, TextView title, TextView episodes) {
-            this.root = root;
-            this.video = video;
-            this.fullscreen = fullscreen;
-            this.player = player;
-            this.decode = decode;
-            this.playParams = playParams;
-            this.speed = speed;
-            this.scale = scale;
-            this.lut = lut;
-            this.reset = reset;
-            this.repeat = repeat;
-            this.text = text;
-            this.audio = audio;
-            this.videoTrack = videoTrack;
-            this.opening = opening;
-            this.ending = ending;
-            this.danmaku = danmaku;
-            this.title = title;
-            this.episodes = episodes;
-        }
     }
 
     public interface Listener {
@@ -700,8 +459,6 @@ if (binding == null || controls == null || player == null) return;
         void onTitlePanel();
 
         void onDanmakuPanel();
-
-        void onDisplayChanged();
 
         void onImmersiveAudioModeChanged();
 

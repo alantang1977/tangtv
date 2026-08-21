@@ -24,7 +24,19 @@ public class DolbyVisionFormatLabelTest {
 
         assertEquals("Dolby Vision DV.07",
                 DolbyVisionFormatLabel.formatName(details));
-        assertEquals("dvhe.07.06（回退HDR10）",
+        assertEquals("dvhe.07.06（降级HDR10）",
+                DolbyVisionFormatLabel.codecText(details));
+    }
+
+    @Test
+    public void p81ConversionMarksUpgradeBesideTheSourceCodec() {
+        PlayerEngine.VideoPlaybackDetails details = new PlayerEngine.VideoPlaybackDetails(
+                "dvhe.07.06", 7, 6, "dvhe.08.06",
+                "c2.qti.hevc.decoder", "", null, false, true);
+
+        assertEquals("Dolby Vision DV.07",
+                DolbyVisionFormatLabel.formatName(details));
+        assertEquals("dvhe.07.06（升级P8.1）",
                 DolbyVisionFormatLabel.codecText(details));
     }
 

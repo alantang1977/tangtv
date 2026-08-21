@@ -32,14 +32,6 @@ public class KeyUtil {
         return event.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT;
     }
 
-    public static boolean isSeekBackKey(KeyEvent event) {
-        return isLeftKey(event) || event.getKeyCode() == KeyEvent.KEYCODE_MEDIA_REWIND;
-    }
-
-    public static boolean isSeekForwardKey(KeyEvent event) {
-        return isRightKey(event) || event.getKeyCode() == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD;
-    }
-
     public static boolean isBackKey(KeyEvent event) {
         return event.getKeyCode() == KeyEvent.KEYCODE_BACK;
     }
@@ -61,10 +53,10 @@ public class KeyUtil {
     }
 
     public static boolean isMediaRewind(KeyEvent event) {
-        return isActionUp(event) && isSeekBackKey(event) && !isLeftKey(event);
+        return isActionUp(event) && event.getKeyCode() == KeyEvent.KEYCODE_MEDIA_REWIND;
     }
 
     public static boolean isMediaFastForward(KeyEvent event) {
-        return isActionUp(event) && isSeekForwardKey(event) && !isRightKey(event);
+        return isActionUp(event) && event.getKeyCode() == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD;
     }
 }

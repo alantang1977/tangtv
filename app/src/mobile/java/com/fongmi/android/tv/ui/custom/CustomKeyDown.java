@@ -27,7 +27,6 @@ public class CustomKeyDown extends GestureDetector.SimpleOnGestureListener imple
     private final Listener listener;
     private final Activity activity;
     private final View videoView;
-    private final int[] videoLocation;
     private boolean changeBright;
     private boolean changeVolume;
     private boolean changeSpeed;
@@ -54,7 +53,6 @@ public class CustomKeyDown extends GestureDetector.SimpleOnGestureListener imple
         this.listener = (Listener) activity;
         this.videoView = videoView;
         this.activity = activity;
-        this.videoLocation = new int[2];
         this.scale = 1.0f;
         applyBrightness();
     }
@@ -100,41 +98,13 @@ public class CustomKeyDown extends GestureDetector.SimpleOnGestureListener imple
     }
 
     private boolean isEdge(MotionEvent e) {
-        int width = getVideoWidth();
-        int height = getVideoHeight();
-        if (width <= 0 || height <= 0) return false;
-        int edge = ResUtil.dp2px(24);
-        float x = getVideoX(e);
-        float y = getVideoY(e);
-        return x < edge || x > width - edge || y < edge || y > height - edge;
+        return ResUtil.isEdge(App.get(), e, ResUtil.dp2px(24));
     }
 
     private boolean isSide(MotionEvent e) {
-        int width = getVideoWidth();
-        if (width <= 0) return false;
-        int four = width / 4;
-        float x = getVideoX(e);
-        return !(x > four) || !(x < four * 3);
-    }
-
-    private int getVideoWidth() {
-        int width = videoView.getWidth();
-        return width > 0 ? width : videoView.getMeasuredWidth();
-    }
-
-    private int getVideoHeight() {
-        int height = videoView.getHeight();
-        return height > 0 ? height : videoView.getMeasuredHeight();
-    }
-
-    private float getVideoX(MotionEvent e) {
-        videoView.getLocationOnScreen(videoLocation);
-        return e.getRawX() - videoLocation[0];
-    }
-
-    private float getVideoY(MotionEvent e) {
-        videoView.getLocationOnScreen(videoLocation);
-        return e.getRawY() - videoLocation[1];
+        int four = ResUtil.getScreenWidth(App.get()) / 4;
+        float x = e.getRawX();
+        return x <= four || x >= four * 3;
     }
 
     private void reset() {
@@ -185,7 +155,7 @@ public class CustomKeyDown extends GestureDetector.SimpleOnGestureListener imple
     @Override
     public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
         if (isMultiple(e) || changeScale) return true;
-        listener.onSingleTap(getVideoX(e), getVideoWidth());
+        listener.onSingleTap(e.getRawX(), ResUtil.getScreenWidth(App.get()));
         return true;
     }
 
@@ -215,9 +185,8 @@ public class CustomKeyDown extends GestureDetector.SimpleOnGestureListener imple
     }
 
     private void checkSide(MotionEvent e2) {
-        int width = getVideoWidth();
-        float x = getVideoX(e2);
-        if (x > width / 2f) changeVolume = true;
+        int half = ResUtil.getScreenWidth(App.get()) / 2;
+        if (e2.getRawX() > half) changeVolume = true;
         else changeBright = true;
     }
 

@@ -1,7 +1,6 @@
 package com.fongmi.android.tv.utils;
 
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -35,11 +34,6 @@ import java.util.regex.Pattern;
 public class Util {
 
     private static final Pattern EPISODE = Pattern.compile("(?i)(?:ep|第|e|[\\-\\.\\s])\\s?(\\d{1,4})");
-    private static final Pattern SEASON_EPISODE = Pattern.compile("[Ss](?:[0-9]{1,2})?[-._\\s]*[Ee]([0-9]{1,3})", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CHINESE_EPISODE = Pattern.compile("第\\s*([零一二三四五六七八九十百千万0-9]+)\\s*[集话章节回期]");
-    private static final Pattern EP_PREFIX = Pattern.compile("\\b(?:EP|E)[-._\\s]*([0-9]{1,3})\\b", Pattern.CASE_INSENSITIVE);
-    private static final Pattern NUMERIC_RANGE = Pattern.compile("(?<!\\d)\\d{1,4}\\s*[-~～至]\\s*\\d{1,4}(?!\\d)");
-    private static final Pattern TRAILING_SEASON_EPISODE = Pattern.compile("(?<!\\d)([1-9]\\d?)[_.-]0*([1-9]\\d{0,2})(?=$|\\s|\\[|\\(|\\.(?:mp4|mkv|avi|flv|ts|m3u8|webm|mov|wmv|rmvb))", Pattern.CASE_INSENSITIVE);
     private static volatile String serial;
 
     public static void toggleFullscreen(Activity activity, boolean fullscreen) {
@@ -52,16 +46,6 @@ public class Util {
             activity.moveTaskToBack(true);
         } catch (NullPointerException ignored) {
             activity.startActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-        }
-    }
-
-    public static boolean resetApp() {
-        try {
-            ActivityManager manager = App.get().getSystemService(ActivityManager.class);
-            return manager != null && manager.clearApplicationUserData();
-        } catch (RuntimeException e) {
-            e.printStackTrace();
-            return false;
         }
     }
 
@@ -125,213 +109,17 @@ public class Util {
         }
     }
 
-    /**
-     * 从文件名或备注文本中提取集数
-     *
-     * @param text 输入文本（文件名、备注等）
-     * @return 集数（1-999），无效或无法提取时返回 -1
-     */
-    public static int getEpisodeNumber(String text) {
+    public static int getNumber(String text) {
         try {
-            if (TextUtils.isEmpty(text)) return -1;
-
-            // 预处理：移除常见干扰信息
-            String processed = preprocessEpisodeText(text);
-
-            // 1. 纯数字区间不是单集，例如 601-620、621-27。
-            String trimmed = processed.trim();
-            if (NUMERIC_RANGE.matcher(trimmed).matches()) return -1;
-
-            // 2. 独立纯数字检测（如播放器传来的 "17" 或 "03"）。
-            if (trimmed.matches("\\d{1,3}")) {
-                int value = Integer.parseInt(trimmed);
-                return (value > 0 && value <= 999) ? value : -1;
-            }
-
-            // 2. S01E03 格式（优先级最高）
-            Matcher matcher = SEASON_EPISODE.matcher(processed);
-            if (matcher.find()) {
-                return Integer.parseInt(matcher.group(1));
-            }
-
-            // 3. 中文格式：第XX集/话/章（支持中文数字）
-            matcher = CHINESE_EPISODE.matcher(processed);
-            if (matcher.find()) {
-                String chineseNum = matcher.group(1);
-                int result = convertChineseNumberToArabic(chineseNum);
-                if (result > 0) return result;
-            }
-
-            // 4. EP03, E03 格式
-            matcher = EP_PREFIX.matcher(processed);
-            if (matcher.find()) {
-                return Integer.parseInt(matcher.group(1));
-            }
-
-            // 6. 作品名后的“季_集 / 季-集 / 季.集”，例如“一人之下6_01”。
-            matcher = TRAILING_SEASON_EPISODE.matcher(processed);
-            if (matcher.find()) return Integer.parseInt(matcher.group(2));
-
-            // 7. 原有逻辑（兼容旧格式）
-            matcher = EPISODE.matcher(processed);
+            text = text.replaceAll("\\[.*?\\]|\\(.*?\\)", "");
+            text = text.replaceAll("\\b(19|20)\\d{2}\\b", "");
+            text = text.toLowerCase().replaceAll("2160p|1080p|720p|480p|4k|h26[45]|x26[45]|mp4", "");
+            Matcher matcher = EPISODE.matcher(text);
             if (matcher.find()) return Integer.parseInt(matcher.group(1));
-
-            // 8. 最后只接受唯一的数字段，禁止把 6 和 01 拼成 601。
-            Matcher digits = Pattern.compile("(?<!\\d)(\\d{1,3})(?!\\d)").matcher(processed);
-            int value = -1;
-            while (digits.find()) {
-                int candidate = Integer.parseInt(digits.group(1));
-                if (candidate <= 0 || candidate >= 1900 && candidate <= 2099) continue;
-                if (value > 0) return -1;
-                value = candidate;
-            }
-            if (value > 0 && value <= 999) return value;
-
-            return -1;
+            String number = text.replaceAll("\\D+", "");
+            return number.isEmpty() ? -1 : Integer.parseInt(number);
         } catch (Exception e) {
             return -1;
-        }
-    }
-
-    private static String preprocessEpisodeText(String text) {
-        // 移除文件扩展名（避免从 mp4, mkv 等提取数字）
-        // 注意：不用 $ 锚点，扩展名后面可能还跟着文件大小等信息（如 02.mp4[5.17GB]）
-        String processed = text.replaceAll("(?i)\\.(mp4|mkv|avi|flv|ts|m3u8|webm|mov|wmv|rmvb)(?![a-z0-9])", " ");
-
-        // 完整日期中的月/日不能被误认成“季_集”，例如 show_2026_07_18。
-        processed = processed.replaceAll("(?<!\\d)(?:19|20)\\d{2}[-_.](?:0?[1-9]|1[0-2])[-_.](?:0?[1-9]|[12]\\d|3[01])(?!\\d)", " ");
-
-        // 移除文件大小格式：[210.03G], (1.2GB) 等
-        processed = processed
-                .replaceAll("\\[[0-9]+(?:\\.[0-9]+)?[GMK]B?\\]", " ")
-                .replaceAll("\\([0-9]+(?:\\.[0-9]+)?[GMK]B?\\)", " ")
-                .replaceAll("【[0-9]+(?:\\.[0-9]+)?[GMK]B?】", " ");
-
-        // 移除常见的画质、编码信息
-        processed = processed
-                .replaceAll("(?i)(?<![a-z0-9])(?:2160|1080|720|480)p(?![a-z0-9])", " ")
-                .replaceAll("(?i)(?<![a-z0-9])(?:4K|2K|HD|SD|FHD|UHD)(?![a-z0-9])", " ")
-                .replaceAll("\\b(?:x264|x265|H264|H265|AVC|HEVC)\\b", " ")
-                .replaceAll("\\b(?:AAC|AC3|DTS|FLAC)\\b", " ")
-                .replaceAll("\\b(?:WEB[-._\\s]*DL|BluRay|BDRip|REMUX|HDTV)\\b", " ");
-
-        // 移除版本信息：v2, ver2.0
-        processed = processed.replaceAll("\\b[vV](?:[0-9]+(?:\\.[0-9]+)?)\\b", " ");
-
-        // 移除年份（但保留在"第X集"等明确格式中的数字）
-        processed = processed.replaceAll("\\b(19|20)\\d{2}\\b", " ");
-
-        // 移除括号内容（但保留括号外的文本）
-        processed = processed.replaceAll("\\[.*?\\]|\\(.*?\\)", " ");
-
-        // 合并多个空格
-        return processed.replaceAll("\\s+", " ").trim();
-    }
-
-    private static int convertChineseNumberToArabic(String chineseNum) {
-        if (TextUtils.isEmpty(chineseNum)) return -1;
-
-        String normalized = chineseNum.trim().replace("两", "二");
-        if (TextUtils.isEmpty(normalized)) return -1;
-
-        // 尝试直接解析阿拉伯数字
-        try {
-            return Integer.parseInt(normalized);
-        } catch (NumberFormatException e) {
-            // 继续中文数字解析
-        }
-
-        // 检查是否全是中文数字
-        if (!normalized.matches("[零一二三四五六七八九十百千万]+")) {
-            return -1;
-        }
-
-        // 处理简单的连续数字（一二三 → 123）
-        boolean hasUnit = normalized.matches(".*[十百千万].*");
-        if (!hasUnit) {
-            StringBuilder digits = new StringBuilder();
-            for (int i = 0; i < normalized.length(); i++) {
-                int digit = chineseDigitToInt(normalized.charAt(i));
-                if (digit < 0) return -1;
-                digits.append(digit);
-            }
-            try {
-                return Integer.parseInt(digits.toString());
-            } catch (NumberFormatException e) {
-                return -1;
-            }
-        }
-
-        // 处理带单位的中文数字（二十三 → 23，一百零五 → 105）
-        int result = 0;
-        int section = 0;
-        int number = 0;
-
-        for (int i = 0; i < normalized.length(); i++) {
-            char c = normalized.charAt(i);
-            int value = chineseValueToInt(c);
-            if (value < 0) return -1;
-
-            if (value == 0) {
-                continue;
-            }
-
-            if (value < 10) {
-                number = value;
-                continue;
-            }
-
-            if (value == 10000) {
-                section += number;
-                if (section == 0) section = 1;
-                result += section * value;
-                section = 0;
-                number = 0;
-                continue;
-            }
-
-            if (number == 0) number = 1;
-            section += number * value;
-            number = 0;
-        }
-
-        result += section + number;
-        return result > 0 ? result : -1;
-    }
-
-    private static int chineseDigitToInt(char c) {
-        switch (c) {
-            case '零': return 0;
-            case '一': return 1;
-            case '二': return 2;
-            case '三': return 3;
-            case '四': return 4;
-            case '五': return 5;
-            case '六': return 6;
-            case '七': return 7;
-            case '八': return 8;
-            case '九': return 9;
-            default: return -1;
-        }
-    }
-
-    private static int chineseValueToInt(char c) {
-        switch (c) {
-            case '零': return 0;
-            case '一': return 1;
-            case '二': return 2;
-            case '三': return 3;
-            case '四': return 4;
-            case '五': return 5;
-            case '六': return 6;
-            case '七': return 7;
-            case '八': return 8;
-            case '九': return 9;
-            case '十': return 10;
-            case '百': return 100;
-            case '千': return 1000;
-            case '万': return 10000;
-            default: return -1;
         }
     }
 

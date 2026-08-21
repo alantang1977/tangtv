@@ -9,16 +9,6 @@ import static org.junit.Assert.assertTrue;
 public class MpvCacheObserverStateTest {
 
     @Test
-    public void compatibilityRecordOverloadTracksObservedValues() {
-        MpvCacheObserverState state = new MpvCacheObserverState();
-
-        assertFalse(state.hasObservedValues());
-        assertTrue(state.record("demuxer-cache-state/cache-duration", 4.5));
-        assertTrue(state.hasObservedValues());
-        assertEquals(1, state.observedCount());
-    }
-
-    @Test
     public void firstObserverValueDisablesFallbackForThatMetric() {
         MpvCacheObserverState state = new MpvCacheObserverState();
 
@@ -53,13 +43,13 @@ public class MpvCacheObserverStateTest {
         MpvCacheObserverState state = new MpvCacheObserverState();
 
         state.onFileLoaded(1_000);
-        assertFalse(state.shouldQueryFallback(false, true, 20_000));
-        assertFalse(state.shouldQueryFallback(true, true, 2_999));
-        assertTrue(state.shouldQueryFallback(true, true, 3_000));
+        assertFalse(state.shouldQueryFallback(false, true, false, 20_000));
+        assertFalse(state.shouldQueryFallback(true, true, false, 2_999));
+        assertTrue(state.shouldQueryFallback(true, true, false, 3_000));
 
         state.onFallbackQuery(3_000);
-        assertFalse(state.shouldQueryFallback(true, true, 7_999));
-        assertTrue(state.shouldQueryFallback(true, true, 8_000));
+        assertFalse(state.shouldQueryFallback(true, true, false, 7_999));
+        assertTrue(state.shouldQueryFallback(true, true, false, 8_000));
     }
 
     @Test
@@ -69,7 +59,7 @@ public class MpvCacheObserverStateTest {
         state.onFileLoaded(1_000);
 
         assertEquals(12, state.observedCount());
-        assertFalse(state.shouldQueryFallback(true, false, 20_000));
+        assertFalse(state.shouldQueryFallback(true, false, false, 20_000));
     }
 
     @Test
@@ -78,14 +68,14 @@ public class MpvCacheObserverStateTest {
         recordAllMetrics(state, 1_000);
         state.onFileLoaded(1_000);
 
-        assertFalse(state.shouldQueryFallback(true, true, 15_999));
-        assertTrue(state.shouldQueryFallback(true, true, 16_000));
+        assertFalse(state.shouldQueryFallback(true, true, false, 15_999));
+        assertTrue(state.shouldQueryFallback(true, true, false, 16_000));
         assertTrue(state.needsFallback(MpvCacheObserverState.Metric.DURATION, true, 16_000));
         assertFalse(state.needsFallback(MpvCacheObserverState.Metric.IDLE, true, 16_000));
 
         state.onFallbackQuery(16_000);
-        assertFalse(state.shouldQueryFallback(true, true, 20_999));
-        assertTrue(state.shouldQueryFallback(true, true, 21_000));
+        assertFalse(state.shouldQueryFallback(true, true, false, 20_999));
+        assertTrue(state.shouldQueryFallback(true, true, false, 21_000));
     }
 
     @Test
@@ -93,13 +83,22 @@ public class MpvCacheObserverStateTest {
         MpvCacheObserverState state = new MpvCacheObserverState();
         recordAllMetrics(state, 1_000);
         state.onFileLoaded(1_000);
-        assertTrue(state.shouldQueryFallback(true, true, 16_000));
+        assertTrue(state.shouldQueryFallback(true, true, false, 16_000));
 
         state.record("cache-speed", 4096L, 16_000);
 
         assertTrue(state.needsFallback(MpvCacheObserverState.Metric.DURATION, true, 16_000));
         assertFalse(state.needsFallback(MpvCacheObserverState.Metric.SPEED, true, 16_000));
-        assertTrue(state.shouldQueryFallback(true, true, 16_000));
+        assertTrue(state.shouldQueryFallback(true, true, false, 16_000));
+    }
+
+    @Test
+    public void activePlaybackNeverUsesSynchronousFallback() {
+        MpvCacheObserverState state = new MpvCacheObserverState();
+        state.onFileLoaded(1_000);
+
+        assertFalse(state.shouldQueryFallback(true, true, true, 20_000));
+        assertTrue(state.shouldQueryFallback(true, true, false, 20_000));
     }
 
     @Test
@@ -120,13 +119,13 @@ public class MpvCacheObserverStateTest {
         MpvCacheObserverState state = new MpvCacheObserverState();
         recordAllMetrics(state, 1_000);
         state.onFileLoaded(1_000);
-        assertTrue(state.shouldQueryFallback(true, true, 16_000));
+        assertTrue(state.shouldQueryFallback(true, true, false, 16_000));
 
         state.onPlaybackDiscontinuity(16_000);
 
-        assertFalse(state.shouldQueryFallback(true, true, 17_999));
-        assertFalse(state.shouldQueryFallback(true, true, 30_999));
-        assertTrue(state.shouldQueryFallback(true, true, 31_000));
+        assertFalse(state.shouldQueryFallback(true, true, false, 17_999));
+        assertFalse(state.shouldQueryFallback(true, true, false, 30_999));
+        assertTrue(state.shouldQueryFallback(true, true, false, 31_000));
     }
 
     @Test
@@ -141,10 +140,9 @@ public class MpvCacheObserverStateTest {
         state.reset();
 
         assertEquals(0, state.observedCount());
-        assertFalse(state.hasObservedValues());
         assertTrue(state.needsFallback(MpvCacheObserverState.Metric.IDLE, false, 0));
         assertTrue(state.needsFallback(MpvCacheObserverState.Metric.EOF, false, 0));
-        assertFalse(state.shouldQueryFallback(true, true, 20_000));
+        assertFalse(state.shouldQueryFallback(true, true, false, 20_000));
     }
 
     private static void recordAllMetrics(MpvCacheObserverState state, long nowMs) {

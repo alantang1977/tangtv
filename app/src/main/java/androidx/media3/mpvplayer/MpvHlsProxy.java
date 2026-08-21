@@ -4,8 +4,7 @@ import android.os.SystemClock;
 import android.text.TextUtils;
 
 import androidx.annotation.Nullable;
-import com.fongmi.android.tv.api.config.HlsRuleConfig;
-import com.fongmi.android.tv.utils.HlsAdblockPipeline;
+import androidx.media3.exoplayer.hls.playlist.HlsAdsParser;
 
 import com.fongmi.android.tv.player.PlaybackAutoContext;
 import com.fongmi.android.tv.player.PlaybackRouteRegistry;
@@ -15,6 +14,8 @@ import com.fongmi.android.tv.player.PreloadPausePolicy;
 import com.fongmi.android.tv.player.cache.PlaybackDiskBufferStore;
 import com.fongmi.android.tv.player.mpv.MpvPreloadPolicy;
 import com.fongmi.android.tv.setting.PlayerSetting;
+import com.fongmi.android.tv.setting.PlaybackPerformanceCatalog;
+import com.fongmi.android.tv.setting.PlaybackPerformanceSetting;
 import com.fongmi.android.tv.setting.PreloadSetting;
 import com.fongmi.android.tv.setting.Setting;
 import com.github.catvod.crawler.SpiderDebug;
@@ -409,31 +410,8 @@ public final class MpvHlsProxy extends NanoHTTPD {
     }
 
     PreloadRuntimeSnapshot preloadRuntimeSnapshot(long nowElapsedMs) {
-        SessionStats stats = sessionStats.get(sessionId);
-        if (stats == null || !stats.vod) {
-            return new PreloadRuntimeSnapshot(
-                    PreloadSetting.isPreload(kernel),
-                    false,
-                    0,
-                    false,
-                    false,
-                    -1,
-                    -1,
-                    0,
-                    0,
-                    "none",
-                    preloadGate.foregroundRequests(),
-                    false,
-                    false,
-                    false,
-                    false,
-                    0,
-                    0,
-                    0,
-                    0,
-                    preloading.size());
-        }
         refreshCacheCoordinator();
+        SessionStats stats = sessionStats.get(sessionId);
         MpvHlsUpstreamEstimator.Snapshot throughput =
                 upstreamEstimator.snapshot(nowElapsedMs);
         MpvHlsCacheCoordinator.PreloadCapacitySnapshot preloadCapacity =
@@ -794,20 +772,21 @@ public final class MpvHlsProxy extends NanoHTTPD {
 
     private String applyAdblock(String text, int session, String url) {
         if (!Setting.isAdblock() || !isVodPlaylist(text)) return text;
-        if (HlsAdblockPipeline.isCoreM3u8Proxy(url)) return text;
         try {
-            HlsAdblockPipeline.Outcome outcome = HlsAdblockPipeline.apply(url, text, HlsRuleConfig.getRules(), true);
-            if (!TextUtils.equals(outcome.manifest(), text)) {
+            String filtered = HlsAdsParser.process(text);
+            if (!TextUtils.equals(filtered, text)) {
                 if (kernel == PlayerSetting.MPV) {
                     SpiderDebug.log(TAG,
                             "adblock bypassed session=%d bytes=%d candidateBytes=%d reason=mpv-ts-timestamp-integrity url=%s",
-                            session, text.length(), outcome.manifest().length(), shortUrl(url));
+                            session, text.length(), filtered.length(),
+                            shortUrl(url));
                     return text;
                 }
-                SpiderDebug.log(TAG, "adblock filtered session=%d bytes=%d->%d structured=%s legacy=%s url=%s",
-                        session, text.length(), outcome.manifest().length(), outcome.structured(), outcome.legacy(), shortUrl(url));
+                SpiderDebug.log(TAG,
+                        "adblock filtered session=%d bytes=%d->%d url=%s",
+                        session, text.length(), filtered.length(), shortUrl(url));
             }
-            return outcome.manifest();
+            return filtered;
         } catch (Throwable e) {
             SpiderDebug.log(TAG, "adblock ignored session=%d errorType=%s", session, e.getClass().getSimpleName());
             return text;
@@ -1014,7 +993,9 @@ public final class MpvHlsProxy extends NanoHTTPD {
 
     private synchronized ExecutorService getPreloadExecutor() {
         int threads = MpvPreloadPolicy.resolveExecutorThreads(
-                automaticPreloadMode,
+                PlaybackPerformanceSetting.isAuto(
+                        kernel,
+                        PlaybackPerformanceCatalog.PRELOAD_THREADS),
                 PreloadSetting.getPreloadThreads(kernel));
         if (preloadExecutor != null && preloadThreads == threads) return preloadExecutor;
         releasePreloadExecutor();
@@ -2245,7 +2226,10 @@ public final class MpvHlsProxy extends NanoHTTPD {
                 ? List.of() : directSegments;
         long selected = Math.max(0, selectedBitsPerSecond);
         if (!variants.isEmpty()) {
-            if (selected <= 0) return List.of();
+            if (selected <= 0) {
+                if (variants.size() != 1) return List.of();
+                return List.copyOf(variants.values().iterator().next());
+            }
             List<HlsPlaylistRewriter.Segment> exact = variants.get(selected);
             if (exact != null) return List.copyOf(exact);
             return List.of();

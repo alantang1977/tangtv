@@ -1,8 +1,10 @@
 package com.fongmi.android.tv.server.process;
 
+import android.text.TextUtils;
+
 import com.fongmi.android.tv.server.Nano;
 import com.fongmi.android.tv.server.impl.Process;
-import com.fongmi.android.tv.utils.AppCache;
+import com.github.catvod.utils.Prefers;
 
 import java.util.Map;
 
@@ -17,7 +19,7 @@ public class Cache implements Process {
     }
 
     private String getKey(String rule, String key) {
-        return AppCache.key(rule, key);
+        return "cache_" + (TextUtils.isEmpty(rule) ? "" : rule + "_") + key;
     }
 
     @Override
@@ -26,9 +28,9 @@ public class Cache implements Process {
         String action = params.get("do");
         String rule = params.get("rule");
         String key = params.get("key");
-        if ("get".equals(action)) return Nano.ok(AppCache.get(getKey(rule, key)));
-        if ("set".equals(action)) AppCache.put(getKey(rule, key), params.get("value"));
-        if ("del".equals(action)) AppCache.remove(getKey(rule, key));
+        if ("get".equals(action)) return Nano.ok(Prefers.getString(getKey(rule, key)));
+        if ("set".equals(action)) Prefers.put(getKey(rule, key), params.get("value"));
+        if ("del".equals(action)) Prefers.remove(getKey(rule, key));
         return Nano.ok();
     }
 }

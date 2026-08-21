@@ -50,6 +50,7 @@ public class PlaybackPerformanceUiPolicyTest {
         assertEquals(Set.of(
                         PlaybackPerformanceCatalog.MPV_OUTPUT,
                         PlaybackPerformanceCatalog.MPV_RENDER,
+                        PlaybackPerformanceCatalog.MPV_VULKAN_BACKEND,
                         PlaybackPerformanceCatalog.MPV_HWDEC,
                         PlaybackPerformanceCatalog.MPV_FRAME_RATE,
                         PlaybackPerformanceCatalog.MPV_OPTION_PRIORITY,
@@ -64,6 +65,16 @@ public class PlaybackPerformanceUiPolicyTest {
                         PlaybackPerformanceCatalog.IJK_RECONNECT),
                 ids(PlaybackPerformanceUiPolicy
                         .splitForKernel(PlayerSetting.IJK, false).common()));
+    }
+
+    @Test
+    public void vulkanBackendRowOnlyAppearsAfterAppSelectsVulkan() {
+        assertFalse(ids(PlaybackPerformanceUiPolicy.splitForKernel(
+                PlayerSetting.MPV, false, false).common()).contains(
+                PlaybackPerformanceCatalog.MPV_VULKAN_BACKEND));
+        assertTrue(ids(PlaybackPerformanceUiPolicy.splitForKernel(
+                PlayerSetting.MPV, false, true).common()).contains(
+                PlaybackPerformanceCatalog.MPV_VULKAN_BACKEND));
     }
 
     @Test

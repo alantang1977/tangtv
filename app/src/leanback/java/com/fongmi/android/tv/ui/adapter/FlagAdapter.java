@@ -68,19 +68,19 @@ public class FlagAdapter extends RecyclerView.Adapter<FlagAdapter.ViewHolder> {
     }
 
     public Flag getActivated() {
-        return mItems.isEmpty() ? new Flag() : mItems.get(getPosition());
+        return mItems.get(getPosition());
     }
 
     public void setSelected(Flag item) {
-        if (mItems.isEmpty() || item == null) return;
+        if (mItems.isEmpty()) return;
         if (indexOf(item) == -1) item.setFlag(mItems.get(0).getFlag());
         for (Flag flag : mItems) flag.setSelected(item);
     }
 
     public void toggle(Episode item) {
-        // 线路焦点回调可能发生在 RecyclerView 布局期间，此处只同步选集状态，不通知线路列表。
         int flagPosition = getPosition();
         for (int i = 0; i < mItems.size(); i++) mItems.get(i).toggle(flagPosition == i, item);
+        notifyDataSetChanged();
     }
 
     public void reverse() {
@@ -92,10 +92,6 @@ public class FlagAdapter extends RecyclerView.Adapter<FlagAdapter.ViewHolder> {
         if (this.nextFocusDown == nextFocusDown) return;
         this.nextFocusDown = nextFocusDown;
         notifyDataSetChanged();
-    }
-
-    public boolean isEmpty() {
-        return getItemCount() == 0;
     }
 
     public void setOnKeyListener(View.OnKeyListener keyListener) {

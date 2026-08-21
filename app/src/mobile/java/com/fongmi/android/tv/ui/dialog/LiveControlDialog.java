@@ -21,7 +21,6 @@ import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.databinding.ActivityLiveBinding;
 import com.fongmi.android.tv.databinding.DialogLiveControlBinding;
 import com.fongmi.android.tv.setting.LiveSetting;
-import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -34,7 +33,7 @@ public class LiveControlDialog extends BaseBottomSheetDialog {
     private final String[] scale;
     private DialogLiveControlBinding binding;
     private ActivityLiveBinding parent;
-    private List<TextView> displays;
+    private List<TextView> scales;
 
     public LiveControlDialog() {
         this.scale = ResUtil.getStringArray(R.array.select_scale);
@@ -72,7 +71,7 @@ public class LiveControlDialog extends BaseBottomSheetDialog {
     @Override
     protected ViewBinding getBinding(@NonNull LayoutInflater inflater, @Nullable ViewGroup container) {
         binding = DialogLiveControlBinding.inflate(inflater, container, false);
-        displays = Arrays.asList(binding.displayTime, binding.displayTraffic, binding.displaySize, binding.displayTitle, binding.displayParams);
+        scales = Arrays.asList(binding.scale0, binding.scale1, binding.scale2, binding.scale3, binding.scale4);
         return binding;
     }
 
@@ -87,7 +86,6 @@ public class LiveControlDialog extends BaseBottomSheetDialog {
         setTrackVisible();
         setListStyleSelected();
         setScaleText();
-        setDisplaySettings();
         binding.controlScroll.post(() -> binding.controlScroll.scrollTo(0, 0));
     }
 
@@ -122,11 +120,7 @@ public class LiveControlDialog extends BaseBottomSheetDialog {
         binding.text.setOnClickListener(v -> onTrack(binding.text));
         binding.audio.setOnClickListener(v -> onTrack(binding.audio));
         binding.video.setOnClickListener(v -> onTrack(binding.video));
-        binding.scale.setOnClickListener(view -> VideoAspectModeDialog.show(requireActivity(), LiveSetting.getScale(), this::setScale));
-        for (int i = 0; i < displays.size(); i++) {
-            int index = i;
-            displays.get(i).setOnClickListener(v -> toggleDisplaySetting(index));
-        }
+        for (TextView view : scales) view.setOnClickListener(this::setScale);
     }
 
     private Listener listener() {
@@ -147,28 +141,16 @@ public class LiveControlDialog extends BaseBottomSheetDialog {
     }
 
     private void setScaleText() {
-        binding.scale.setText(scale[LiveSetting.getScale()]);
-        binding.scale.setSelected(false);
+        for (int i = 0; i < scales.size() && i < scale.length; i++) {
+            scales.get(i).setText(scale[i]);
+            scales.get(i).setSelected(i == LiveSetting.getScale());
+        }
     }
 
     private void setListStyleSelected() {
         boolean classic = LiveSetting.isListStyleClassic();
         binding.listTransparent.setSelected(classic);
         binding.listReadable.setSelected(!classic);
-    }
-
-    private void setDisplaySettings() {
-        boolean[] checked = PlayerSetting.getLiveDisplayChecked();
-        for (int i = 0; i < displays.size(); i++) displays.get(i).setSelected(i < checked.length && checked[i]);
-    }
-
-    private void toggleDisplaySetting(int index) {
-        boolean[] checked = PlayerSetting.getLiveDisplayChecked();
-        if (index < 0 || index >= checked.length) return;
-        checked[index] = !checked[index];
-        PlayerSetting.putLiveDisplayChecked(checked);
-        setDisplaySettings();
-        listener().onLiveDisplayChanged();
     }
 
     private void setListStyle(boolean classic) {
@@ -183,9 +165,10 @@ public class LiveControlDialog extends BaseBottomSheetDialog {
         setTrackVisible();
     }
 
-    private void setScale(int mode) {
-        listener().onLiveScalePanel(mode);
-        setScaleText();
+    private void setScale(View view) {
+        for (TextView textView : scales) textView.setSelected(false);
+        listener().onLiveScalePanel(Integer.parseInt(view.getTag().toString()));
+        view.setSelected(true);
     }
 
     private void active(TextView view, TextView target) {
@@ -265,8 +248,6 @@ public class LiveControlDialog extends BaseBottomSheetDialog {
         void onLiveBackgroundPanel();
 
         void onLiveListStylePanel(boolean classic);
-
-        void onLiveDisplayChanged();
 
         void onLiveScalePanel(int scale);
 

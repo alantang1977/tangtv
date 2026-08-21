@@ -9,38 +9,47 @@ import org.junit.Test;
 public class MpvAutoOutputPolicyTest {
 
     @Test
-    public void acceptsUltraWideFourKClassVideoOnTvHardwareDecode() {
-        assertTrue(MpvAutoOutputPolicy.evaluate(3840, 1632, true, true, false, false, false).eligible());
+    public void acceptsTvHardwareDecodeAtAnyResolution() {
+        assertTrue(MpvAutoOutputPolicy.evaluate(3840, 1632, true, true, false, false).eligible());
+        assertTrue(MpvAutoOutputPolicy.evaluate(1920, 1080, true, true, false, false).eligible());
     }
 
     @Test
-    public void rejectsOrdinaryFullHdVideo() {
-        assertFalse(MpvAutoOutputPolicy.evaluate(1920, 1080, true, true, false, false, false).eligible());
+    public void canStartDirectBeforeVideoSizeIsKnown() {
+        assertTrue(MpvAutoOutputPolicy.canStartSurfaceDirect(true, true, false, false));
+        assertFalse(MpvAutoOutputPolicy.canStartSurfaceDirect(true, true, true, false));
     }
 
     @Test
-    public void rejectsFeaturesThatNeedGpuComposition() {
-        assertTrue(MpvAutoOutputPolicy.evaluate(3840, 2160, true, true, true, false, false).eligible());
-        assertFalse(MpvAutoOutputPolicy.evaluate(3840, 2160, true, true, false, true, false).eligible());
-        assertFalse(MpvAutoOutputPolicy.evaluate(3840, 2160, true, true, false, false, true).eligible());
+    public void rejectsVideoFeaturesThatNeedGpuComposition() {
+        assertFalse(MpvAutoOutputPolicy.evaluate(3840, 2160, true, true, true, false).eligible());
+        assertFalse(MpvAutoOutputPolicy.evaluate(3840, 2160, true, true, false, true).eligible());
+    }
+
+    @Test
+    public void usesDirectOutputOnlyWhenDolbyVisionProfileIsSupported() {
+        assertTrue(MpvAutoOutputPolicy.evaluate(3840, 2160, true, true, false, false,
+                MpvAutoOutputPolicy.DolbyVisionSupport.SUPPORTED, 5).eligible());
+        assertFalse(MpvAutoOutputPolicy.evaluate(3840, 2160, true, true, false, false,
+                MpvAutoOutputPolicy.DolbyVisionSupport.UNSUPPORTED, 5).eligible());
+        assertFalse(MpvAutoOutputPolicy.evaluate(3840, 2160, true, true, false, false,
+                MpvAutoOutputPolicy.DolbyVisionSupport.UNKNOWN, 5).eligible());
     }
 
     @Test
     public void evaluatesFourKBeforeTracksAreComplete() {
-        assertTrue(MpvAutoOutputPolicy.canEvaluateWithoutTracks(3840, 1606, false));
+        assertTrue(MpvAutoOutputPolicy.canEvaluateWithoutTracks(3840, 1606));
     }
 
     @Test
-    public void waitsForTracksWhenEarlyDecisionCouldLoseFeatures() {
-        assertFalse(MpvAutoOutputPolicy.canEvaluateWithoutTracks(1920, 1080, false));
-        assertTrue(MpvAutoOutputPolicy.canEvaluateWithoutTracks(3840, 2160, true));
+    public void evaluatesKnownSizeBeforeTracksAreComplete() {
+        assertTrue(MpvAutoOutputPolicy.canEvaluateWithoutTracks(1920, 1080));
+        assertTrue(MpvAutoOutputPolicy.canEvaluateWithoutTracks(3840, 2160));
     }
 
     @Test
-    public void subtitlesUseTheDedicatedDirectOutputOsdSurface() {
-        assertFalse(MpvAutoOutputPolicy.requiresGpuSubtitle(false, false));
-        assertFalse(MpvAutoOutputPolicy.requiresGpuSubtitle(true, false));
-        assertFalse(MpvAutoOutputPolicy.requiresGpuSubtitle(false, true));
+    public void subtitlesUseDirectOutputOverlay() {
+        assertTrue(MpvAutoOutputPolicy.evaluate(3840, 2160, true, true, false, false).eligible());
     }
 
     @Test

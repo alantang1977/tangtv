@@ -30,8 +30,8 @@ struct MpvRequest {
     std::vector<std::string> command;
     jobject surface;
 
-    MpvRequest(RequestType type_, jobject surface_)
-        : type(type_), request_id(INTERNAL_REQUEST_ID), surface(surface_) {}
+    MpvRequest(RequestType type_, uint64_t request_id_, jobject surface_)
+        : type(type_), request_id(request_id_), surface(surface_) {}
 
     MpvRequest(uint64_t request_id_, std::vector<std::string> command_)
         : type(RequestType::COMMAND), request_id(request_id_),
@@ -146,7 +146,8 @@ int enqueue_command(JNIEnv *env, uint64_t request_id,
     return enqueue_request(env, std::move(request));
 }
 
-int enqueue_surface(JNIEnv *env, SurfaceTarget target, jobject surface) {
+static int enqueue_surface_request(JNIEnv *env, uint64_t request_id,
+                                   SurfaceTarget target, jobject surface) {
     jobject surface_ref = surface ? env->NewGlobalRef(surface) : NULL;
     if (surface && !surface_ref)
         return MPV_ERROR_NOMEM;
@@ -157,8 +158,20 @@ int enqueue_surface(JNIEnv *env, SurfaceTarget target, jobject surface) {
     } else {
         type = RequestType::OSD_SURFACE;
     }
-    std::unique_ptr<MpvRequest> request(new MpvRequest(type, surface_ref));
+    std::unique_ptr<MpvRequest> request(
+        new MpvRequest(type, request_id, surface_ref));
     return enqueue_request(env, std::move(request));
+}
+
+int enqueue_surface(JNIEnv *env, SurfaceTarget target, jobject surface) {
+    return enqueue_surface_request(env, INTERNAL_REQUEST_ID, target, surface);
+}
+
+int enqueue_surface_async(JNIEnv *env, uint64_t request_id,
+                          SurfaceTarget target, jobject surface) {
+    if (!request_id || request_id == INTERNAL_REQUEST_ID)
+        return MPV_ERROR_INVALID_PARAMETER;
+    return enqueue_surface_request(env, request_id, target, surface);
 }
 
 void handle_request_reply(JNIEnv *env, mpv_event *event) {

@@ -1,1 +1,0 @@
-jsonschema[format-nongpl]>=4.18,<5

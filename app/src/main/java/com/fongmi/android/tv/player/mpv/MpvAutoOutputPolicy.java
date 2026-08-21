@@ -2,19 +2,41 @@ package com.fongmi.android.tv.player.mpv;
 
 public final class MpvAutoOutputPolicy {
 
-    private static final long HIGH_RESOLUTION_AREA = 2560L * 1440L;
-    private static final int HIGH_RESOLUTION_EDGE = 2560;
-
     private MpvAutoOutputPolicy() {
     }
 
-    public static Decision evaluate(int width, int height, boolean hardDecode, boolean leanback, boolean subtitleActive, boolean lutOrFilterActive, boolean customGpuProcessing) {
+    public static Decision evaluate(int width, int height, boolean hardDecode,
+                                    boolean leanback, boolean lutOrFilterActive,
+                                    boolean customGpuProcessing) {
+        return evaluate(width, height, hardDecode, leanback, lutOrFilterActive,
+                customGpuProcessing, DolbyVisionSupport.UNKNOWN, -1);
+    }
+
+    public static Decision evaluate(int width, int height, boolean hardDecode,
+                                    boolean leanback, boolean lutOrFilterActive,
+                                    boolean customGpuProcessing,
+                                    DolbyVisionSupport dolbyVisionSupport,
+                                    int dolbyVisionProfile) {
         if (!leanback) return new Decision(false, "not-tv");
         if (!hardDecode) return new Decision(false, "software-decode");
-        if (!isHighResolution(width, height)) return new Decision(false, "below-high-resolution-threshold");
         if (lutOrFilterActive) return new Decision(false, "lut-or-filter-active");
         if (customGpuProcessing) return new Decision(false, "custom-gpu-processing");
-        return new Decision(true, "eligible-high-resolution-hardware-decode");
+        if (dolbyVisionProfile > 0) {
+            if (dolbyVisionSupport == DolbyVisionSupport.SUPPORTED) {
+                return new Decision(true, "dolby-vision-hw-supported");
+            }
+            return new Decision(false, dolbyVisionSupport == DolbyVisionSupport.UNKNOWN
+                    ? "dolby-vision-hw-unknown" : "dolby-vision-hw-unsupported");
+        }
+        return new Decision(true, "tv-hardware-decode");
+    }
+
+    /** Select the initial TV output before MPV has reported a video size. */
+    public static boolean canStartSurfaceDirect(boolean hardDecode, boolean leanback,
+                                                 boolean lutOrFilterActive,
+                                                 boolean customGpuProcessing) {
+        return evaluate(1, 1, hardDecode, leanback, lutOrFilterActive,
+                customGpuProcessing).eligible();
     }
 
     public static Transition transition(boolean eligible, boolean currentlyDirect) {
@@ -22,16 +44,8 @@ public final class MpvAutoOutputPolicy {
         return currentlyDirect ? Transition.LEAVE_SURFACE_DIRECT : Transition.KEEP_GPU;
     }
 
-    public static boolean canEvaluateWithoutTracks(int width, int height, boolean externalSubtitleActive) {
-        return isHighResolution(width, height);
-    }
-
-    public static boolean requiresGpuSubtitle(boolean externalSubtitleActive, boolean userRequestedSubtitle) {
-        return false;
-    }
-
-    public static boolean shouldLeaveSurfaceDirectForSubtitle(boolean automaticOutput, boolean currentlyDirect, boolean externalSubtitleActive, boolean userRequestedSubtitle) {
-        return automaticOutput && currentlyDirect && requiresGpuSubtitle(externalSubtitleActive, userRequestedSubtitle);
+    public static boolean canEvaluateWithoutTracks(int width, int height) {
+        return width > 0 && height > 0;
     }
 
     public enum Transition {
@@ -41,11 +55,12 @@ public final class MpvAutoOutputPolicy {
         LEAVE_SURFACE_DIRECT
     }
 
-    static boolean isHighResolution(int width, int height) {
-        if (width <= 0 || height <= 0) return false;
-        return Math.max(width, height) >= HIGH_RESOLUTION_EDGE && (long) width * height >= HIGH_RESOLUTION_AREA;
+    public record Decision(boolean eligible, String reason) {
     }
 
-    public record Decision(boolean eligible, String reason) {
+    public enum DolbyVisionSupport {
+        UNKNOWN,
+        SUPPORTED,
+        UNSUPPORTED
     }
 }

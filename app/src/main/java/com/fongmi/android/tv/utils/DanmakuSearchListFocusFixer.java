@@ -44,18 +44,11 @@ public final class DanmakuSearchListFocusFixer {
         HANDLER.post(PULSE);
     }
 
-    public static void stop() {
-        if (!started) return;
-        started = false;
-        HANDLER.removeCallbacks(PULSE);
-    }
-
     private static final Runnable PULSE = new Runnable() {
         @Override
         public void run() {
-            if (!started) return;
             scan();
-            if (started) HANDLER.postDelayed(this, INTERVAL_MS);
+            HANDLER.postDelayed(this, INTERVAL_MS);
         }
     };
 

@@ -385,7 +385,7 @@ public class ShellProxyDialog extends BaseAlertDialog {
     }
 
     private String getSiteName(Site site) {
-        return site.getDisplayName();
+        return TextUtils.isEmpty(site.getName()) ? site.getKey() : site.getName();
     }
 
     private void suggestRules(Site site) {

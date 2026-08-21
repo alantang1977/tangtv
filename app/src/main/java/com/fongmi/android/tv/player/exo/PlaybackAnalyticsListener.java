@@ -13,12 +13,14 @@ import androidx.media3.exoplayer.DecoderReuseEvaluation;
 import androidx.media3.exoplayer.ExoPlaybackException;
 import androidx.media3.exoplayer.analytics.AnalyticsListener;
 import androidx.media3.exoplayer.analytics.AnalyticsListener.EventTime;
+import androidx.media3.exoplayer.audio.AudioSink;
 import androidx.media3.exoplayer.mediacodec.MediaCodecRenderer;
 import androidx.media3.exoplayer.source.LoadEventInfo;
 import androidx.media3.exoplayer.source.MediaLoadData;
 import androidx.media3.exoplayer.video.VideoFrameMetadataListener;
 
 import com.fongmi.android.tv.setting.ExoPerformanceSetting;
+import com.fongmi.android.tv.setting.PlaybackPerformanceCatalog;
 import com.fongmi.android.tv.setting.PlaybackPerformanceSetting;
 import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.player.PlaybackTrace;
@@ -344,6 +346,37 @@ public class PlaybackAnalyticsListener implements AnalyticsListener, VideoFrameM
     }
 
     @Override
+    public void onAudioTrackInitialized(EventTime eventTime, AudioSink.AudioTrackConfig config) {
+        if (!SpiderDebug.isEnabled()) return;
+        traceLog("audio track initialized encoding=%s(%d) sampleRate=%d channelMask=0x%X channels=%d tunneling=%s offload=%s buffer=%d",
+                audioEncodingName(config.encoding), config.encoding, config.sampleRate,
+                config.channelConfig, Integer.bitCount(config.channelConfig), config.tunneling,
+                config.offload, config.bufferSize);
+    }
+
+    @Override
+    public void onAudioTrackReleased(EventTime eventTime, AudioSink.AudioTrackConfig config) {
+        if (!SpiderDebug.isEnabled()) return;
+        traceLog("audio track released encoding=%s(%d) sampleRate=%d channelMask=0x%X channels=%d tunneling=%s offload=%s buffer=%d",
+                audioEncodingName(config.encoding), config.encoding, config.sampleRate,
+                config.channelConfig, Integer.bitCount(config.channelConfig), config.tunneling,
+                config.offload, config.bufferSize);
+    }
+
+    @Override
+    public void onAudioSinkError(EventTime eventTime, Exception error) {
+        if (!SpiderDebug.isEnabled()) return;
+        traceLog("audio sink error type=%s message=%s", error == null ? "unknown" : error.getClass().getSimpleName(),
+                error == null || error.getMessage() == null ? "" : error.getMessage());
+    }
+
+    @Override
+    public void onAudioUnderrun(EventTime eventTime, int bufferSize, long bufferSizeMs, long elapsedSinceLastFeedMs) {
+        if (!SpiderDebug.isEnabled()) return;
+        traceLog("audio underrun buffer=%d bufferMs=%d elapsedSinceFeedMs=%d", bufferSize, bufferSizeMs, elapsedSinceLastFeedMs);
+    }
+
+    @Override
     public void onVideoSizeChanged(EventTime eventTime, VideoSize videoSize) {
         if (!SpiderDebug.isEnabled()) return;
         traceLog("video size=%dx%d unappliedRotation=%d ratio=%.3f", videoSize.width, videoSize.height, videoSize.unappliedRotationDegrees, videoSize.pixelWidthHeightRatio);
@@ -485,12 +518,15 @@ public class PlaybackAnalyticsListener implements AnalyticsListener, VideoFrameM
             long bufferedDurationMs,
             boolean rebuffering,
             long nowElapsedMs) {
-        if (!PlaybackPerformanceSetting.isAuto(PlayerSetting.EXO)) return;
+        if (!PlaybackPerformanceSetting.hasAutomaticOptions(
+                PlayerSetting.EXO,
+                PlaybackPerformanceCatalog.EXO_START_BUFFER,
+                PlaybackPerformanceCatalog.EXO_REBUFFER)) return;
         ExoPerformanceSetting.refreshAutoSession(playbackTraceId);
         ExoPlaybackThresholdCoordinator.process().observe(
                 ExoPlaybackThresholdCoordinator.captureInputs(
-                        ExoPerformanceSetting.getAutoSessionStartBufferMs(),
-                        ExoPerformanceSetting.getAutoSessionRebufferMs(),
+                        ExoPerformanceSetting.getEffectiveStartBufferMs(),
+                        ExoPerformanceSetting.getEffectiveRebufferMs(),
                         Math.max(0, bufferedDurationMs),
                         -1,
                         rebuffering,
@@ -525,6 +561,21 @@ public class PlaybackAnalyticsListener implements AnalyticsListener, VideoFrameM
             case Player.STATE_READY -> "READY";
             case Player.STATE_ENDED -> "ENDED";
             default -> String.valueOf(state);
+        };
+    }
+
+    private static String audioEncodingName(int encoding) {
+        return switch (encoding) {
+            case C.ENCODING_PCM_16BIT -> "pcm16";
+            case C.ENCODING_PCM_FLOAT -> "pcmfloat";
+            case C.ENCODING_AC3 -> "ac3";
+            case C.ENCODING_E_AC3 -> "eac3";
+            case C.ENCODING_E_AC3_JOC -> "eac3-joc";
+            case C.ENCODING_DTS -> "dts";
+            case C.ENCODING_DTS_HD -> "dts-hd";
+            case C.ENCODING_DTS_HD_MA -> "dts-hd-ma";
+            case C.ENCODING_DOLBY_TRUEHD -> "truehd";
+            default -> "unknown";
         };
     }
 

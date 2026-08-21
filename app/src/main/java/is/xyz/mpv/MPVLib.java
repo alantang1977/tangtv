@@ -2,6 +2,7 @@ package is.xyz.mpv;
 
 import android.content.Context;
 import android.content.pm.FeatureInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
@@ -11,6 +12,7 @@ import android.util.Log;
 import android.view.Surface;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -24,6 +26,7 @@ public final class MPVLib {
 
     private static final String TAG = "mpv";
     private static final String ASSET_ROOT = "mpv-libs";
+    private static final String BUNDLE_MARKER = ".bundle-last-update";
     private static final String[] LOAD_ORDER = {
             "c++_shared",
             "mvutil",
@@ -61,12 +64,21 @@ public final class MPVLib {
             Context app = context.getApplicationContext();
             String abi = chooseAbi(app.getAssets());
             if (abi == null) throw new UnsatisfiedLinkError("No bundled MPV native libraries for " + String.join(",", Build.SUPPORTED_ABIS));
-            File dir = new File(app.getDir("mpv-libs", Context.MODE_PRIVATE), abi);
+            File root = app.getDir("mpv-libs", Context.MODE_PRIVATE);
+            File dir = new File(root, abi);
             if (!dir.exists() && !dir.mkdirs()) throw new IOException("Unable to create " + dir);
-            for (String lib : LOAD_ORDER) copyLibrary(app.getAssets(), abi, lib, dir);
+            File marker = new File(root, BUNDLE_MARKER);
+            String bundleId = getBundleId(app, abi);
+            boolean refreshBundle = !bundleId.equals(readMarker(marker));
+            for (String lib : LOAD_ORDER) copyLibrary(app.getAssets(), abi, lib, dir, refreshBundle);
             for (String lib : LOAD_ORDER) System.load(new File(dir, System.mapLibraryName(lib)).getAbsolutePath());
             loadedAbi = abi;
             loaded = true;
+            try {
+                writeMarker(marker, bundleId);
+            } catch (IOException e) {
+                Log.w(TAG, "Unable to update bundled MPV native marker", e);
+            }
             return true;
         } catch (Throwable e) {
             loadError = e;
@@ -145,11 +157,40 @@ public final class MPVLib {
         }
     }
 
-    private static void copyLibrary(AssetManager assets, String abi, String lib, File dir) throws IOException {
+    private static String getBundleId(Context app, String abi) throws IOException {
+        try {
+            PackageInfo info = app.getPackageManager().getPackageInfo(app.getPackageName(), 0);
+            return info.lastUpdateTime + ":" + abi;
+        } catch (PackageManager.NameNotFoundException e) {
+            throw new IOException("Unable to read app update time", e);
+        }
+    }
+
+    private static String readMarker(File marker) {
+        if (!marker.isFile()) return "";
+        try (InputStream in = new FileInputStream(marker); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[128];
+            int read;
+            while ((read = in.read(buffer)) != -1) out.write(buffer, 0, read);
+            return out.toString(StandardCharsets.UTF_8.name());
+        } catch (IOException e) {
+            Log.w(TAG, "Unable to read bundled MPV native marker", e);
+            return "";
+        }
+    }
+
+    private static void writeMarker(File marker, String bundleId) throws IOException {
+        try (FileOutputStream out = new FileOutputStream(marker)) {
+            out.write(bundleId.getBytes(StandardCharsets.UTF_8));
+            out.getFD().sync();
+        }
+    }
+
+    private static void copyLibrary(AssetManager assets, String abi, String lib, File dir, boolean force) throws IOException {
         File outFile = new File(dir, System.mapLibraryName(lib));
         try (InputStream in = assets.open(assetPath(abi, lib), AssetManager.ACCESS_STREAMING)) {
             long size = in.available();
-            if (outFile.length() == size && size > 0) return;
+            if (!force && outFile.length() == size && size > 0) return;
             try (OutputStream out = new FileOutputStream(outFile)) {
                 byte[] buffer = new byte[64 * 1024];
                 int read;
@@ -184,21 +225,8 @@ public final class MPVLib {
 
     public static native int destroy();
 
-    public static synchronized void initializeCreatedContext() {
-        try {
-            init();
-        } catch (RuntimeException error) {
-            contextCreated = false;
-            contextCreationAttempted = false;
-            contextDestroying = false;
-            lastContextDestroyedAtMs = SystemClock.elapsedRealtime();
-            MPVLib.class.notifyAll();
-            throw error;
-        }
-    }
-
     public static synchronized boolean tryCreate(Context appctx) {
-        if (!awaitContextShutdown()) return false;
+        awaitContextShutdown();
         if (contextCreationAttempted) {
             Log.w(TAG, "Ignore duplicate MPV context creation");
             return false;
@@ -210,24 +238,20 @@ public final class MPVLib {
             SystemClock.sleep(waitMs);
         }
         contextCreationAttempted = true;
-        try {
-            create(appctx);
-            contextCreated = true;
-            return true;
-        } catch (RuntimeException | Error error) {
-            contextCreationAttempted = false;
-            throw error;
-        }
+        create(appctx);
+        contextCreated = true;
+        return true;
     }
 
-    private static boolean awaitContextShutdown() {
-        if (!contextDestroying) return true;
+    private static void awaitContextShutdown() {
+        if (!contextDestroying) return;
         long deadline = SystemClock.elapsedRealtime() + CONTEXT_SHUTDOWN_TIMEOUT_MS;
         while (contextDestroying) {
             long remaining = deadline - SystemClock.elapsedRealtime();
             if (remaining <= 0) {
                 Log.w(TAG, "Timed out waiting for previous MPV context shutdown");
-                return false;
+                contextDestroying = false;
+                break;
             }
             try {
                 MPVLib.class.wait(Math.min(remaining, 100));
@@ -236,7 +260,6 @@ public final class MPVLib {
                 throw new IllegalStateException("Interrupted while waiting for MPV shutdown", e);
             }
         }
-        return true;
     }
 
     public static synchronized void destroyCreatedContext() {
@@ -269,6 +292,8 @@ public final class MPVLib {
     public static native void replaceOsdSurface(Surface surface);
 
     public static native void detachOsdSurface();
+
+    public static native int enqueueOsdSurface(long requestId, Surface surface);
 
     public static native int command(String[] cmd);
 

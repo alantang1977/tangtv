@@ -30,32 +30,7 @@ public class BackupPreferenceFilterTest {
         SyncOptions settingsOnly = new SyncOptions().config(false).spider(false).webHome(false).settings(true);
 
         assertFalse(Backup.include("web_home_fullscreen", webHomeOnly));
-        assertFalse(Backup.include("web_home_theme_enabled", webHomeOnly));
-        assertFalse(Backup.include("web_home_theme_url", webHomeOnly));
         assertTrue(Backup.include("web_home_fullscreen", settingsOnly));
-        assertTrue(Backup.include("web_home_theme_enabled", settingsOnly));
-        assertTrue(Backup.include("web_home_theme_url", settingsOnly));
-        assertFalse(Backup.include("web_home_theme_trusted_url", settingsOnly));
-    }
-
-    @Test
-    public void episodeHistoryFollowsSettingsOption() {
-        SyncOptions settingsOnly = new SyncOptions().config(false).spider(false).webHome(false).settings(true);
-        SyncOptions spiderOnly = new SyncOptions().config(false).spider(true).webHome(false).settings(false);
-
-        assertTrue(Backup.include("episode_history", settingsOnly));
-        assertFalse(Backup.include("episode_history", spiderOnly));
-    }
-
-    @Test
-    public void githubProxyPreferencesFollowSettingsOption() {
-        SyncOptions settingsOnly = new SyncOptions().config(false).spider(false).webHome(false).settings(true);
-        SyncOptions webHomeOnly = new SyncOptions().config(false).spider(false).webHome(true).settings(false);
-
-        assertTrue(Backup.include("github_proxy", settingsOnly));
-        assertTrue(Backup.include("github_proxy_enabled", settingsOnly));
-        assertFalse(Backup.include("github_proxy", webHomeOnly));
-        assertFalse(Backup.include("github_proxy_enabled", webHomeOnly));
     }
 
     @Test

@@ -19,8 +19,9 @@ public final class DolbyVisionFormatLabel {
         if (details == null || !details.hasDolbyVisionSource()) return "";
         String codec = firstCodec(details.sourceCodecs());
         if (codec.isEmpty()) codec = fallbackCodec(details);
+        if (details.dolbyVisionP81Conversion()) return codec + "（升级P8.1）";
         return details.dolbyVisionHdr10Fallback()
-                ? codec + "（回退HDR10）" : codec;
+                ? codec + "（降级HDR10）" : codec;
     }
 
     private static String fallbackCodec(PlayerEngine.VideoPlaybackDetails details) {

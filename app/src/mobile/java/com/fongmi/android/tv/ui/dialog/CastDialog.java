@@ -146,7 +146,7 @@ public class CastDialog extends BaseBottomSheetDialog implements DeviceAdapter.O
     }
 
     private void onCasted() {
-        if (requireActivity() instanceof CastDialog.Listener listener) listener.onCasted();
+        ((CastDialog.Listener) requireActivity()).onCasted();
         dismiss();
     }
 

@@ -106,7 +106,6 @@ public final class RemoteAgent {
         private final String serverOrigin;
         private volatile ScheduledFuture<?> future;
         private volatile WebSocket webSocket;
-        private volatile boolean active;
         private volatile boolean busy;
         private volatile boolean webSocketSupported;
         private volatile boolean webSocketConnected;
@@ -119,14 +118,12 @@ public final class RemoteAgent {
         }
 
         private synchronized void start() {
-            active = true;
             if (future != null && !future.isCancelled()) return;
             future = Task.scheduler().scheduleWithFixedDelay(() -> Task.execute(this::pollSafely), 0, POLL_INTERVAL_MS, TimeUnit.MILLISECONDS);
             log("session started origin=%s", serverOrigin);
         }
 
         private synchronized void stop() {
-            active = false;
             if (future != null) future.cancel(false);
             future = null;
             closeWebSocket();
@@ -134,7 +131,7 @@ public final class RemoteAgent {
         }
 
         private void pollSafely() {
-            if (!active || busy) return;
+            if (busy) return;
             busy = true;
             try {
                 RemoteProfile profile = RemoteStore.getProfileByOrigin(serverOrigin);
@@ -148,27 +145,22 @@ public final class RemoteAgent {
                 long now = System.currentTimeMillis();
                 if (lastRegister <= 0 || now - lastRegister > REGISTER_INTERVAL_MS) {
                     ServerCapabilities capabilities = client.capabilities();
-                    if (!active) return;
                     client.register();
-                    if (!active) return;
                     profile.updatedAt = now;
                     RemoteStore.upsertProfile(profile);
                     webSocketSupported = capabilities != null && capabilities.capabilities != null && capabilities.capabilities.webSocket;
                     lastRegister = now;
                 }
-                if (!active) return;
                 if (webSocketSupported) {
                     ensureWebSocket(profile);
-                    if (!active || webSocketConnected) return;
+                    if (webSocketConnected) return;
                 }
                 PollResponse response = client.poll();
-                if (!active) return;
                 RemoteCommand command = response == null ? null : response.command;
                 if (command == null || TextUtils.isEmpty(command.id)) return;
                 log("command received origin=%s id=%s type=%s", serverOrigin, command.id, command.type);
                 executeCommand(profile, command);
             } catch (Throwable e) {
-                if (!active) return;
                 if (System.currentTimeMillis() - lastErrorLog > 30_000L) {
                     lastErrorLog = System.currentTimeMillis();
                     log("poll failed origin=%s error=%s", serverOrigin, e.getMessage());
@@ -179,8 +171,8 @@ public final class RemoteAgent {
             }
         }
 
-        private synchronized void ensureWebSocket(RemoteProfile profile) {
-            if (!active || webSocketConnected || webSocket != null) return;
+        private void ensureWebSocket(RemoteProfile profile) {
+            if (webSocketConnected || webSocket != null) return;
             long now = System.currentTimeMillis();
             if (now - lastWebSocketAttempt < WEBSOCKET_RETRY_MS) return;
             lastWebSocketAttempt = now;
@@ -198,46 +190,33 @@ public final class RemoteAgent {
         }
 
         private void executeCommand(RemoteProfile profile, RemoteCommand command) {
-            if (!active || !RemoteStore.shouldStart(profile) || command == null || TextUtils.isEmpty(command.id)) return;
+            if (!RemoteStore.shouldStart(profile) || command == null || TextUtils.isEmpty(command.id)) return;
             try {
                 if (App.activity() == null) {
-                    if (!active) return;
                     new RemoteClient(profile).commandResult(command.id, RemoteCommandResult.failure("App is not open"));
                     return;
                 }
                 RemoteCommandResult result = RemoteCommandExecutor.execute(profile, command);
-                if (!active) return;
                 new RemoteClient(profile).commandResult(command.id, result);
             } catch (Throwable e) {
-                if (active) log("command execute failed origin=%s id=%s error=%s", serverOrigin, command.id, e.getMessage());
+                log("command execute failed origin=%s id=%s error=%s", serverOrigin, command.id, e.getMessage());
             }
         }
 
-        private synchronized boolean onWebSocketOpen(WebSocket socket) {
-            if (!active || webSocket != socket) {
-                socket.close(1000, "stop");
-                return false;
-            }
+        private synchronized void onWebSocketOpen() {
             webSocketConnected = true;
             log("websocket connected origin=%s", serverOrigin);
-            return true;
         }
 
-        private synchronized boolean isCurrentWebSocket(WebSocket socket) {
-            return active && webSocket == socket;
-        }
-
-        private synchronized void onWebSocketClosed(WebSocket socket) {
-            if (webSocket != socket) return;
+        private synchronized void onWebSocketClosed() {
             webSocketConnected = false;
             webSocket = null;
             log("websocket closed origin=%s", serverOrigin);
         }
 
-        private synchronized void onWebSocketFailure(WebSocket socket, Throwable t, Response response) {
-            if (webSocket != socket) return;
+        private synchronized void onWebSocketFailure(Throwable t, Response response) {
             webSocketSupported = false;
-            onWebSocketClosed(socket);
+            onWebSocketClosed();
             int code = response == null ? 0 : response.code();
             if (code == 426) {
                 log("websocket unavailable origin=%s code=%s fallback=poll", serverOrigin, code);
@@ -267,13 +246,12 @@ public final class RemoteAgent {
 
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
-            if (!session.onWebSocketOpen(webSocket)) return;
+            session.onWebSocketOpen();
             webSocket.send(hello);
         }
 
         @Override
         public void onMessage(WebSocket webSocket, String text) {
-            if (!session.isCurrentWebSocket(webSocket)) return;
             try {
                 JsonObject object = App.gson().fromJson(text, JsonObject.class);
                 if (object == null || !object.has("command")) return;
@@ -295,12 +273,12 @@ public final class RemoteAgent {
 
         @Override
         public void onClosed(WebSocket webSocket, int code, String reason) {
-            session.onWebSocketClosed(webSocket);
+            session.onWebSocketClosed();
         }
 
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
-            session.onWebSocketFailure(webSocket, t, response);
+            session.onWebSocketFailure(t, response);
         }
     }
 }

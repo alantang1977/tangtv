@@ -26,10 +26,13 @@ public final class MpvPerformanceSetting {
     public static final int HLS_LOWEST = 3;
     public static final int PRIORITY_PERFORMANCE = 0;
     public static final int PRIORITY_CONFIG = 1;
+    // Kept only to migrate the temporary four-choice test build. Formal UI
+    // exposes direct / legacy / stable, and old "auto" values become legacy.
+    public static final int VULKAN_BACKEND_AUTO = 0;
+    public static final int VULKAN_BACKEND_DIRECT = 1;
+    public static final int VULKAN_BACKEND_LEGACY = 2;
+    public static final int VULKAN_BACKEND_STABLE = 3;
 
-    // Keep automatic Surface direct output paused independently from hardware decoder quirks.
-    private static final boolean SURFACE_AUTO_STABILITY_GUARD_ENABLED = true;
-    private static final boolean ZERO_COPY_DEVICE_GUARD_ENABLED = true;
     private static final String KEY_OUTPUT_MODE = "perf_mpv_output_mode";
     private static final String KEY_HWDEC = "perf_mpv_hwdec";
     private static final String KEY_SYNC = "perf_mpv_sync";
@@ -41,6 +44,7 @@ public final class MpvPerformanceSetting {
     private static final String KEY_HLS_BITRATE = "perf_mpv_hls_bitrate";
     private static final String KEY_REBUFFER_MS = "perf_mpv_rebuffer_ms";
     private static final String KEY_OPTION_PRIORITY = "perf_mpv_option_priority";
+    private static final String KEY_VULKAN_BACKEND = "perf_mpv_vulkan_backend";
 
     private MpvPerformanceSetting() {
     }
@@ -50,26 +54,19 @@ public final class MpvPerformanceSetting {
     }
 
     public static void putOutputMode(int value) {
-        Prefers.put(KEY_OUTPUT_MODE, clamp(value, OUTPUT_AUTO, OUTPUT_SURFACE_DIRECT));
-        PlaybackPerformanceSetting.markCustom();
+        int mode = clamp(value, OUTPUT_AUTO, OUTPUT_SURFACE_DIRECT);
+        Prefers.put(KEY_OUTPUT_MODE, mode);
+        PlaybackPerformanceSetting.setOverride(
+                PlaybackPerformanceCatalog.MPV_OUTPUT,
+                mode != OUTPUT_AUTO);
     }
 
     public static String getOutputModeText() {
-        int mode = getOutputMode();
-        if (mode == OUTPUT_SURFACE_DIRECT && isZeroCopyBlocked()) return "电视直出（设备保护：GPU）";
-        return switch (mode) {
-            case OUTPUT_GPU -> "GPU完整";
+        return switch (getOutputMode()) {
+            case OUTPUT_GPU -> "GPU渲染";
             case OUTPUT_SURFACE_DIRECT -> "电视直出";
             default -> "自动";
         };
-    }
-
-    public static boolean isAutoSurfaceDirectEnabled() {
-        return !SURFACE_AUTO_STABILITY_GUARD_ENABLED && !isZeroCopyBlocked();
-    }
-
-    public static boolean isZeroCopyBlocked() {
-        return ZERO_COPY_DEVICE_GUARD_ENABLED && MpvHardwarePolicy.blocksZeroCopy();
     }
 
     public static boolean shouldUseSurfaceDirect(boolean autoEligible, boolean leanback, boolean hardDecode) {
@@ -77,15 +74,11 @@ public final class MpvPerformanceSetting {
     }
 
     static boolean resolveSurfaceDirect(int outputMode, boolean autoEligible, boolean leanback, boolean hardDecode) {
-        return resolveSurfaceDirect(outputMode, autoEligible, leanback, hardDecode, isZeroCopyBlocked());
-    }
-
-    static boolean resolveSurfaceDirect(int outputMode, boolean autoEligible, boolean leanback, boolean hardDecode, boolean zeroCopyBlocked) {
-        if (!hardDecode || zeroCopyBlocked) return false;
+        if (!hardDecode) return false;
         return switch (clamp(outputMode, OUTPUT_AUTO, OUTPUT_SURFACE_DIRECT)) {
             case OUTPUT_SURFACE_DIRECT -> true;
             case OUTPUT_GPU -> false;
-            default -> !SURFACE_AUTO_STABILITY_GUARD_ENABLED && leanback && autoEligible;
+            default -> leanback && autoEligible;
         };
     }
 
@@ -94,22 +87,15 @@ public final class MpvPerformanceSetting {
     }
 
     public static void putHwdecMode(int value) {
-        Prefers.put(KEY_HWDEC, clamp(value, HWDEC_AUTO, HWDEC_COPY));
-        PlaybackPerformanceSetting.markCustom();
+        int mode = clamp(value, HWDEC_AUTO, HWDEC_COPY);
+        Prefers.put(KEY_HWDEC, mode);
+        PlaybackPerformanceSetting.setOverride(
+                PlaybackPerformanceCatalog.MPV_HWDEC,
+                mode != HWDEC_AUTO);
     }
 
     public static String getHwdecOption() {
-        return resolveHwdecOption(getHwdecMode(), isZeroCopyBlocked());
-    }
-
-    static String resolveHwdecOption(int mode) {
-        return resolveHwdecOption(mode, isZeroCopyBlocked());
-    }
-
-    static String resolveHwdecOption(int mode, boolean zeroCopyBlocked) {
-        int resolvedMode = clamp(mode, HWDEC_AUTO, HWDEC_COPY);
-        if (zeroCopyBlocked) return "mediacodec-copy";
-        return switch (resolvedMode) {
+        return switch (getHwdecMode()) {
             case HWDEC_DIRECT -> "mediacodec";
             case HWDEC_COPY -> "mediacodec-copy";
             default -> "mediacodec,mediacodec-copy";
@@ -117,15 +103,7 @@ public final class MpvPerformanceSetting {
     }
 
     public static String getHwdecText() {
-        return resolveHwdecText(getHwdecMode(), isZeroCopyBlocked());
-    }
-
-    static String resolveHwdecText(int mode, boolean zeroCopyBlocked) {
-        int resolvedMode = clamp(mode, HWDEC_AUTO, HWDEC_COPY);
-        if (zeroCopyBlocked) {
-            return resolvedMode == HWDEC_DIRECT ? "零拷贝（设备保护：兼容复制）" : resolvedMode == HWDEC_AUTO ? "自动（设备保护：兼容复制）" : "兼容复制";
-        }
-        return switch (resolvedMode) {
+        return switch (getHwdecMode()) {
             case HWDEC_DIRECT -> "零拷贝优先";
             case HWDEC_COPY -> "兼容复制";
             default -> "自动回退";
@@ -138,7 +116,7 @@ public final class MpvPerformanceSetting {
 
     public static void putSyncMode(int value) {
         Prefers.put(KEY_SYNC, clamp(value, SYNC_AUDIO, SYNC_DISPLAY_RESAMPLE));
-        PlaybackPerformanceSetting.markCustom();
+        PlaybackPerformanceSetting.markOverride(PlaybackPerformanceCatalog.MPV_SYNC);
     }
 
     public static String getSyncOption() {
@@ -155,7 +133,7 @@ public final class MpvPerformanceSetting {
 
     public static void putFrameDropMode(int value) {
         Prefers.put(KEY_FRAME_DROP, clamp(value, FRAME_DROP_OUTPUT, FRAME_DROP_DECODER));
-        PlaybackPerformanceSetting.markCustom();
+        PlaybackPerformanceSetting.markOverride(PlaybackPerformanceCatalog.MPV_FRAME_DROP);
     }
 
     public static String getFrameDropOption() {
@@ -180,7 +158,7 @@ public final class MpvPerformanceSetting {
 
     public static void putInterpolation(boolean value) {
         Prefers.put(KEY_INTERPOLATION, value);
-        PlaybackPerformanceSetting.markCustom();
+        PlaybackPerformanceSetting.markOverride(PlaybackPerformanceCatalog.MPV_INTERPOLATION);
     }
 
     public static int getSoftTuneMode() {
@@ -189,7 +167,7 @@ public final class MpvPerformanceSetting {
 
     public static void putSoftTuneMode(int value) {
         Prefers.put(KEY_SOFT_TUNE, clamp(value, SOFT_TUNE_OFF, SOFT_TUNE_AGGRESSIVE));
-        PlaybackPerformanceSetting.markCustom();
+        PlaybackPerformanceSetting.markOverride(PlaybackPerformanceCatalog.MPV_SOFT_TUNE);
     }
 
     public static String getSoftTuneText() {
@@ -205,16 +183,12 @@ public final class MpvPerformanceSetting {
     }
 
     public static int getFrameRateMode() {
-        return resolveFrameRateMode(Prefers.getInt(KEY_FRAME_RATE, FRAME_RATE_SEAMLESS));
-    }
-
-    static int resolveFrameRateMode(int value) {
-        return clamp(value, FRAME_RATE_OFF, FRAME_RATE_SEAMLESS);
+        return clamp(Prefers.getInt(KEY_FRAME_RATE, FRAME_RATE_SEAMLESS), FRAME_RATE_OFF, FRAME_RATE_SEAMLESS);
     }
 
     public static void putFrameRateMode(int value) {
         Prefers.put(KEY_FRAME_RATE, clamp(value, FRAME_RATE_OFF, FRAME_RATE_SEAMLESS));
-        PlaybackPerformanceSetting.markCustom();
+        PlaybackPerformanceSetting.markOverride(PlaybackPerformanceCatalog.MPV_FRAME_RATE);
     }
 
     public static String getFrameRateText() {
@@ -227,7 +201,7 @@ public final class MpvPerformanceSetting {
 
     public static void putHlsBitrateMode(int value) {
         Prefers.put(KEY_HLS_BITRATE, clamp(value, HLS_HIGHEST, HLS_LOWEST));
-        PlaybackPerformanceSetting.markCustom();
+        PlaybackPerformanceSetting.markOverride(PlaybackPerformanceCatalog.MPV_HLS_BITRATE);
     }
 
     public static String getHlsBitrateOption() {
@@ -241,7 +215,9 @@ public final class MpvPerformanceSetting {
 
     public static String getHlsBitrateText() {
         return getHlsBitrateText(
-                PlaybackPerformanceSetting.isAuto(PlayerSetting.MPV));
+                PlaybackPerformanceSetting.isAuto(
+                        PlayerSetting.MPV,
+                        PlaybackPerformanceCatalog.MPV_HLS_BITRATE));
     }
 
     public static String getHlsBitrateText(boolean automatic) {
@@ -261,7 +237,7 @@ public final class MpvPerformanceSetting {
 
     public static void putRebufferMs(int value) {
         Prefers.put(KEY_REBUFFER_MS, normalizeRebuffer(value));
-        PlaybackPerformanceSetting.markCustom();
+        PlaybackPerformanceSetting.markOverride(PlaybackPerformanceCatalog.MPV_REBUFFER);
     }
 
     public static int nextRebufferMs() {
@@ -283,6 +259,7 @@ public final class MpvPerformanceSetting {
 
     public static void putOptionPriority(int value) {
         Prefers.put(KEY_OPTION_PRIORITY, clamp(value, PRIORITY_PERFORMANCE, PRIORITY_CONFIG));
+        PlaybackPerformanceSetting.markOverride(PlaybackPerformanceCatalog.MPV_OPTION_PRIORITY);
     }
 
     public static boolean isPerformancePriority() {
@@ -293,12 +270,54 @@ public final class MpvPerformanceSetting {
         return isPerformancePriority() ? "播放性能优先" : "mpv.conf优先";
     }
 
+    public static int getVulkanBackend() {
+        return normalizeVulkanBackend(Prefers.getInt(
+                KEY_VULKAN_BACKEND, VULKAN_BACKEND_DIRECT));
+    }
+
+    public static void putVulkanBackend(int value) {
+        Prefers.put(KEY_VULKAN_BACKEND, normalizeVulkanBackend(value));
+        PlaybackPerformanceSetting.markOverride(PlaybackPerformanceCatalog.MPV_VULKAN_BACKEND);
+    }
+
+    public static int nextVulkanBackend() {
+        return switch (getVulkanBackend()) {
+            case VULKAN_BACKEND_DIRECT -> VULKAN_BACKEND_LEGACY;
+            case VULKAN_BACKEND_LEGACY -> VULKAN_BACKEND_STABLE;
+            default -> VULKAN_BACKEND_DIRECT;
+        };
+    }
+
+    public static String getVulkanBackendOption() {
+        return vulkanBackendOption(getVulkanBackend());
+    }
+
+    static String vulkanBackendOption(int value) {
+        return switch (normalizeVulkanBackend(value)) {
+            case VULKAN_BACKEND_DIRECT -> "direct";
+            case VULKAN_BACKEND_STABLE -> "stable";
+            default -> "legacy";
+        };
+    }
+
+    public static String getVulkanBackendText() {
+        return getVulkanBackendOption();
+    }
+
+    private static int normalizeVulkanBackend(int value) {
+        return switch (value) {
+            case VULKAN_BACKEND_DIRECT, VULKAN_BACKEND_STABLE -> value;
+            default -> VULKAN_BACKEND_LEGACY;
+        };
+    }
+
     public static void putVerboseLog(boolean value) {
         Prefers.put(KEY_VERBOSE_LOG, value);
-        PlaybackPerformanceSetting.markCustom();
+        PlaybackPerformanceSetting.markOverride(PlaybackPerformanceCatalog.MPV_VERBOSE_LOG);
     }
 
     public static void applyRecommended() {
+        PlayerSetting.putMpvRender(PlayerSetting.MPV_RENDER_OPENGL);
         Prefers.put(KEY_OUTPUT_MODE, OUTPUT_AUTO);
         Prefers.put(KEY_HWDEC, HWDEC_AUTO);
         Prefers.put(KEY_SYNC, SYNC_AUDIO);
@@ -308,10 +327,12 @@ public final class MpvPerformanceSetting {
         Prefers.put(KEY_VERBOSE_LOG, false);
         Prefers.put(KEY_FRAME_RATE, FRAME_RATE_SEAMLESS);
         Prefers.put(KEY_HLS_BITRATE, HLS_HIGHEST);
+        Prefers.put(KEY_VULKAN_BACKEND, VULKAN_BACKEND_DIRECT);
         applyRebufferPreset(PlaybackPerformanceSetting.PROFILE_RECOMMENDED);
     }
 
     public static void applyAuto() {
+        PlayerSetting.putMpvRender(PlayerSetting.MPV_RENDER_OPENGL);
         Prefers.put(KEY_OUTPUT_MODE, OUTPUT_AUTO);
         Prefers.put(KEY_HWDEC, HWDEC_AUTO);
         Prefers.put(KEY_SYNC, SYNC_AUDIO);
@@ -321,6 +342,7 @@ public final class MpvPerformanceSetting {
         Prefers.put(KEY_VERBOSE_LOG, false);
         Prefers.put(KEY_FRAME_RATE, FRAME_RATE_SEAMLESS);
         Prefers.put(KEY_HLS_BITRATE, HLS_HIGHEST);
+        Prefers.put(KEY_VULKAN_BACKEND, VULKAN_BACKEND_DIRECT);
         applyRebufferPreset(PlaybackPerformanceSetting.PROFILE_AUTO);
     }
 
@@ -329,6 +351,7 @@ public final class MpvPerformanceSetting {
     }
 
     public static void applyLightweight() {
+        PlayerSetting.putMpvRender(PlayerSetting.MPV_RENDER_OPENGL);
         Prefers.put(KEY_OUTPUT_MODE, OUTPUT_AUTO);
         Prefers.put(KEY_HWDEC, HWDEC_AUTO);
         Prefers.put(KEY_SYNC, SYNC_AUDIO);
@@ -338,6 +361,7 @@ public final class MpvPerformanceSetting {
         Prefers.put(KEY_VERBOSE_LOG, false);
         Prefers.put(KEY_FRAME_RATE, FRAME_RATE_OFF);
         Prefers.put(KEY_HLS_BITRATE, HLS_8_MBPS);
+        Prefers.put(KEY_VULKAN_BACKEND, VULKAN_BACKEND_DIRECT);
         applyRebufferPreset(PlaybackPerformanceSetting.PROFILE_LIGHTWEIGHT);
     }
 

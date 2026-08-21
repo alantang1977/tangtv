@@ -35,17 +35,13 @@ final class MpvCacheObserverState {
         Arrays.fill(lastObserverAtMs, -1);
     }
 
-    boolean record(String property, Object value) {
-        return record(property, value, -1);
-    }
-
     boolean record(String property, Object value, long nowMs) {
         Metric metric = metricForProperty(property);
         if (metric == null || value == null) return false;
         int bit = bit(metric);
         boolean firstValue = (observedMask & bit) == 0;
         observedMask |= bit;
-        if (nowMs >= 0 && isDynamic(metric)) lastObserverAtMs[metric.ordinal()] = Math.max(0, nowMs);
+        if (isDynamic(metric)) lastObserverAtMs[metric.ordinal()] = Math.max(0, nowMs);
         return firstValue;
     }
 
@@ -65,8 +61,12 @@ final class MpvCacheObserverState {
         }
     }
 
-    boolean shouldQueryFallback(boolean fileLoaded, boolean cacheActive, long nowMs) {
-        if (!fileLoaded) return false;
+    boolean shouldQueryFallback(
+            boolean fileLoaded,
+            boolean cacheActive,
+            boolean playbackActive,
+            long nowMs) {
+        if (!fileLoaded || playbackActive) return false;
         if (fileLoadedAtMs < 0) {
             onFileLoaded(nowMs);
             return false;
@@ -95,10 +95,6 @@ final class MpvCacheObserverState {
 
     void onFallbackQuery(long nowMs) {
         lastFallbackQueryAtMs = Math.max(0, nowMs);
-    }
-
-    boolean hasObservedValues() {
-        return observedMask != 0;
     }
 
     void onPausedTimelineQuery(long nowMs) {

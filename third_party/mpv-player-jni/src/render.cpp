@@ -1,5 +1,7 @@
 #include <jni.h>
 
+#include <mpv/client.h>
+
 #include "jni_utils.h"
 #include "log.h"
 #include "request.h"
@@ -11,6 +13,7 @@ extern "C" {
     jni_func(void, attachOsdSurface, jobject surface);
     jni_func(void, replaceOsdSurface, jobject surface);
     jni_func(void, detachOsdSurface);
+    jni_func(jint, enqueueOsdSurface, jlong request_id, jobject surface);
 };
 
 static void enqueue_surface_or_throw(JNIEnv *env, SurfaceTarget target,
@@ -58,4 +61,11 @@ jni_func(void, replaceOsdSurface, jobject surface) {
 
 jni_func(void, detachOsdSurface) {
     detach_surface(env, SurfaceTarget::OSD);
+}
+
+jni_func(jint, enqueueOsdSurface, jlong request_id, jobject surface) {
+    if (!require_mpv_initialized(env))
+        return MPV_ERROR_UNINITIALIZED;
+    return enqueue_surface_async(env, static_cast<uint64_t>(request_id),
+                                 SurfaceTarget::OSD, surface);
 }

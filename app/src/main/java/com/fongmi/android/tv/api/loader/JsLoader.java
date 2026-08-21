@@ -22,13 +22,10 @@ public class JsLoader {
     }
 
     public void clear() {
-        try {
-            SpiderCleanup.destroy("js-loader", spiders);
-            Module.get().clear();
-        } finally {
-            spiders.clear();
-            recent = null;
-        }
+        spiders.values().forEach(Spider::destroy);
+        Module.get().clear();
+        spiders.clear();
+        recent = null;
     }
 
     public void setRecent(String recent) {

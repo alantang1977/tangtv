@@ -13,14 +13,16 @@ public class EpisodeGridLayoutPolicyTest {
 
     @Test
     public void portraitLayoutIgnoresFullscreenLandscapeMeasurement() {
-        int width = EpisodeGridLayoutPolicy.getAvailableWidth(2400, 2400, 1080, 112, false, true);
+        int width = EpisodeGridLayoutPolicy.getAvailableWidth(
+                2400, 2400, 1080, 112, false, true);
 
         assertEquals(968, width);
     }
 
     @Test
     public void matchingOrientationUsesMeasuredRecyclerWidth() {
-        int width = EpisodeGridLayoutPolicy.getAvailableWidth(1024, 1080, 2400, 112, false, false);
+        int width = EpisodeGridLayoutPolicy.getAvailableWidth(
+                1024, 1080, 2400, 112, false, false);
 
         assertEquals(1024, width);
     }

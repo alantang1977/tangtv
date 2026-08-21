@@ -28,20 +28,24 @@
 #include "video/out/placebo/ra_pl.h"
 #include "video/out/vulkan/context.h"
 
-#include "hwdec_aimagereader_comp.h"
 #include "hwdec_aimagereader_vk_private.h"
 
+#define STABLE_WORKGROUP_X 16
+#define STABLE_WORKGROUP_Y 8
 #define OUTPUT_COUNT 4
 #define INPUT_CACHE_SIZE 8
 #define EXTERNAL_FORMAT_DESCRIPTOR_COUNT 4
 #define CONVERSION_FENCE_TIMEOUT_NS UINT64_C(250000000)
 #define POOL_LOG_INTERVAL 120
 
+static const uint32_t aimagereader_stable_comp_spv[] =
+#include "hwdec_aimagereader_vk_stable_comp.inc"
+;
+
 struct conversion_push_constants {
-    int32_t crop_offset[2];
-    int32_t crop_size[2];
+    float uv_offset[2];
+    float uv_scale[2];
     int32_t output_size[2];
-    int32_t source_size[2];
 };
 
 struct vk_input {
@@ -487,12 +491,14 @@ static VkFormat choose_output_format(
     bool high_depth = source_is_high_depth(p, desc, props, data_space);
     const VkFormat high_depth_candidates[] = {
         VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+        VK_FORMAT_A2R10G10B10_UNORM_PACK32,
         VK_FORMAT_R16G16B16A16_SFLOAT,
         VK_FORMAT_R8G8B8A8_UNORM,
     };
     const VkFormat low_depth_candidates[] = {
         VK_FORMAT_R8G8B8A8_UNORM,
         VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+        VK_FORMAT_A2R10G10B10_UNORM_PACK32,
         VK_FORMAT_R16G16B16A16_SFLOAT,
     };
     const VkFormat *candidates =
@@ -870,8 +876,8 @@ static bool create_pipeline(
 
     VkShaderModuleCreateInfo shader_info = {
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .codeSize = sizeof(aimagereader_comp_spv),
-        .pCode = aimagereader_comp_spv,
+        .codeSize = sizeof(aimagereader_stable_comp_spv),
+        .pCode = aimagereader_stable_comp_spv,
     };
     VkShaderModule shader = VK_NULL_HANDLE;
     if (!vk_success(p, vkCreateShaderModule(p->device, &shader_info, NULL,
@@ -951,10 +957,12 @@ static bool create_pipeline(
     mp_info(p->log, "Using Vulkan AHardwareBuffer stable GPU conversion "
                     "(source format %d, external format 0x%" PRIx64
                     ", output format %d, sampler descriptors %u, "
-                    "chroma filter %s)\n",
+                    "chroma filter %s, workgroup %dx%d, "
+                    "CPU-precomputed UV transform)\n",
             p->source_format, p->external_format, p->output_format,
             sampler_descriptors,
-            chroma_filter == VK_FILTER_LINEAR ? "linear" : "nearest");
+            chroma_filter == VK_FILTER_LINEAR ? "linear" : "nearest",
+            STABLE_WORKGROUP_X, STABLE_WORKGROUP_Y);
     return true;
 }
 
@@ -962,6 +970,7 @@ static int output_sample_depth(VkFormat format)
 {
     switch (format) {
     case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
+    case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
         return 10;
     case VK_FORMAT_R16G16B16A16_SFLOAT:
         return 16;
@@ -1350,19 +1359,29 @@ static bool record_conversion(struct aimagereader_vk_stable *p,
     vkCmdBindDescriptorSets(output->command, VK_PIPELINE_BIND_POINT_COMPUTE,
                             p->pipeline_layout, 0, 1, &output->descriptor,
                             0, NULL);
+    const double source_width = desc->width;
+    const double source_height = desc->height;
     const struct conversion_push_constants push = {
-        .crop_offset = {crop->left, crop->top},
-        .crop_size = {
-            crop->right - crop->left,
-            crop->bottom - crop->top,
+        .uv_offset = {
+            (float)(crop->left / source_width),
+            (float)(crop->top / source_height),
+        },
+        .uv_scale = {
+            (float)((crop->right - crop->left) /
+                    ((double)p->width * source_width)),
+            (float)((crop->bottom - crop->top) /
+                    ((double)p->height * source_height)),
         },
         .output_size = {p->width, p->height},
-        .source_size = {desc->width, desc->height},
     };
     vkCmdPushConstants(output->command, p->pipeline_layout,
                        VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
-    vkCmdDispatch(output->command, MP_ALIGN_UP(p->width, 16) / 16,
-                  MP_ALIGN_UP(p->height, 8) / 8, 1);
+    vkCmdDispatch(output->command,
+                  MP_ALIGN_UP(p->width, STABLE_WORKGROUP_X) /
+                      STABLE_WORKGROUP_X,
+                  MP_ALIGN_UP(p->height, STABLE_WORKGROUP_Y) /
+                      STABLE_WORKGROUP_Y,
+                  1);
 
     VkImageMemoryBarrier release[] = {
         {

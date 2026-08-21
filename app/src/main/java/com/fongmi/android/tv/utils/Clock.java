@@ -43,7 +43,6 @@ public class Clock {
     }
 
     public void start() {
-        android.util.Log.d("Clock", "start() called, timer=" + (timer != null));
         timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
@@ -51,17 +50,14 @@ public class Clock {
                 App.post(() -> doJob());
             }
         }, 0, 1000);
-        android.util.Log.d("Clock", "Timer scheduled");
     }
 
     private void doJob() {
         try {
             long time = System.currentTimeMillis();
-            android.util.Log.d("Clock", "doJob: callback=" + (callback != null));
             if (callback != null) callback.onTimeChanged(time);
             if (view != null) view.setText(format.format(LocalDateTime.now()));
-        } catch (Exception e) {
-            android.util.Log.e("Clock", "doJob error", e);
+        } catch (Exception ignored) {
         }
     }
 

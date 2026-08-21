@@ -10,10 +10,9 @@ usage() {
 Usage: scripts/verify_mpv_native_assets.sh [--require-elf]
 
 Validate the committed MPV/FFmpeg assets for both Android ARM ABIs against
-third_party/mpv-native-lock.json. The v5.5.6 Vulkan shader source/header contract,
-presence, ABI, embedded capability/version and removed-backend checks are always
-performed. ELF SONAME/DT_NEEDED checks run when llvm-readelf/readelf is available;
---require-elf makes the absence of that tool an error.
+third_party/mpv-native-lock.json. Presence, ABI and embedded version checks are
+always performed. ELF SONAME/DT_NEEDED checks run when llvm-readelf/readelf is
+available; --require-elf makes the absence of that tool an error.
 EOF
 }
 
@@ -34,7 +33,7 @@ done
 [ -f "$LOCK_FILE" ] || die "missing lock file: $LOCK_FILE"
 command -v python3 >/dev/null 2>&1 || die "missing command: python3"
 command -v file >/dev/null 2>&1 || die "missing command: file"
-python3 "$ROOT/scripts/verify_mpv_v556_shader_contract.py"
+python3 "$ROOT/scripts/verify_mpv_vulkan_shader_contract.py"
 
 eval "$(python3 - "$LOCK_FILE" <<'PY'
 import json
@@ -149,10 +148,10 @@ contains_string() {
 }
 
 reject_string() {
-  local file_path="$1"
-  local forbidden="$2"
-  if "$STRINGS_BIN" "$file_path" | grep -F "$forbidden" >/dev/null; then
-    die "forbidden embedded string in $file_path: $forbidden"
+  local file="$1"
+  local value="$2"
+  if strings "$file" | grep -Fq "$value"; then
+    die "obsolete string '$value' present in $file"
   fi
 }
 
@@ -187,20 +186,23 @@ verify_abi() {
   contains_string "$directory/libmpv.so" "mpv v$MPV_VERSION"
   contains_string "$directory/libmpv.so" "v$LIBPLACEBO_VERSION"
   contains_string "$directory/libmpv.so" "WebHTV stream_cb controls enabled"
-  contains_string "$directory/libmpv.so" "Using WebHTV low-power Vulkan AHardwareBuffer GPU conversion"
-  reject_string "$directory/libmpv.so" "android-vulkan-aimagereader-backend"
-  reject_string "$directory/libmpv.so" "android-vulkan-conversion-backend"
-  reject_string "$directory/libmpv.so" "Vulkan AImageReader backend:"
-  reject_string "$directory/libmpv.so" "Using Vulkan YCbCr AHardwareBuffer sampling"
-  reject_string "$directory/libmpv.so" "Using Vulkan AHardwareBuffer stable GPU conversion"
-  reject_string "$directory/libmpv.so" "WebHTV Vulkan auto backend prefers direct"
-  reject_string "$directory/libmpv.so" "Direct Vulkan sampling"
-  reject_string "$directory/libmpv.so" "Stable Vulkan conversion"
-  contains_string "$directory/libmpv.so" "Using Vulkan sync_fd for AImage acquire fences"
+  contains_string "$directory/libmpv.so" "Vulkan AImageReader backend:"
+  contains_string "$directory/libmpv.so" "Using Vulkan YCbCr AHardwareBuffer sampling"
+  contains_string "$directory/libmpv.so" "Vulkan AImageReader sync-fd:"
   contains_string "$directory/libmpv.so" "android-osd-wid"
   contains_string "$directory/libmpv.so" "Direct Dolby Vision initialization failed"
   contains_string "$directory/libmpv.so" "video output has no queue-safe EL decoder"
-  contains_string "$directory/libmpv.so" "Using device native output sample rate for passthrough compatibility"
+  contains_string "$directory/libmpv.so" "DV7 HDR10 fallback: using MediaCodec base-layer decoder"
+  contains_string "$directory/libmpv.so" "DV7 HDR10 fallback: stripping EL/RPU before decoder."
+  contains_string "$directory/libmpv.so" "DV7 HDR10 fallback: failed to produce base-layer packet."
+  reject_string "$directory/libmpv.so" "DV7 HDR10 fallback: preserving decoder input and stripping Dolby Vision frame metadata."
+  reject_string "$directory/libmpv.so" "Using device native output sample rate for passthrough compatibility"
+  contains_string "$directory/libmpv.so" "Using 7.1 IEC61937 carrier mask for TrueHD"
+  contains_string "$directory/libmpv.so" "WebHTV Vulkan auto backend prefers direct AHardwareBuffer sampling"
+  contains_string "$directory/libmpv.so" "WebHTV Vulkan auto uses a queue-safe four-output bounded-fence pool"
+  contains_string "$directory/libmpv.so" "CPU-precomputed UV transform"
+  contains_string "$directory/libmpv.so" "Stable Vulkan conversion preserves Dolby Vision raw YUV component mapping"
+  contains_string "$directory/libmpv.so" "WebHTV Vulkan keeps AImage until the conversion fence completes"
   contains_string "$directory/libmpv.so" "WebHTV AImageReader uses stable release/acquire flow"
   contains_string "$directory/libmpv.so" "Using declared Matroska segment end for seek metadata."
   contains_string "$directory/libmvcodec.so" "libarcdav3a AV3A"
@@ -208,6 +210,7 @@ verify_abi() {
   contains_string "$directory/libmvcodec.so" "Timed Text Markup Language subtitle"
   contains_string "$directory/libmvformat.so" "MMT protocol over TLV packets"
   contains_string "$directory/libmvformat.so" "WebHTV proxy range offset accepted"
+  contains_string "$directory/libmvcodec.so" "failing hardware decode so the player can fall back"
   contains_string "$directory/libmpv.so" "No usable fontconfig configuration file found, using fallback."
   if [ -n "$CURL_VERSION" ]; then
     contains_string "$directory/libmpv.so" "libcurl/$CURL_VERSION"

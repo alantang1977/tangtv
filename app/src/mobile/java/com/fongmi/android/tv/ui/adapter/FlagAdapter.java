@@ -1,17 +1,14 @@
 package com.fongmi.android.tv.ui.adapter;
 
-import android.view.View;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.Episode;
 import com.fongmi.android.tv.bean.Flag;
+import com.fongmi.android.tv.databinding.AdapterFlagBinding;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,8 +18,6 @@ public class FlagAdapter extends RecyclerView.Adapter<FlagAdapter.ViewHolder> {
 
     private final OnClickListener listener;
     private final List<Flag> mItems;
-    private boolean tmdbStyle;
-    private boolean tmdbLight = true;
 
     public FlagAdapter(OnClickListener listener) {
         this.listener = listener;
@@ -32,18 +27,6 @@ public class FlagAdapter extends RecyclerView.Adapter<FlagAdapter.ViewHolder> {
     public interface OnClickListener {
 
         void onItemClick(Flag item);
-    }
-
-    public void setTmdbStyle(boolean tmdbStyle) {
-        if (this.tmdbStyle == tmdbStyle) return;
-        this.tmdbStyle = tmdbStyle;
-        notifyItemRangeChanged(0, getItemCount());
-    }
-
-    public void setTmdbLight(boolean tmdbLight) {
-        if (this.tmdbLight == tmdbLight) return;
-        this.tmdbLight = tmdbLight;
-        notifyItemRangeChanged(0, getItemCount());
     }
 
     public void addAll(List<Flag> items) {
@@ -71,11 +54,10 @@ public class FlagAdapter extends RecyclerView.Adapter<FlagAdapter.ViewHolder> {
     }
 
     public Flag getActivated() {
-        return mItems.isEmpty() ? new Flag() : mItems.get(getPosition());
+        return mItems.get(getPosition());
     }
 
     public void setSelected(Flag flag) {
-        if (mItems.isEmpty() || flag == null) return;
         if (!mItems.contains(flag)) flag.setFlag(mItems.get(0).getFlag());
         for (Flag item : mItems) item.setSelected(flag);
         notifyItemRangeChanged(0, getItemCount());
@@ -98,40 +80,27 @@ public class FlagAdapter extends RecyclerView.Adapter<FlagAdapter.ViewHolder> {
         return mItems.size();
     }
 
-    @Override
-    public int getItemViewType(int position) {
-        return tmdbStyle ? 1 : 0;
-    }
-
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        int layout = viewType == 1 ? R.layout.adapter_flag_tmdb : R.layout.adapter_flag;
-        return new ViewHolder(LayoutInflater.from(parent.getContext()).inflate(layout, parent, false));
+        return new ViewHolder(AdapterFlagBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false));
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Flag item = mItems.get(position);
-        holder.text.setText(item.getShow());
-        holder.text.setSelected(item.isSelected());
-        applyTmdbTheme(holder.text);
-        holder.text.setOnClickListener(v -> listener.onItemClick(item));
-    }
-
-    private void applyTmdbTheme(TextView text) {
-        if (!tmdbStyle) return;
-        text.setBackgroundResource(tmdbLight ? R.drawable.selector_tmdb_flag_item : R.drawable.selector_tmdb_flag_item_dark);
-        text.setTextColor(ContextCompat.getColorStateList(text.getContext(), tmdbLight ? R.color.selector_tmdb_flag_text : R.color.selector_tmdb_flag_text_dark));
+        holder.binding.text.setText(item.getShow());
+        holder.binding.text.setSelected(item.isSelected());
+        holder.binding.text.setOnClickListener(v -> listener.onItemClick(item));
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
-        private final TextView text;
+        private final AdapterFlagBinding binding;
 
-        ViewHolder(@NonNull View itemView) {
-            super(itemView);
-            this.text = itemView.findViewById(R.id.text);
+        ViewHolder(@NonNull AdapterFlagBinding binding) {
+            super(binding.getRoot());
+            this.binding = binding;
         }
     }
 }

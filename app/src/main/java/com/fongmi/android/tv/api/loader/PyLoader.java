@@ -22,12 +22,9 @@ public class PyLoader {
     }
 
     public void clear() {
-        try {
-            SpiderCleanup.destroy("py-loader", spiders);
-        } finally {
-            spiders.clear();
-            recent = null;
-        }
+        spiders.values().forEach(Spider::destroy);
+        spiders.clear();
+        recent = null;
     }
 
     public void setRecent(String recent) {

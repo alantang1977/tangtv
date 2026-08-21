@@ -14,10 +14,4 @@
         android:title="@string/menu_delete"
         app:showAsAction="always" />
 
-    <item
-        android:id="@+id/report"
-        android:icon="@drawable/ic_action_report"
-        android:title="@string/menu_viewing_report"
-        app:showAsAction="ifRoom" />
-
 </menu>

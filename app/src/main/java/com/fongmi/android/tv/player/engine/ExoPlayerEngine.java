@@ -37,46 +37,26 @@ import com.fongmi.android.tv.setting.ExoPerformanceSetting;
 import com.fongmi.android.tv.setting.PlaybackPerformanceSetting;
 import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.utils.ResUtil;
+import com.github.catvod.crawler.SpiderDebug;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class ExoPlayerEngine implements PlayerEngine {
-
-    private static final AtomicInteger PREPARE_GENERATION = new AtomicInteger();
-
-    public interface PrepareListener {
-
-        PrepareListener NONE = new PrepareListener() {
-        };
-
-        default void onPrepareStarted(int generation) {
-        }
-
-        default void onPrepareReady(int generation) {
-        }
-
-        default void onPrepareCanceled(int generation) {
-        }
-    }
 
     private final ErrorMsgProvider provider;
     private final PreCache preCache;
     private final Set<String> attemptedFormats;
-    private final PrepareListener prepareListener;
     private final ExoDecoderRuntimeSession decoderRuntimeSession;
     private final ExoDolbyVisionPlaybackState dolbyVisionPlaybackState;
     private final ExoFrameSchedulingSessionLock frameSchedulingSessionLock;
     private PlaySpec spec;
     private String activeFormat;
     private ExoPlayer player;
-    private Player.Listener prepareReadyListener;
     private int decode;
-    private int pendingPrepareGeneration = -1;
     private boolean playWhenReady;
     private boolean cacheSessionActive;
     private boolean tunnelingFallbackAttempted;
@@ -143,10 +123,6 @@ public class ExoPlayerEngine implements PlayerEngine {
     };
 
     public ExoPlayerEngine(int decode, Player.Listener listener) {
-        this(decode, listener, PrepareListener.NONE);
-    }
-
-    public ExoPlayerEngine(int decode, Player.Listener listener, PrepareListener prepareListener) {
         this.decoderRuntimeSession = ExoDecoderRuntimeProfiles.process().newSession();
         this.dolbyVisionPlaybackState = new ExoDolbyVisionPlaybackState();
         this.decoderRuntimeEnabledForPlayer =
@@ -177,7 +153,6 @@ public class ExoPlayerEngine implements PlayerEngine {
         this.provider = new ErrorMsgProvider();
         this.preCache = new PreCache();
         this.attemptedFormats = new HashSet<>();
-        this.prepareListener = prepareListener == null ? PrepareListener.NONE : prepareListener;
         this.decode = decode;
         this.tunnelingEnabledForSession = ExoUtil.isTunnelingEnabled(decode, false);
         this.firstFrameRendered = false;
@@ -191,7 +166,6 @@ public class ExoPlayerEngine implements PlayerEngine {
 
     @Override
     public void release() {
-        cancelPendingPrepare();
         Runnable cacheRelease = null;
         if (cacheSessionActive) {
             cacheSessionActive = false;
@@ -209,7 +183,6 @@ public class ExoPlayerEngine implements PlayerEngine {
 
     @Override
     public Player rebuild(Player.Listener listener) {
-        cancelPendingPrepare();
         ExoFrameSchedulingPlayerSettings schedulingSettings =
                 settingsForRebuild();
         preCache.stop("engine-rebuild");
@@ -472,7 +445,6 @@ public class ExoPlayerEngine implements PlayerEngine {
         }
         resetAttemptedFormats();
         PlaybackTrace.log("player-engine", getPlaybackTraceId(), "restart decode=%d format=%s position=%d play=%s headers=%s urlLen=%d", decode, spec.getFormat(), position, playWhenReady, spec.getHeaders() == null ? 0 : spec.getHeaders().size(), spec.getUrl() == null ? 0 : spec.getUrl().length());
-        cancelPendingPrepare();
         preCache.stop("engine-restart");
         player.stop();
         startInternal(position, playWhenReady);
@@ -489,7 +461,6 @@ public class ExoPlayerEngine implements PlayerEngine {
 
     @Override
     public void stop() {
-        cancelPendingPrepare();
         preCache.stop("player-stop");
         cancelDecoderRuntimeStableWindow();
         finishDecoderRuntimeAttempt();
@@ -542,11 +513,6 @@ public class ExoPlayerEngine implements PlayerEngine {
     }
 
     @Override
-public void resetTrack(int type) {
-        TrackUtil.reset(player, type);
-    }
-
-    @Override
     public void restoreVideoTrack() {
         TrackUtil.enable(player, C.TRACK_TYPE_VIDEO);
     }
@@ -568,6 +534,14 @@ public void resetTrack(int type) {
 
     @Override
     public void setVideoEffects(List<Effect> effects) {
+        if (SpiderDebug.isEnabled()) {
+            Format format = getVideoFormat();
+            SpiderDebug.log("lut-exo", "set effects=%d state=%d position=%d video=%s",
+                    effects == null ? 0 : effects.size(),
+                    player.getPlaybackState(),
+                    player.getCurrentPosition(),
+                    format == null ? "unknown" : format.width + "x" + format.height + "/" + format.sampleMimeType);
+        }
         player.setVideoEffects(effects);
     }
 
@@ -610,15 +584,17 @@ public void resetTrack(int type) {
                 PlaybackAnalyticsListener.getPlaybackTraceId());
         ExoDolbyVisionPlaybackState.Snapshot fallback =
                 dolbyVisionPlaybackState.snapshot();
+        boolean transformed = fallback.hdr10FallbackActive()
+                || fallback.p81ConversionActive();
         Format selected = TrackUtil.explicitlySelectedFormat(
                 getCurrentTracks(), C.TRACK_TYPE_VIDEO);
         Format runtime = currentAnalyticsSession
                 ? analytics.videoFormat() : null;
-        Format source = fallback.hdr10FallbackActive()
+        Format source = transformed
                 && fallback.sourceFormat() != null
                 ? fallback.sourceFormat()
                 : selected != null ? selected : runtime;
-        Format output = fallback.hdr10FallbackActive()
+        Format output = transformed
                 && fallback.outputFormat() != null
                 ? fallback.outputFormat()
                 : runtime != null ? runtime : player.getVideoFormat();
@@ -637,7 +613,8 @@ public void resetTrack(int type) {
                 currentAnalyticsSession ? analytics.videoDecoderName() : "",
                 "",
                 output == null ? null : output.colorInfo,
-                fallback.hdr10FallbackActive());
+                fallback.hdr10FallbackActive(),
+                fallback.p81ConversionActive());
     }
 
     @Override
@@ -718,7 +695,7 @@ public void resetTrack(int type) {
         PlaybackTrace.log("exo-rtsp-live", getPlaybackTraceId(),
                 "action=seek-live-edge");
         player.seekToDefaultPosition();
-        preparePlayer();
+        player.prepare();
         return true;
     }
 
@@ -756,44 +733,8 @@ public void resetTrack(int type) {
         MediaItem item = ExoUtil.getMediaItem(spec.copyWithFormat(activeFormat), decode);
         player.setMediaItem(item, position);
         preCache.start(player, item, spec.getPlaybackTraceId(), spec.getPlaybackRoute());
-        preparePlayer();
-        if (playWhenReady) player.play();
-    }
-
-    private void preparePlayer() {
-        int generation = beginPrepare();
-        prepareListener.onPrepareStarted(generation);
         player.prepare();
-    }
-
-    private int beginPrepare() {
-        cancelPendingPrepare();
-        int generation = PREPARE_GENERATION.incrementAndGet();
-        pendingPrepareGeneration = generation;
-        Player.Listener readyListener = new Player.Listener() {
-            @Override
-            public void onPlaybackStateChanged(int state) {
-                if (state != Player.STATE_READY || generation != pendingPrepareGeneration || prepareReadyListener != this) return;
-                player.removeListener(this);
-                prepareReadyListener = null;
-                pendingPrepareGeneration = -1;
-                prepareListener.onPrepareReady(generation);
-            }
-        };
-        prepareReadyListener = readyListener;
-        player.addListener(readyListener);
-        return generation;
-    }
-
-    @Override
-    public void cancelPendingPrepare() {
-        int generation = pendingPrepareGeneration;
-        if (generation < 0) return;
-        pendingPrepareGeneration = -1;
-        Player.Listener readyListener = prepareReadyListener;
-        prepareReadyListener = null;
-        if (readyListener != null) player.removeListener(readyListener);
-        prepareListener.onPrepareCanceled(generation);
+        if (playWhenReady) player.play();
     }
 
     private void finishDecoderRuntimeAttempt() {
@@ -873,7 +814,7 @@ public void resetTrack(int type) {
 
     private ErrorAction seekToDefaultPosition() {
         player.seekToDefaultPosition();
-        preparePlayer();
+        player.prepare();
         return ErrorAction.RECOVERED;
     }
 

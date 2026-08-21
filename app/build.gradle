@@ -14,8 +14,8 @@ def releaseKeyPassword = localProps['keyPassword'] ?: localProps['storePassword'
 def fastRelease = (project.findProperty('fastRelease') ?: 'false').toString().toBoolean()
 def buildTimestamp = new Date().format('yyyyMMddHHmm', TimeZone.getTimeZone('Asia/Shanghai'))
 def buildTime = fastRelease ? "fast-${buildTimestamp}" : buildTimestamp
-def releaseTag = (System.getenv('TAMGTV_RELEASE_TAG') ?: '').replace('\\', '\\\\').replace('"', '\\"')
-def apkSuffix = (System.getenv('TANGTV_APK_SUFFIX') ?: '').replaceAll('[^A-Za-z0-9._-]', '')
+def releaseTag = (System.getenv('WEBHTV_RELEASE_TAG') ?: '').replace('\\', '\\\\').replace('"', '\\"')
+def apkSuffix = (System.getenv('WEBHTV_APK_SUFFIX') ?: '').replaceAll('[^A-Za-z0-9._-]', '')
 
 android {
     namespace = 'com.fongmi.android.tv'
@@ -23,7 +23,7 @@ android {
     compileSdk libs.versions.compileSdk.get().toInteger()
 
     defaultConfig {
-        applicationId "com.silent.android.tangtv"
+        applicationId "com.fongmi.android.tangtv"
         minSdk libs.versions.minSdk.get().toInteger()
         targetSdk libs.versions.targetSdk.get().toInteger()
         versionCode 560
@@ -122,7 +122,7 @@ androidComponents {
 }
 
 dependencies {
-    implementation fileTree(dir: "libs", include: ["*.aar", "*.jar"])
+    implementation fileTree(dir: "libs", include: ["*.aar"])
     implementation project(':catvod')
     implementation project(':chaquo')
     implementation project(':quickjs')
@@ -130,6 +130,7 @@ dependencies {
     implementation libs.lifecycle.service
     implementation libs.media
     implementation libs.bundles.media3
+    implementation libs.exoplayer.hdr.utils
     implementation libs.nextlib.media3ext
     implementation libs.palette
     implementation libs.recyclerview
@@ -160,7 +161,6 @@ dependencies {
     leanbackImplementation libs.zxing.android.embedded
     mobileImplementation libs.biometric
     mobileImplementation libs.zxing.android.embedded
-    testImplementation libs.junit
     annotationProcessor libs.room.compiler
     annotationProcessor libs.eventbus.annotation.processor
     annotationProcessor libs.glide.compiler

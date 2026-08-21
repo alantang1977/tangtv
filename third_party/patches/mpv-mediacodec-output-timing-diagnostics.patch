@@ -1,0 +1,52 @@
+diff --git a/video/out/vo.c b/video/out/vo.c
+index 679a7bd0..06f51b3c 100644
+--- a/video/out/vo.c
++++ b/video/out/vo.c
+@@ -162,6 +162,9 @@ struct vo_internal {
+ 
+     int64_t delayed_count;
+     int64_t drop_count;
++    int64_t drop_late_total;
++    int64_t drop_late_max;
++    uint64_t drop_diag_frames;
+     bool dropped_frame;             // the previous frame was dropped
+ 
+     struct vo_frame *current_frame; // last frame queued to the VO
+@@ -706,6 +709,9 @@ static void forget_frames(struct vo *vo)
+     in->hasframe = false;
+     in->hasframe_rendered = false;
+     in->drop_count = 0;
++    in->drop_late_total = 0;
++    in->drop_late_max = 0;
++    in->drop_diag_frames = 0;
+     in->delayed_count = 0;
+     talloc_free(in->frame_queued);
+     in->frame_queued = NULL;
+@@ -1018,6 +1024,27 @@ static bool render_frame(struct vo *vo)
+ 
+     if (in->dropped_frame) {
+         in->drop_count += 1;
++        int64_t late_ns = end_time < now ? now - end_time : 0;
++        if (late_ns > 0) {
++            in->drop_late_total += late_ns;
++            in->drop_late_max = MPMAX(in->drop_late_max, late_ns);
++        }
++        in->drop_diag_frames++;
++        if (vo->driver == &video_out_mediacodec_embed &&
++            (in->drop_count == 1 || in->drop_diag_frames >= 60))
++        {
++            MP_WARN(vo, "MediaCodec VO drop timing: count=%lld late=%lld "
++                        "avg=%lld max=%lld us pts=%lld duration=%lld us.\n",
++                    (long long)in->drop_count,
++                    (long long)(late_ns / 1000),
++                    (long long)(in->drop_late_total / in->drop_diag_frames / 1000),
++                    (long long)(in->drop_late_max / 1000),
++                    (long long)(pts / 1000),
++                    (long long)(duration / 1000));
++            in->drop_diag_frames = 0;
++            in->drop_late_total = 0;
++            in->drop_late_max = 0;
++        }
+         wakeup_core(vo);
+     } else {
+         in->rendering = true;

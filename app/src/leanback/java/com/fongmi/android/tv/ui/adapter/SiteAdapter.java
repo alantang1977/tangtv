@@ -15,7 +15,6 @@ import com.fongmi.android.tv.databinding.AdapterSiteBinding;
 import com.fongmi.android.tv.databinding.AdapterSiteSwitchBinding;
 import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.setting.SiteHealthStore;
-import com.fongmi.android.tv.setting.SiteNameStore;
 import com.github.catvod.crawler.SpiderDebug;
 
 import java.util.ArrayList;
@@ -48,8 +47,6 @@ public class SiteAdapter extends RecyclerView.Adapter<SiteAdapter.ViewHolder> {
     public interface OnClickListener {
 
         void onItemClick(Site item);
-
-        boolean onItemKeyUp(int position);
     }
 
     public void setType(int type) {
@@ -59,15 +56,10 @@ public class SiteAdapter extends RecyclerView.Adapter<SiteAdapter.ViewHolder> {
         else notifyItemRangeChanged(0, getItemCount());
     }
 
-    public void filter(String group, String keyword) {
-        String tag = group == null ? "" : group.trim();
+    public void filter(String keyword) {
         String text = keyword == null ? "" : keyword.trim().toLowerCase(Locale.getDefault());
         mItems.clear();
-        for (Site site : allItems) {
-            boolean matchGroup = site.inGroup(tag);
-            boolean matchKeyword = SiteNameStore.matchesSearch(site, text);
-            if (matchGroup && matchKeyword) mItems.add(site);
-        }
+        for (Site site : allItems) if (text.isEmpty() || site.getName().toLowerCase(Locale.getDefault()).contains(text) || site.getKey().toLowerCase(Locale.getDefault()).contains(text)) mItems.add(site);
         displayLimit = Integer.MAX_VALUE;
         notifyDataSetChanged();
     }
@@ -201,7 +193,6 @@ public class SiteAdapter extends RecyclerView.Adapter<SiteAdapter.ViewHolder> {
             binding.getRoot().setOnClickListener(v -> click());
             binding.getRoot().setOnLongClickListener(v -> longClick());
             binding.getRoot().setOnFocusChangeListener((v, hasFocus) -> binding.text.setSelected(hasFocus || isSelected()));
-            binding.getRoot().setOnKeyListener((v, keyCode, event) -> onKey(keyCode, event));
         }
 
         ViewHolder(@NonNull AdapterSiteSwitchBinding binding) {
@@ -212,19 +203,18 @@ public class SiteAdapter extends RecyclerView.Adapter<SiteAdapter.ViewHolder> {
             binding.getRoot().setOnClickListener(v -> click());
             binding.getRoot().setOnLongClickListener(v -> longClick());
             binding.getRoot().setOnFocusChangeListener((v, hasFocus) -> binding.text.setSelected(hasFocus || isSelected()));
-            binding.getRoot().setOnKeyListener((v, keyCode, event) -> onKey(keyCode, event));
         }
 
         void bind(Site item) {
             this.item = item;
             if (actionBinding != null) {
-                actionBinding.text.setText(item.getDisplayName());
+                actionBinding.text.setText(item.getName());
                 actionBinding.health.setBackgroundTintList(ColorStateList.valueOf(SiteHealthStore.getColor(item)));
                 actionBinding.check.setChecked(getChecked(item));
                 actionBinding.text.setSelected(item.isSelected());
                 actionBinding.getRoot().setSelected(item.isSelected());
             } else {
-                switchBinding.text.setText(item.getDisplayName());
+                switchBinding.text.setText(item.getName());
                 switchBinding.health.setBackgroundTintList(ColorStateList.valueOf(SiteHealthStore.getColor(item)));
                 switchBinding.text.setSelected(item.isSelected());
                 switchBinding.getRoot().setSelected(item.isSelected());
@@ -239,14 +229,6 @@ public class SiteAdapter extends RecyclerView.Adapter<SiteAdapter.ViewHolder> {
             int position = getBindingAdapterPosition();
             if (position == RecyclerView.NO_POSITION || item == null) return;
             setListener(item, position);
-        }
-
-        private boolean onKey(int keyCode, android.view.KeyEvent event) {
-            if (event.getAction() != android.view.KeyEvent.ACTION_DOWN) return false;
-            if (keyCode != android.view.KeyEvent.KEYCODE_DPAD_UP) return false;
-            int position = getBindingAdapterPosition();
-            if (position == RecyclerView.NO_POSITION) return false;
-            return listener.onItemKeyUp(position);
         }
 
         private boolean longClick() {

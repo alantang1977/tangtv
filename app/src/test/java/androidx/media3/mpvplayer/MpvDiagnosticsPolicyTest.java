@@ -16,21 +16,17 @@ public class MpvDiagnosticsPolicyTest {
     }
 
     @Test
-    public void diagnosticsNeverSynchronouslyQueryNativeProperties() {
-        for (MpvDiagnosticsPolicy.Request request : MpvDiagnosticsPolicy.Request.values()) {
-            assertFalse(MpvDiagnosticsPolicy.allowsSynchronousProperties(request, false));
-            assertFalse(MpvDiagnosticsPolicy.allowsSynchronousProperties(request, true));
-        }
+    public void visiblePanelUsesObservedPropertiesOnly() {
+        assertFalse(MpvDiagnosticsPolicy.allowsSynchronousProperties(MpvDiagnosticsPolicy.Request.PANEL, false));
+        assertFalse(MpvDiagnosticsPolicy.allowsSynchronousProperties(MpvDiagnosticsPolicy.Request.PANEL, true));
     }
 
     @Test
-    public void detailedLoggingIsIndependentFromNativePropertyAccess() {
-        assertFalse(MpvDiagnosticsPolicy.allowsDetailedDiagnostics(MpvDiagnosticsPolicy.Request.DEBUG_LOG, false));
-        assertTrue(MpvDiagnosticsPolicy.allowsDetailedDiagnostics(MpvDiagnosticsPolicy.Request.DEBUG_LOG, true));
-        assertFalse(MpvDiagnosticsPolicy.allowsDetailedDiagnostics(MpvDiagnosticsPolicy.Request.ERROR_DETAILED, false));
-        assertTrue(MpvDiagnosticsPolicy.allowsDetailedDiagnostics(MpvDiagnosticsPolicy.Request.ERROR_DETAILED, true));
-        assertTrue(MpvDiagnosticsPolicy.allowsDetailedDiagnostics(MpvDiagnosticsPolicy.Request.PANEL, false));
-        assertFalse(MpvDiagnosticsPolicy.allowsDetailedDiagnostics(null, true));
+    public void detailedLogsAndErrorsRequireDebugSwitch() {
+        assertFalse(MpvDiagnosticsPolicy.allowsSynchronousProperties(MpvDiagnosticsPolicy.Request.DEBUG_LOG, false));
+        assertTrue(MpvDiagnosticsPolicy.allowsSynchronousProperties(MpvDiagnosticsPolicy.Request.DEBUG_LOG, true));
+        assertFalse(MpvDiagnosticsPolicy.allowsSynchronousProperties(MpvDiagnosticsPolicy.Request.ERROR_DETAILED, false));
+        assertTrue(MpvDiagnosticsPolicy.allowsSynchronousProperties(MpvDiagnosticsPolicy.Request.ERROR_DETAILED, true));
     }
 
     @Test
