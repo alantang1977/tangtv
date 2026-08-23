@@ -1,5 +1,4 @@
 name: CNB Release Sync
-
 on:
   workflow_dispatch:
     inputs:
@@ -15,10 +14,8 @@ on:
         description: "CNB repo slug, blank = tangtang.com.cn.kul/tangtv"
         required: false
         type: string
-
 permissions:
   contents: read
-
 env:
   TZ: Asia/Shanghai
   GH_REPO: ${{ github.repository }}
@@ -26,17 +23,14 @@ env:
   CNB_WEB_ENDPOINT: https://cnb.cool
   CNB_REPO_SLUG: ${{ inputs.cnb_repo_slug || 'tangtang.com.cn.kul/tangtv' }}
   CNB_REPO_URL: ${{ inputs.cnb_repo_url || 'https://cnb.cool/tangtang.com.cn.kul/tangtv.git' }}
-
 jobs:
   sync:
     name: Sync GitHub release assets to CNB
     runs-on: ubuntu-latest
     timeout-minutes: 60
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Resolve release tag
         id: meta
         env:
@@ -50,7 +44,6 @@ jobs:
           gh release view "$TAG" --json name,body,isPrerelease > github-release.json
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Sync tag: $TAG"
-
       - name: Download release assets
         env:
           GH_TOKEN: ${{ github.token }}
@@ -63,7 +56,6 @@ jobs:
             --dir dist
           ls -lh dist
           test "$(find dist -maxdepth 1 -type f \( -name '*.apk' -o -name '*.json' \) | wc -l | tr -d ' ')" -gt 0
-
       - name: Sync to CNB
         env:
           CNB_TOKEN: ${{ secrets.CNB_TOKEN }}
