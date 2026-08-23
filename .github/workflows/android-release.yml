@@ -42,8 +42,8 @@ env:
   TZ: Asia/Shanghai
   CNB_API_ENDPOINT: https://api.cnb.cool
   CNB_WEB_ENDPOINT: https://cnb.cool
-  CNB_REPO_SLUG: fish2035/webhtv-release
-  CNB_REPO_URL: https://cnb.cool/fish2035/webhtv-release.git
+  CNB_REPO_SLUG: tangtang.com.cn.kul/tangtv
+  CNB_REPO_URL: https://cnb.cool/tangtang.com.cn.kul/tangtv.git
   UPDATE_CHANNEL_TAG: update-channel
 
 jobs:
