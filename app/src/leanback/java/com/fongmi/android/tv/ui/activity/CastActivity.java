@@ -130,7 +130,7 @@ public class CastActivity extends PlaybackActivity implements CustomKeyDownVod.L
         mBinding.control.action.speed.setOnClickListener(view -> onSpeed());
         mBinding.control.action.reset.setOnClickListener(view -> onReset());
         mBinding.control.action.player.setOnClickListener(view -> onPlayerKernel());
-        mBinding.control.action.player.setOnLongClickListener(view -> onChooseLong());
+        mBinding.control.action.player.setOnLongClickListener(view -> onPlayerKernelLong());
         mBinding.control.action.decode.setOnClickListener(view -> onDecode());
         mBinding.control.action.speed.setOnLongClickListener(view -> onSpeedLong());
         mBinding.video.setOnTouchListener((view, event) -> mKeyDown.onTouchEvent(event));
@@ -180,14 +180,13 @@ public class CastActivity extends PlaybackActivity implements CustomKeyDownVod.L
     }
 
     private void setScale(int scale) {
+        this.scale = scale;
         applyResizeMode(scale);
         mBinding.control.action.scale.setText(ResUtil.getStringArray(R.array.select_scale)[scale]);
     }
 
     private void onScale() {
-        String[] array = ResUtil.getStringArray(R.array.select_scale);
-        scale = scale == array.length - 1 ? 0 : ++scale;
-        setScale(scale);
+        showResizeModeDialog(scale, this::setScale);
     }
 
     private void onSpeed() {
@@ -218,18 +217,32 @@ public class CastActivity extends PlaybackActivity implements CustomKeyDownVod.L
     }
 
     private void onChoose() {
-        PlayerHelper.choose(this, player().getUrl(), player().getHeaders(), player().isVod(), player().getPosition(), mBinding.widget.title.getText());
-        setRedirect(true);
-    }
-
-    private boolean onChooseLong() {
-        onChoose();
-        return true;
+        if (player().isEmpty()) return;
+        String[] kernel = ResUtil.getStringArray(R.array.select_player_kernel);
+        String[] items = new String[kernel.length + 1];
+        System.arraycopy(kernel, 0, items, 0, kernel.length);
+        items[kernel.length] = "外调";
+        new androidx.appcompat.app.AlertDialog.Builder(this).setItems(items, (dialog, which) -> {
+            if (which < kernel.length) {
+                position = player().getPosition();
+                player().switchPlayerManually(which);
+                setPlayerKernel();
+                setDecode();
+            } else {
+                PlayerHelper.choose(this, player().getUrl(), player().getHeaders(), player().isVod(), player().getPosition(), mBinding.widget.title.getText());
+                setRedirect(true);
+            }
+        }).show();
     }
 
     private void onPlayerKernel() {
         if (player().isEmpty()) return;
         PlayerKernelDialog.show(this, player().getPlayerType(), this::switchPlayerKernel);
+    }
+
+    private boolean onPlayerKernelLong() {
+        onPlayerKernel();
+        return true;
     }
 
     private void switchPlayerKernel(int type) {
@@ -310,7 +323,7 @@ public class CastActivity extends PlaybackActivity implements CustomKeyDownVod.L
     }
 
     private void setTraffic() {
-        Traffic.setSpeed(mBinding.progress.traffic);
+        Traffic.setSpeed(mBinding.progress.traffic, service() == null ? null : player());
         App.post(mR2, 1000);
     }
 
@@ -367,7 +380,7 @@ public class CastActivity extends PlaybackActivity implements CustomKeyDownVod.L
     private final PlaybackService.NavigationCallback mNavigationCallback = new PlaybackService.NavigationCallback() {
         @Override
         public void onStop() {
-            finish();
+            finishPlayback();
         }
     };
 
@@ -376,6 +389,12 @@ public class CastActivity extends PlaybackActivity implements CustomKeyDownVod.L
         setDecode();
         setPosition();
         consumePendingSeek();
+    }
+
+    @Override
+    protected void onPlayerRebuilt() {
+        setPlayerKernel();
+        setDecode();
     }
 
     @Override
@@ -536,7 +555,7 @@ public class CastActivity extends PlaybackActivity implements CustomKeyDownVod.L
         } else if (isVisible(mBinding.widget.center)) {
             hideCenter();
         } else {
-            super.onBackInvoked();
+            finishPlayback();
         }
     }
 

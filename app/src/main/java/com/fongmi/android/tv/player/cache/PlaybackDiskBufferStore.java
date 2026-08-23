@@ -2,8 +2,6 @@ package com.fongmi.android.tv.player.cache;
 
 import androidx.media3.common.MediaItem;
 
-import com.github.catvod.crawler.SpiderDebug;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,11 +12,9 @@ public final class PlaybackDiskBufferStore {
 
     private static final int MAX_MEDIA_ENTRIES = 16;
     private static final int MAX_RANGES_PER_MEDIA = 128;
-    private static final long QUERY_LOG_INTERVAL_MS = 5000;
     private static final PlaybackDiskBufferStore PROCESS = new PlaybackDiskBufferStore();
 
     private final Map<String, RangeSet> mediaRanges = new LinkedHashMap<>(16, 0.75f, true);
-    private final Map<String, QueryLogState> queryLogs = new LinkedHashMap<>();
 
     public static PlaybackDiskBufferStore process() {
         return PROCESS;
@@ -35,7 +31,6 @@ public final class PlaybackDiskBufferStore {
         if (mediaKey == null || mediaKey.isBlank()) return;
         mediaRanges.put(mediaKey, new RangeSet());
         trimMediaEntries();
-        log("reset", mediaKey, 0, 0, 0);
     }
 
     public synchronized void recordCompleted(String mediaKey, long startMs, long endMs) {
@@ -43,40 +38,18 @@ public final class PlaybackDiskBufferStore {
         RangeSet ranges = mediaRanges.computeIfAbsent(mediaKey, ignored -> new RangeSet());
         ranges.add(startMs, endMs);
         trimMediaEntries();
-        log("record", mediaKey, startMs, endMs, endMs);
     }
 
     public synchronized long contiguousEnd(String mediaKey, long fromMs, long gapToleranceMs) {
         if (mediaKey == null || mediaKey.isBlank()) return Math.max(0, fromMs);
         RangeSet ranges = mediaRanges.get(mediaKey);
-        long result = ranges == null
+        return ranges == null
                 ? Math.max(0, fromMs)
                 : ranges.contiguousEnd(Math.max(0, fromMs), Math.max(0, gapToleranceMs));
-        logQuery(mediaKey, fromMs, gapToleranceMs, result);
-        return result;
     }
 
     public synchronized void clear() {
         mediaRanges.clear();
-        queryLogs.clear();
-    }
-
-    private static void log(String action, String mediaKey, long startMs, long endMs, long resultMs) {
-        if (!SpiderDebug.isEnabled()) return;
-        SpiderDebug.log("playback-disk-buffer",
-                "action=%s key=%s startMs=%d endMs=%d resultMs=%d",
-                action, Integer.toHexString(mediaKey == null ? 0 : mediaKey.hashCode()),
-                startMs, endMs, resultMs);
-    }
-
-    private void logQuery(String mediaKey, long fromMs, long gapToleranceMs, long resultMs) {
-        if (!SpiderDebug.isEnabled()) return;
-        long now = android.os.SystemClock.elapsedRealtime();
-        QueryLogState previous = queryLogs.get(mediaKey);
-        if (previous != null && previous.resultMs() == resultMs
-                && now - previous.loggedAtMs() < QUERY_LOG_INTERVAL_MS) return;
-        queryLogs.put(mediaKey, new QueryLogState(resultMs, now));
-        log("query", mediaKey, fromMs, gapToleranceMs, resultMs);
     }
 
     private void trimMediaEntries() {
@@ -131,8 +104,5 @@ public final class PlaybackDiskBufferStore {
     }
 
     private record Range(long startMs, long endMs) {
-    }
-
-    private record QueryLogState(long resultMs, long loggedAtMs) {
     }
 }

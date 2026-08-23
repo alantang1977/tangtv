@@ -126,7 +126,9 @@ public class VodFragment extends BaseFragment implements ConfigListener, SiteLis
     protected void initEvent() {
         mBinding.top.setOnClickListener(this::onTop);
         mBinding.logo.setOnClickListener(this::onLogo);
+        mBinding.logo.setOnLongClickListener(this::reloadConfig);
         mBinding.link.setOnClickListener(this::onLink);
+        mBinding.typeMore.setOnClickListener(this::onTypeMore);
         mBinding.title.setOnClickListener(this::onSite);
         mBinding.title.setOnLongClickListener(this::reloadConfig);
         mBinding.typeMore.setOnTouchListener(this::onTypeMoreTouch);
@@ -153,6 +155,16 @@ public class VodFragment extends BaseFragment implements ConfigListener, SiteLis
         });
     }
 
+    private void updateTypeMoreVisible() {
+        if (mBinding.type.getWidth() == 0 || mBinding.typeBar.getWidth() == 0) {
+            mBinding.type.post(this::updateTypeMoreVisible);
+            return;
+        }
+        int typeWidth = mBinding.typeBar.getWidth() - mBinding.typeBar.getPaddingStart() - mBinding.typeBar.getPaddingEnd();
+        boolean visible = mAdapter.getItemCount() > 0 && mBinding.type.computeHorizontalScrollRange() > typeWidth;
+        mBinding.typeMore.setVisibility(visible ? View.VISIBLE : View.GONE);
+    }
+
     private void setRecyclerView() {
         mBinding.type.setHasFixedSize(true);
         mBinding.type.setItemAnimator(null);
@@ -174,22 +186,12 @@ public class VodFragment extends BaseFragment implements ConfigListener, SiteLis
         if (mWeb != null && mWeb.isVisible()) return;
         mAdapter.addAll(mResult = result);
         notifyPagerAdapter();
-        setFabVisible(0);
         mBinding.typeMore.setVisibility(View.GONE);
         mBinding.type.post(this::updateTypeMoreVisible);
+        setFabVisible(0);
         updateToolbarMenu();
         hideProgress();
         showContent();
-    }
-
-    private void updateTypeMoreVisible() {
-        if (mBinding.type.getWidth() == 0 || mBinding.typeBar.getWidth() == 0) {
-            mBinding.type.post(this::updateTypeMoreVisible);
-            return;
-        }
-        int typeWidth = mBinding.typeBar.getWidth() - mBinding.typeBar.getPaddingStart() - mBinding.typeBar.getPaddingEnd();
-        boolean visible = mAdapter.getItemCount() > 0 && mBinding.type.computeHorizontalScrollRange() > typeWidth;
-        mBinding.typeMore.setVisibility(visible ? View.VISIBLE : View.GONE);
     }
 
     private void setFabVisible(int position) {
@@ -215,7 +217,7 @@ public class VodFragment extends BaseFragment implements ConfigListener, SiteLis
     }
 
     private void setTitle() {
-        List<String> items = Arrays.asList(getHome().getName(), getConfig().getName(), getString(R.string.app_name));
+        List<String> items = Arrays.asList(getHome().getDisplayName(), getConfig().getName(), getString(R.string.app_name));
         Optional<String> optional = items.stream().filter(s -> !TextUtils.isEmpty(s)).findFirst();
         optional.ifPresent(s -> mBinding.title.setText(s));
     }
@@ -256,7 +258,7 @@ public class VodFragment extends BaseFragment implements ConfigListener, SiteLis
     }
 
     private boolean reloadConfig(View view) {
-        VodConfig.get().clear().config(getConfig()).load(new Callback() {
+        VodConfig.get().clear("mobile-vod-reload").config(getConfig()).load(new Callback() {
             @Override
             public void start() {
                 showProgress();
@@ -365,7 +367,7 @@ public class VodFragment extends BaseFragment implements ConfigListener, SiteLis
     private void homeContent() {
         requestNormalChrome();
         showProgress();
-        mBinding.homeWeb.setVisibility(View.GONE);
+        if (mWeb != null) mWeb.hide();
         updateToolbarMenu();
         clearPagerTypes();
         mBinding.pager.setAdapter(new PageAdapter(getChildFragmentManager()));
@@ -596,6 +598,11 @@ public class VodFragment extends BaseFragment implements ConfigListener, SiteLis
     }
 
     @Override
+    public void openSite() {
+        SiteDialog.create().change().show(this);
+    }
+
+    @Override
     public void openSetting() {
         if (getActivity() instanceof HomeActivity) ((HomeActivity) getActivity()).change(1);
     }
@@ -619,7 +626,7 @@ public class VodFragment extends BaseFragment implements ConfigListener, SiteLis
         mBinding.type.setVisibility(View.VISIBLE);
         updateTypeMoreVisible();
         mBinding.pager.setVisibility(View.VISIBLE);
-        mBinding.homeWeb.setVisibility(View.GONE);
+        if (mWeb != null) mWeb.hide();
         updateToolbarMenu();
     }
 
@@ -649,10 +656,7 @@ public class VodFragment extends BaseFragment implements ConfigListener, SiteLis
     }
 
     private void setHomeWebTopMargin(int margin) {
-        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) mBinding.homeWeb.getLayoutParams();
-        if (params.topMargin == margin) return;
-        params.topMargin = margin;
-        mBinding.homeWeb.setLayoutParams(params);
+        if (mWeb != null) mWeb.setTopMargin(margin);
     }
 
     private void requestNormalChrome() {

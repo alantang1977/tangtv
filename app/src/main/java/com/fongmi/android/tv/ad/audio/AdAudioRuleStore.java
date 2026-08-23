@@ -1,0 +1,212 @@
+package com.fongmi.android.tv.ad.audio;
+
+import android.content.ContentResolver;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.OpenableColumns;
+
+import com.fongmi.android.tv.App;
+
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.List;
+
+public final class AdAudioRuleStore {
+
+    public static final int MAX_IMPORT_BYTES = 2 * 1024 * 1024;
+
+    private static final String FILE_NAME = "ad-audio-rules.json";
+    private static final String TEMP_FILE_NAME = FILE_NAME + ".tmp";
+    private static final String LOCAL_SOURCE_ID = "local";
+
+    private final Path directory;
+    private final Path rulesFile;
+    private final Path temporaryFile;
+    private Snapshot snapshot;
+
+    public AdAudioRuleStore(Path directory) {
+        if (directory == null) throw new IllegalArgumentException("directory is required");
+        this.directory = directory;
+        this.rulesFile = directory.resolve(FILE_NAME);
+        this.temporaryFile = directory.resolve(TEMP_FILE_NAME);
+        this.snapshot = emptySnapshot("");
+    }
+
+    public static AdAudioRuleStore get() {
+        return Holder.INSTANCE;
+    }
+
+    public synchronized Snapshot load() {
+        if (!Files.exists(rulesFile)) {
+            snapshot = emptySnapshot("");
+            return snapshot;
+        }
+        try (InputStream input = Files.newInputStream(rulesFile)) {
+            snapshot = parse(readUtf8(input));
+        } catch (IOException | IllegalArgumentException e) {
+            snapshot = emptySnapshot("RULE_LOAD_FAILED");
+        }
+        return snapshot;
+    }
+
+    public synchronized Snapshot current() {
+        return snapshot;
+    }
+
+    public synchronized Snapshot importJson(String json) {
+        if (json == null) throw new IllegalArgumentException("rule JSON is required");
+        byte[] input = json.getBytes(StandardCharsets.UTF_8);
+        if (input.length > MAX_IMPORT_BYTES) throw new IllegalArgumentException("rule JSON is too large");
+        return persist(json);
+    }
+
+    public synchronized Snapshot importStream(InputStream input) throws IOException {
+        if (input == null) throw new IllegalArgumentException("rule input is required");
+        return persist(readUtf8(input));
+    }
+
+    public synchronized Snapshot importUri(ContentResolver resolver, Uri uri) throws IOException {
+        if (resolver == null || uri == null) throw new IllegalArgumentException("rule URI is required");
+        String mimeType = resolver.getType(uri);
+        String displayName = displayName(resolver, uri);
+        if (!isJsonSource(mimeType, displayName)) throw new IllegalArgumentException("rule file must be JSON");
+        try (InputStream input = resolver.openInputStream(uri)) {
+            if (input == null) throw new IOException("rule file cannot be opened");
+            return importStream(input);
+        }
+    }
+
+    public synchronized Snapshot clear() {
+        try {
+            Files.deleteIfExists(temporaryFile);
+            Files.deleteIfExists(rulesFile);
+        } catch (IOException e) {
+            throw new IllegalStateException("failed to clear ad audio rules", e);
+        }
+        snapshot = emptySnapshot("");
+        return snapshot;
+    }
+
+    private Snapshot persist(String json) {
+        AudioFingerprintRuleSet ruleSet = AudioFingerprintRuleCodec.fromJson(json);
+        String canonicalJson = AudioFingerprintRuleCodec.toJson(ruleSet);
+        byte[] data = canonicalJson.getBytes(StandardCharsets.UTF_8);
+        if (data.length > MAX_IMPORT_BYTES) throw new IllegalArgumentException("rule JSON is too large");
+        Snapshot next = new Snapshot(LOCAL_SOURCE_ID, versionOf(data), ruleSet, List.of(), "");
+        try {
+            Files.createDirectories(directory);
+            try (FileOutputStream output = new FileOutputStream(temporaryFile.toFile())) {
+                output.write(data);
+                output.getFD().sync();
+            }
+            moveAtomically(temporaryFile, rulesFile);
+            snapshot = next;
+            return snapshot;
+        } catch (IOException e) {
+            try {
+                Files.deleteIfExists(temporaryFile);
+            } catch (IOException ignored) {
+            }
+            throw new IllegalStateException("failed to persist ad audio rules", e);
+        }
+    }
+
+    private static Snapshot parse(String json) {
+        AudioFingerprintRuleSet ruleSet = AudioFingerprintRuleCodec.fromJson(json);
+        byte[] canonical = AudioFingerprintRuleCodec.toJson(ruleSet).getBytes(StandardCharsets.UTF_8);
+        return new Snapshot(LOCAL_SOURCE_ID, versionOf(canonical), ruleSet, List.of(), "");
+    }
+
+    private static String readUtf8(InputStream input) throws IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream(16_384);
+        byte[] buffer = new byte[8_192];
+        int total = 0;
+        int count;
+        while ((count = input.read(buffer)) != -1) {
+            if (count == 0) continue;
+            total += count;
+            if (total > MAX_IMPORT_BYTES) throw new IllegalArgumentException("rule JSON is too large");
+            output.write(buffer, 0, count);
+        }
+        try {
+            return StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(output.toByteArray()))
+                    .toString();
+        } catch (CharacterCodingException e) {
+            throw new IllegalArgumentException("rule JSON must be UTF-8", e);
+        }
+    }
+
+    private static void moveAtomically(Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private static boolean isJsonSource(String mimeType, String displayName) {
+        if ("application/json".equalsIgnoreCase(mimeType) || "text/json".equalsIgnoreCase(mimeType)) return true;
+        return displayName != null && displayName.toLowerCase(java.util.Locale.ROOT).endsWith(".json");
+    }
+
+    private static String displayName(ContentResolver resolver, Uri uri) {
+        try (Cursor cursor = resolver.query(uri, new String[]{OpenableColumns.DISPLAY_NAME}, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) return cursor.getString(0);
+        } catch (RuntimeException ignored) {
+        }
+        return uri.getLastPathSegment();
+    }
+
+    private static String versionOf(byte[] value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(value);
+            StringBuilder result = new StringBuilder(16);
+            for (int i = 0; i < 8; i++) result.append(String.format(java.util.Locale.ROOT, "%02x", digest[i] & 0xff));
+            return result.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable", e);
+        }
+    }
+
+    private static Snapshot emptySnapshot(String error) {
+        return new Snapshot(LOCAL_SOURCE_ID, "", AudioFingerprintRuleSet.empty(), List.of(), error);
+    }
+
+    public record Snapshot(String sourceId, String version, AudioFingerprintRuleSet ruleSet,
+                           List<String> warnings, String lastError) {
+        public Snapshot {
+            if (sourceId == null || version == null || ruleSet == null || warnings == null || lastError == null) {
+                throw new IllegalArgumentException("snapshot fields are required");
+            }
+            warnings = List.copyOf(warnings);
+        }
+
+        public boolean hasRules() {
+            return !ruleSet.rules().isEmpty();
+        }
+
+        public boolean hasError() {
+            return !lastError.isEmpty();
+        }
+    }
+
+    private static final class Holder {
+        private static final AdAudioRuleStore INSTANCE =
+                new AdAudioRuleStore(App.get().getFilesDir().toPath());
+    }
+}

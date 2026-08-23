@@ -12,6 +12,11 @@ import androidx.annotation.Nullable;
 import androidx.viewbinding.ViewBinding;
 
 import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.api.config.ImportedAdRuleCandidateStore;
+import com.fongmi.android.tv.api.config.RuleConfig;
+import com.fongmi.android.tv.api.config.UserAdRuleStore;
+import com.fongmi.android.tv.bean.AudioConfig;
+import com.fongmi.android.tv.bean.ShortDramaConfig;
 import com.fongmi.android.tv.gitcloud.GitCloudAccountStore;
 import com.fongmi.android.tv.playback.ViewingRecordSyncStore;
 import com.fongmi.android.tv.remote.RemoteStore;
@@ -20,8 +25,12 @@ import com.fongmi.android.tv.databinding.FragmentSettingEnhanceBinding;
 import com.fongmi.android.tv.setting.CustomCspSetting;
 import com.fongmi.android.tv.setting.ProxySetting;
 import com.fongmi.android.tv.setting.SiteHealthStore;
+import com.fongmi.android.tv.setting.SiteNameStore;
 import com.fongmi.android.tv.ui.activity.HomeActivity;
 import com.fongmi.android.tv.ui.base.BaseFragment;
+import com.fongmi.android.tv.ui.dialog.AdRuleManageDialog;
+import com.fongmi.android.tv.ui.dialog.AudioSourceDialog;
+import com.fongmi.android.tv.ui.dialog.ShortDramaSourceDialog;
 import com.fongmi.android.tv.ui.dialog.CspWarmupDialog;
 import com.fongmi.android.tv.ui.dialog.CustomCspDialog;
 import com.fongmi.android.tv.ui.dialog.DebugLogDialog;
@@ -32,19 +41,21 @@ import com.fongmi.android.tv.ui.dialog.OneKeySyncDialog;
 import com.fongmi.android.tv.ui.dialog.RemoteTrustDialog;
 import com.fongmi.android.tv.ui.dialog.ShellProxyDialog;
 import com.fongmi.android.tv.ui.dialog.SiteHealthDialog;
+import com.fongmi.android.tv.ui.dialog.SiteNameDialog;
 import com.fongmi.android.tv.ui.dialog.ViewingRecordSyncDialog;
 import com.fongmi.android.tv.ui.dialog.WebHomeExtensionDialog;
+import com.fongmi.android.tv.ui.dialog.WebHomeThemeDialog;
 import com.fongmi.android.tv.utils.LoginStateSync;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.PermissionUtil;
-import com.fongmi.android.tv.web.ext.WebHomeExtensionRegistry;
 import com.github.catvod.crawler.SpiderDebug;
+import com.fongmi.android.tv.web.ext.WebHomeExtensionRegistry;
 import com.google.gson.JsonObject;
 
 public class SettingEnhanceFragment extends BaseFragment {
 
-    private static final String URL_GITHUB = "https://github.com/fish2018/webhtv";
-    private static final String URL_CNB = "https://cnb.cool/fish2035/ext";
+    private static final String URL_GITHUB = "https://github.com/Silent1566/webhtv";
+    private static final String URL_CNB = "https://cnb.cool/fish2018/ext";
 
     private FragmentSettingEnhanceBinding mBinding;
 
@@ -81,11 +92,16 @@ public class SettingEnhanceFragment extends BaseFragment {
             return false;
         });
         mBinding.driveCheck.setOnClickListener(this::setDriveCheck);
+        mBinding.siteName.setOnClickListener(this::setSiteName);
+        mBinding.audioSource.setOnClickListener(this::setAudioSource);
+        mBinding.shortDramaSource.setOnClickListener(this::setShortDramaSource);
+        mBinding.adRuleManage.setOnClickListener(view -> AdRuleManageDialog.create().show(requireActivity(), this::setText));
         mBinding.debugLog.setOnClickListener(this::setDebugLog);
         mBinding.siteHealthSort.setOnClickListener(view -> SiteHealthDialog.show(this, this::setText));
         mBinding.siteHealthSort.setOnLongClickListener(this::clearSiteHealth);
         mBinding.webHomeExtension.setOnClickListener(view -> WebHomeExtensionDialog.show(this, this::setText));
         mBinding.webHomeExtension.setOnLongClickListener(this::clearWebHomeExtension);
+        mBinding.webHomeTheme.setOnClickListener(view -> WebHomeThemeDialog.show(requireActivity(), this::setText));
         mBinding.webHomeFullscreen.setOnClickListener(this::setWebHomeFullscreen);
         mBinding.cspWarmup.setOnClickListener(this::setCspWarmup);
         mBinding.playbackArtworkWall.setOnClickListener(this::setPlaybackArtworkWall);
@@ -117,10 +133,15 @@ public class SettingEnhanceFragment extends BaseFragment {
                 mBinding.shellProxy,
                 mBinding.shellProxyConfig,
                 mBinding.managePage,
+                mBinding.webHomeTheme,
                 mBinding.webHomeFullscreen,
                 mBinding.cspWarmup,
                 mBinding.playbackArtworkWall,
                 mBinding.driveCheck,
+                mBinding.siteName,
+                mBinding.audioSource,
+                mBinding.shortDramaSource,
+                mBinding.adRuleManage,
                 mBinding.siteHealthSort,
                 mBinding.debugLog,
                 mBinding.playbackWebhook
@@ -132,12 +153,19 @@ public class SettingEnhanceFragment extends BaseFragment {
     private void setText() {
         if (!canSetText()) return;
         safeSet("driveCheck", mBinding.driveCheckText, () -> getSwitch(Setting.isDriveCheck()));
+        safeSet("siteName", mBinding.siteNameText, () -> getString(R.string.setting_site_name_summary, SiteNameStore.count()));
+        safeSet("audioSource", mBinding.audioSourceText, () -> getSwitch(!AudioConfig.objectFrom(Setting.getAudioConfig()).getDisplayRules().isEmpty()));
+        safeSet("shortDramaSource", mBinding.shortDramaSourceText, () -> getSwitch(!ShortDramaConfig.objectFrom(Setting.getShortDramaConfig()).getDisplayRules().isEmpty()));
+        safeSet("adRuleManage", mBinding.adRuleManageText, () -> getString(R.string.ad_rule_count_with_pending,
+                UserAdRuleStore.load().size() + RuleConfig.get().getDefaultRules().size(),
+                ImportedAdRuleCandidateStore.pending().size()));
         safeSet("debugLog", mBinding.debugLogText, () -> getSwitch(Setting.isDebugLog()));
-        safeSet("siteHealthSort", mBinding.siteHealthSortText, () -> getSwitch(Setting.isSiteHealthSort()));
+        safeSet("siteHealthSort", mBinding.siteHealthSortText, this::getSiteHealthText);
         safeSet("webHomeExtension", mBinding.webHomeExtensionText, () -> {
             WebHomeExtensionRegistry.Snapshot webHomeExtension = WebHomeExtensionRegistry.get().snapshot();
             return getSwitch(Setting.isWebHomeExtension()) + " · " + webHomeExtension.readyCount + "/" + webHomeExtension.installedCount;
         });
+        safeSet("webHomeTheme", mBinding.webHomeThemeText, () -> WebHomeThemeDialog.summary(requireContext()));
         safeSet("webHomeFullscreen", mBinding.webHomeFullscreenText, () -> getSwitch(Setting.isWebHomeFullscreen()));
         safeSet("cspWarmup", mBinding.cspWarmupText, this::getCspWarmupText);
         safeSet("playbackArtworkWall", mBinding.playbackArtworkWallText, () -> getSwitch(Setting.isPlaybackArtworkWall()));
@@ -216,6 +244,25 @@ public class SettingEnhanceFragment extends BaseFragment {
         mBinding.debugLogText.setText(getSwitch(Setting.isDebugLog()));
         if (!Setting.isDebugLog()) return;
         DebugLogDialog.show(this);
+    }
+
+    private void setSiteName(View view) {
+        SiteNameDialog.create(requireActivity()).onChanged(this::setText).show();
+    }
+
+    private void setAudioSource(View view) {
+        AudioSourceDialog.create(requireActivity()).onDismiss(this::setText).show();
+    }
+
+    private void setShortDramaSource(View view) {
+        ShortDramaSourceDialog.create(requireActivity()).onDismiss(this::setText).show();
+    }
+
+    private String getSiteHealthText() {
+        SiteHealthStore.Summary summary = SiteHealthStore.summary();
+        String state = getSwitch(Setting.isSiteHealthSort());
+        if (summary.siteCount <= 0) return state;
+        return state + " · " + getString(R.string.site_health_report_setting_summary, summary.siteCount, summary.sampleCount);
     }
 
     private void setPlaybackArtworkWall(View view) {

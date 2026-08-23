@@ -53,43 +53,34 @@ public final class MpvPreloadPolicy {
         if (!current.cacheStorageKnown()) {
             return block(current, Reason.CACHE_STORAGE_UNKNOWN, 0);
         }
-        if (!current.bufferUsable()) return block(current, Reason.BUFFER_UNKNOWN, 0);
-        // Foreground requests are independently prioritized and cancel active
-        // preload work. Keep the disk worker admitted during short buffer dips
-        // so paused playback can continue filling the disk timeline.
-        if (current.buffering()) return bootstrap(current, Reason.BUFFERING);
-        if (current.rebufferRisk()) return bootstrap(current, Reason.REBUFFER);
-        if (current.bufferDeclining()) return bootstrap(current, Reason.BUFFER_DECLINING);
-        if (current.bufferedDurationMs() < LOW_BUFFER_MS) {
-            return bootstrap(current, Reason.LOW_BUFFER);
-        }
-        if (current.foregroundRequests() > 0) {
-            return new Assessment(true, Signal.SUSPEND, Reason.FOREGROUND_ACTIVE,
-                    0, current);
-        }
-        if (!current.cacheBudgetAvailable()) {
-            return block(current, Reason.CACHE_BUDGET_EXHAUSTED, 0);
-        }
         if (!current.throughputKnown()) {
-            return new Assessment(true, Signal.BOOTSTRAP,
-                    Reason.THROUGHPUT_BOOTSTRAP, 0, current);
+            return block(current, Reason.THROUGHPUT_UNKNOWN, 0);
         }
         if (!current.throughputFresh()) {
-            return new Assessment(true, Signal.BOOTSTRAP,
-                    Reason.THROUGHPUT_REFRESH, 0, current);
+            return block(current, Reason.THROUGHPUT_STALE, 0);
         }
         if (current.upstreamBitsPerSecond() <= 0) {
-            return new Assessment(true, Signal.BOOTSTRAP,
-                    Reason.THROUGHPUT_BOOTSTRAP, 0, current);
+            return block(current, Reason.THROUGHPUT_UNKNOWN, 0);
         }
         if (current.selectedBitsPerSecond() <= 0) {
             return block(current, Reason.SELECTED_BITRATE_UNKNOWN, 0);
         }
+        if (!current.bufferUsable()) return block(current, Reason.BUFFER_UNKNOWN, 0);
         long ratio = ratioPermille(
                 current.upstreamBitsPerSecond(), current.selectedBitsPerSecond());
-        if (ratio < PAUSE_RATIO_PERMILLE) {
-            return new Assessment(true, Signal.BOOTSTRAP, Reason.RATIO_LOW,
+        if (current.buffering()) return block(current, Reason.BUFFERING, ratio);
+        if (current.rebufferRisk()) return block(current, Reason.REBUFFER, ratio);
+        if (current.bufferDeclining()) return block(current, Reason.BUFFER_DECLINING, ratio);
+        if (current.bufferedDurationMs() < LOW_BUFFER_MS) {
+            return block(current, Reason.LOW_BUFFER, ratio);
+        }
+        if (ratio < PAUSE_RATIO_PERMILLE) return block(current, Reason.RATIO_LOW, ratio);
+        if (current.foregroundRequests() > 0) {
+            return new Assessment(true, Signal.SUSPEND, Reason.FOREGROUND_ACTIVE,
                     ratio, current);
+        }
+        if (!current.cacheBudgetAvailable()) {
+            return block(current, Reason.CACHE_BUDGET_EXHAUSTED, ratio);
         }
         if (ratio >= RESUME_RATIO_PERMILLE
                 && current.bufferedDurationMs() >= SAFE_BUFFER_MS) {
@@ -113,10 +104,6 @@ public final class MpvPreloadPolicy {
 
     private static Assessment block(Request request, Reason reason, long ratio) {
         return new Assessment(true, Signal.BLOCK, reason, ratio, request);
-    }
-
-    private static Assessment bootstrap(Request request, Reason reason) {
-        return new Assessment(true, Signal.BOOTSTRAP, reason, 0, request);
     }
 
     private static long ratioPermille(long throughput, long selectedBitrate) {
@@ -237,7 +224,6 @@ public final class MpvPreloadPolicy {
         INACTIVE("inactive"),
         BLOCK("block"),
         SUSPEND("suspend"),
-        BOOTSTRAP("bootstrap"),
         HOLD("hold"),
         RECOVER("recover");
 
@@ -272,8 +258,6 @@ public final class MpvPreloadPolicy {
         CACHE_CIRCUIT_OPEN("cache-circuit-open"),
         THROUGHPUT_UNKNOWN("throughput-unknown"),
         THROUGHPUT_STALE("throughput-stale"),
-        THROUGHPUT_BOOTSTRAP("throughput-bootstrap"),
-        THROUGHPUT_REFRESH("throughput-refresh"),
         SELECTED_BITRATE_UNKNOWN("selected-bitrate-unknown"),
         BUFFER_UNKNOWN("buffer-unknown"),
         BUFFERING("buffering"),

@@ -97,8 +97,8 @@ public class MpvResourcePressurePolicyTest {
     }
 
     @Test
-    public void networkCostDoesNotDisableDiskPreload() {
-        assertNormal(
+    public void meteredRoamingAndDataSaverConstrainWithoutHardPressure() {
+        assertConstrained(
                 context(PlaybackAutoContext.MemoryPressure.NORMAL,
                         normalMemory(), PlaybackAutoContext.ThermalState.NOMINAL,
                         PlaybackAutoContext.PowerState.NORMAL,
@@ -108,8 +108,8 @@ public class MpvResourcePressurePolicyTest {
                                 PlaybackAutoContext.NetworkTransport.CELLULAR,
                                 PlaybackAutoContext.DataSaverState.DISABLED),
                         7, 70),
-                70);
-        assertNormal(
+                MpvResourcePressurePolicy.Reason.METERED, 70);
+        assertConstrained(
                 context(PlaybackAutoContext.MemoryPressure.NORMAL,
                         normalMemory(), PlaybackAutoContext.ThermalState.NOMINAL,
                         PlaybackAutoContext.PowerState.NORMAL,
@@ -119,8 +119,8 @@ public class MpvResourcePressurePolicyTest {
                                 PlaybackAutoContext.NetworkTransport.CELLULAR,
                                 PlaybackAutoContext.DataSaverState.DISABLED),
                         8, 80),
-                80);
-        assertNormal(
+                MpvResourcePressurePolicy.Reason.ROAMING, 80);
+        assertConstrained(
                 context(PlaybackAutoContext.MemoryPressure.NORMAL,
                         normalMemory(), PlaybackAutoContext.ThermalState.NOMINAL,
                         PlaybackAutoContext.PowerState.NORMAL,
@@ -130,12 +130,12 @@ public class MpvResourcePressurePolicyTest {
                                 PlaybackAutoContext.NetworkTransport.WIFI,
                                 PlaybackAutoContext.DataSaverState.ENABLED),
                         9, 90),
-                90);
+                MpvResourcePressurePolicy.Reason.DATA_SAVER, 90);
     }
 
     @Test
-    public void networkValidationDoesNotDisableDiskPreload() {
-        assertNormal(
+    public void unavailableUnvalidatedAndWhitelistedNetworkConstrain() {
+        assertConstrained(
                 context(PlaybackAutoContext.MemoryPressure.NORMAL,
                         normalMemory(), PlaybackAutoContext.ThermalState.NOMINAL,
                         PlaybackAutoContext.PowerState.NORMAL,
@@ -145,8 +145,8 @@ public class MpvResourcePressurePolicyTest {
                                 PlaybackAutoContext.NetworkTransport.WIFI,
                                 PlaybackAutoContext.DataSaverState.DISABLED),
                         14, 140),
-                140);
-        assertNormal(
+                MpvResourcePressurePolicy.Reason.NETWORK_UNAVAILABLE, 140);
+        assertConstrained(
                 context(PlaybackAutoContext.MemoryPressure.NORMAL,
                         normalMemory(), PlaybackAutoContext.ThermalState.NOMINAL,
                         PlaybackAutoContext.PowerState.NORMAL,
@@ -156,8 +156,8 @@ public class MpvResourcePressurePolicyTest {
                                 PlaybackAutoContext.NetworkTransport.WIFI,
                                 PlaybackAutoContext.DataSaverState.DISABLED),
                         15, 150),
-                150);
-        assertNormal(
+                MpvResourcePressurePolicy.Reason.NETWORK_UNVALIDATED, 150);
+        assertConstrained(
                 context(PlaybackAutoContext.MemoryPressure.NORMAL,
                         normalMemory(), PlaybackAutoContext.ThermalState.NOMINAL,
                         PlaybackAutoContext.PowerState.NORMAL,
@@ -167,7 +167,7 @@ public class MpvResourcePressurePolicyTest {
                                 PlaybackAutoContext.NetworkTransport.WIFI,
                                 PlaybackAutoContext.DataSaverState.WHITELISTED),
                         16, 160),
-                160);
+                MpvResourcePressurePolicy.Reason.DATA_SAVER_WHITELISTED, 160);
     }
 
     @Test
@@ -249,12 +249,6 @@ public class MpvResourcePressurePolicyTest {
         MpvResourcePressurePolicy.Assessment result = assess(context, now);
         assertEquals(MpvResourcePressurePolicy.Level.CONSTRAINED, result.level());
         assertEquals(reason, result.reason());
-    }
-
-    private static void assertNormal(PlaybackAutoContext context, long now) {
-        MpvResourcePressurePolicy.Assessment result = assess(context, now);
-        assertEquals(MpvResourcePressurePolicy.Level.NORMAL, result.level());
-        assertEquals(MpvResourcePressurePolicy.Reason.NORMAL, result.reason());
     }
 
     private static MpvResourcePressurePolicy.Assessment assess(

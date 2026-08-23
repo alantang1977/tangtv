@@ -34,13 +34,18 @@ import com.fongmi.android.tv.player.Source;
 import com.fongmi.android.tv.receiver.ShortcutReceiver;
 import com.fongmi.android.tv.server.Server;
 import com.fongmi.android.tv.service.PlaybackService;
+import com.fongmi.android.tv.setting.AutoBackupPolicy;
 import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.ui.base.BaseActivity;
 import com.fongmi.android.tv.ui.custom.FragmentStateManager;
 import com.fongmi.android.tv.ui.fragment.SettingEnhanceFragment;
+import com.fongmi.android.tv.ui.fragment.SettingAiFragment;
+import com.fongmi.android.tv.ui.fragment.SettingTmdbFragment;
 import com.fongmi.android.tv.ui.fragment.SettingDanmakuFragment;
 import com.fongmi.android.tv.ui.fragment.SettingFragment;
+import com.fongmi.android.tv.ui.fragment.SettingPersonalFragment;
 import com.fongmi.android.tv.ui.fragment.SettingPlayerFragment;
+import com.fongmi.android.tv.ui.fragment.SettingSubtitleFragment;
 import com.fongmi.android.tv.ui.fragment.VodFragment;
 import com.fongmi.android.tv.utils.FileChooser;
 import com.fongmi.android.tv.utils.MobileWindow;
@@ -144,6 +149,10 @@ public class HomeActivity extends BaseActivity implements NavigationBarView.OnIt
             case 2 -> SettingPlayerFragment.newInstance();
             case 3 -> SettingEnhanceFragment.newInstance();
             case 4 -> SettingDanmakuFragment.newInstance();
+            case 5 -> SettingPersonalFragment.newInstance();
+            case 6 -> SettingSubtitleFragment.newInstance();
+            case 7 -> SettingTmdbFragment.newInstance();
+            case 8 -> SettingAiFragment.newInstance();
             default -> null;
         });
         if (savedInstanceState == null) change(0);
@@ -284,6 +293,10 @@ public class HomeActivity extends BaseActivity implements NavigationBarView.OnIt
         return changed;
     }
 
+    private boolean isSettingSubPageVisible() {
+        return mManager.isVisible(2) || mManager.isVisible(3) || mManager.isVisible(4) || mManager.isVisible(5) || mManager.isVisible(6) || mManager.isVisible(7) || mManager.isVisible(8);
+    }
+
     private void refreshWebHomeChromeLayout() {
         if (mChrome != null) mChrome.refreshLayout();
     }
@@ -419,7 +432,7 @@ public class HomeActivity extends BaseActivity implements NavigationBarView.OnIt
         } else if (returnVodFromEnhance && mManager.isVisible(3)) {
             returnVodFromEnhance = false;
             change(0);
-        } else if (mManager.isVisible(2) || mManager.isVisible(3) || mManager.isVisible(4)) {
+        } else if (isSettingSubPageVisible()) {
             change(1);
         } else if (mManager.isVisible(1)) {
             change(0);
@@ -433,8 +446,14 @@ public class HomeActivity extends BaseActivity implements NavigationBarView.OnIt
     protected void onDestroy() {
         if (mChrome != null) mChrome.destroy();
         LiveConfig.get().clear();
-        VodConfig.get().clear();
-        AppDatabase.backup();
+        VodConfig.get().clear("mobile-home-destroy");
+        if (AutoBackupPolicy.shouldRun(
+                Setting.isAutoBackup(),
+                Setting.hasFileAccess(),
+                isFinishing(),
+                isChangingConfigurations())) {
+            AppDatabase.autoBackup();
+        }
         OkHttp.get().clear();
         Source.get().exit();
         Server.get().stop();

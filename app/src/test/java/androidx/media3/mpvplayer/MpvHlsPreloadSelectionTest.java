@@ -27,7 +27,7 @@ public class MpvHlsPreloadSelectionTest {
     }
 
     @Test
-    public void unknownMultiVariantDoesNotFallThroughToAnotherParsedLadderEntry() {
+    public void unknownVariantDoesNotFallThroughToAnotherParsedLadderEntry() {
         List<HlsPlaylistRewriter.Segment> selected =
                 MpvHlsProxy.resolveAutomaticPreloadSegments(
                         Map.of(5_000_000L, List.of(segment("low"))),
@@ -40,19 +40,7 @@ public class MpvHlsPreloadSelectionTest {
                         0);
 
         assertTrue(selected.isEmpty());
-        assertEquals(1, unknown.size());
-        assertEquals("low", unknown.get(0).uri());
-    }
-
-    @Test
-    public void singleParsedVariantCanBootstrapBeforeNativeBitrateIsKnown() {
-        List<HlsPlaylistRewriter.Segment> only = List.of(segment("only"));
-        List<HlsPlaylistRewriter.Segment> selected =
-                MpvHlsProxy.resolveAutomaticPreloadSegments(
-                        Map.of(8_000_000L, only), List.of(), 0);
-
-        assertEquals(1, selected.size());
-        assertEquals("only", selected.get(0).uri());
+        assertTrue(unknown.isEmpty());
     }
 
     @Test

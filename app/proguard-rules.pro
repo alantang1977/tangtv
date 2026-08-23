@@ -1,7 +1,6 @@
 # TV
 -keep class androidx.leanback.widget.** { *; }
 -keep class com.fongmi.quickjs.method.** { *; }
--keep class com.fongmi.android.tv.bean.** { *; }
 
 # MPV JNI bridge
 -keep class is.xyz.mpv.MPVLib { *; }
@@ -22,9 +21,21 @@
 -keep,allowobfuscation class com.fongmi.android.tv.player.engine.MpvPlayerEngine { *; }
 
 # Gson
+-keepattributes Signature
+-keepattributes *Annotation*
 -keep class com.google.gson.** { *; }
--keep class com.fongmi.android.tv.remote.** { *; }
--keep class com.fongmi.android.tv.gitcloud.** { *; }
+
+# App code: keep everything, no obfuscation.
+# R8 fullMode strips generic Signature from obfuscated classes, so any persisted
+# class holding an object/numeric generic collection field (Map<String,Integer>,
+# List<Entry>, ...) without an explicit TypeToken would have its generics erased,
+# making Gson deserialize numbers as Double and objects as LinkedTreeMap -> later
+# casts crash with ClassCastException. Obfuscation also renames fields lacking
+# @SerializedName, silently breaking persisted JSON key lookups. Keeping the whole
+# app package eliminates both classes of failure globally instead of patching each
+# offending class one by one. The dex size cost is a few MB; total APK size is
+# dominated by native .so libraries, so this is negligible.
+-keep class com.fongmi.android.tv.** { *; }
 
 # SimpleXML
 -keep interface org.simpleframework.xml.core.Label { public *; }
@@ -70,6 +81,15 @@
 -keep class org.jupnp.** { *; }
 -keep class javax.xml.** { *; }
 
+# Mobile inline cast uses reflection from the shared TMDB detail activity.
+-keepclassmembernames class com.fongmi.android.tv.ui.dialog.CastDialog {
+    public static com.fongmi.android.tv.ui.dialog.CastDialog create();
+    public com.fongmi.android.tv.ui.dialog.CastDialog history(com.fongmi.android.tv.bean.History);
+    public com.fongmi.android.tv.ui.dialog.CastDialog video(com.fongmi.android.tv.bean.CastVideo);
+    public com.fongmi.android.tv.ui.dialog.CastDialog fm(boolean);
+    public void show(androidx.fragment.app.FragmentActivity);
+}
+
 # Nano
 -keep class fi.iki.elonen.** { *; }
 
@@ -99,3 +119,6 @@
 
 # Zxing
 -keep class com.google.zxing.** { *; }
+
+# sherpa-onnx JNI resolves Java class and method names directly.
+-keep class com.k2fsa.sherpa.onnx.** { *; }

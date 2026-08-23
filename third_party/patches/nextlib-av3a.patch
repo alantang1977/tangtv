@@ -12,10 +12,10 @@ index 18acf58..0366f56 100644
  
              pom {
 diff --git a/ffmpeg/setup.sh b/ffmpeg/setup.sh
-index 09f6fcd..1c764ce 100755
+index e68e4d0..aad587a 100755
 --- a/ffmpeg/setup.sh
 +++ b/ffmpeg/setup.sh
-@@ -3,21 +3,22 @@
+@@ -5,21 +5,22 @@ set -euo pipefail
  # Versions
  VPX_VERSION=1.13.0
  MBEDTLS_VERSION=3.4.1
@@ -34,28 +34,15 @@ index 09f6fcd..1c764ce 100755
  MBEDTLS_DIR=$SOURCES_DIR/mbedtls-$MBEDTLS_VERSION
  
  # Configuration
--ANDROID_ABIS="x86 x86_64 armeabi-v7a arm64-v8a"
-+ANDROID_ABIS="armeabi-v7a arm64-v8a"
+-ANDROID_ABIS="${ANDROID_ABIS:-x86 x86_64 armeabi-v7a arm64-v8a}"
++ANDROID_ABIS="${ANDROID_ABIS:-armeabi-v7a arm64-v8a}"
  ANDROID_PLATFORM=21
--ENABLED_DECODERS="vorbis opus flac alac pcm_mulaw pcm_alaw mp3 amrnb amrwb aac ac3 eac3 dca mlp truehd h264 hevc mpeg2video mpegvideo libvpx_vp8 libvpx_vp9"
-+ENABLED_DECODERS="vorbis opus flac alac pcm_mulaw pcm_alaw mp3 amrnb amrwb aac ac3 eac3 dca mlp truehd libarcdav3a h264 hevc mpeg2video mpegvideo libvpx_vp8 libvpx_vp9"
- JOBS=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || sysctl -n hw.pysicalcpu || echo 4)
+-ENABLED_DECODERS="vorbis opus flac alac pcm_mulaw pcm_alaw mp3 amrnb amrwb aac ac3 eac3 dca mlp truehd h264 hevc mpeg2video mpegvideo vc1 libvpx_vp8 libvpx_vp9"
++ENABLED_DECODERS="vorbis opus flac alac pcm_mulaw pcm_alaw mp3 amrnb amrwb aac ac3 eac3 dca mlp truehd libarcdav3a h264 hevc mpeg2video mpegvideo vc1 libvpx_vp8 libvpx_vp9"
+ JOBS="${JOBS:-$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || sysctl -n hw.pysicalcpu || echo 4)}"
  
  # Set up host platform variables
-@@ -37,8 +38,10 @@ esac
- TOOLCHAIN_PREFIX="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/${HOST_PLATFORM}"
- CMAKE_EXECUTABLE="${ANDROID_SDK_HOME}/cmake/${ANDROID_CMAKE_VERSION}/bin/cmake"
- 
--# Check if sdkmanager is in PATH
--if command -v sdkmanager &> /dev/null; then
-+# Install CMake only when the requested version is not already available.
-+if [[ -x "$CMAKE_EXECUTABLE" ]]; then
-+  echo "Using installed CMake ${ANDROID_CMAKE_VERSION}"
-+elif command -v sdkmanager &> /dev/null; then
-   # Use sdkmanager from PATH
-   echo "Using sdkmanager from PATH"
-   echo y | sdkmanager --sdk_root="${ANDROID_SDK_HOME}" "cmake;${ANDROID_CMAKE_VERSION}"
-@@ -80,15 +83,42 @@ function downloadMbedTLS() {
+@@ -95,15 +96,42 @@ function downloadMbedTLS() {
  
  function downloadFfmpeg() {
    pushd $SOURCES_DIR
@@ -101,7 +88,7 @@ index 09f6fcd..1c764ce 100755
  function buildLibVpx() {
    pushd $VPX_DIR
  
-@@ -232,7 +262,7 @@ function buildFfmpeg() {
+@@ -252,7 +280,7 @@ function buildFfmpeg() {
      DEP_LD_FLAGS="-L$BUILD_DIR/external/$ABI/lib"
  
      # Configure FFmpeg build
@@ -110,7 +97,7 @@ index 09f6fcd..1c764ce 100755
        --prefix=$BUILD_DIR/$ABI \
        --enable-cross-compile \
        --arch=$ARCH \
-@@ -245,6 +275,7 @@ function buildFfmpeg() {
+@@ -268,6 +296,7 @@ function buildFfmpeg() {
        --extra-cflags="-O3 -fPIC $DEP_CFLAGS" \
        --extra-ldflags="$DEP_LD_FLAGS -Wl,-z,max-page-size=16384" \
        --pkg-config="$(which pkg-config)" \
@@ -118,23 +105,15 @@ index 09f6fcd..1c764ce 100755
        --target-os=android \
        --enable-shared \
        --disable-static \
-@@ -254,7 +285,6 @@ function buildFfmpeg() {
+@@ -277,7 +306,6 @@ function buildFfmpeg() {
        --disable-vulkan \
        --disable-avdevice \
        --disable-avformat \
 -      --disable-postproc \
        --disable-avfilter \
        --disable-symver \
-       --enable-parsers \
-@@ -262,6 +292,7 @@ function buildFfmpeg() {
-       --enable-swresample \
-       --enable-avformat \
-       --enable-libvpx \
-+      --enable-libarcdav3a \
-       --enable-protocol=file,http,https,mmsh,mmst,pipe,rtmp,rtmps,rtmpt,rtmpts,rtp,tls \
-       --enable-version3 \
-       --enable-mbedtls \
-@@ -288,6 +319,11 @@ function buildFfmpeg() {
+       --disable-network \
+@@ -308,6 +336,11 @@ function buildFfmpeg() {
    popd
  }
  
@@ -143,18 +122,18 @@ index 09f6fcd..1c764ce 100755
 +  exit $?
 +fi
 +
- if [[ ! -d "$OUTPUT_DIR" && ! -d "$BUILD_DIR" ]]; then
-   # Download MbedTLS source code if it doesn't exist
-   if [[ ! -d "$MBEDTLS_DIR" ]]; then
-@@ -307,5 +343,6 @@ if [[ ! -d "$OUTPUT_DIR" && ! -d "$BUILD_DIR" ]]; then
+ if [[ "${FORCE_BUILD:-0}" == "1" || ( ! -d "$OUTPUT_DIR" && ! -d "$BUILD_DIR" ) ]]; then
+   # Download Vpx source code if it doesn't exist
+   if [[ ! -d "$VPX_DIR" ]]; then
+@@ -321,5 +354,6 @@ if [[ "${FORCE_BUILD:-0}" == "1" || ( ! -d "$OUTPUT_DIR" && ! -d "$BUILD_DIR" )
+ 
    # Building library
-   buildMbedTLS
    buildLibVpx
 +  buildArcDav3a
    buildFfmpeg
  fi
 diff --git a/media3ext/build.gradle.kts b/media3ext/build.gradle.kts
-index 3bb9d4f..fc17421 100644
+index 3bb9d4f..8196d4c 100644
 --- a/media3ext/build.gradle.kts
 +++ b/media3ext/build.gradle.kts
 @@ -22,7 +22,7 @@ android {
@@ -166,15 +145,8 @@ index 3bb9d4f..fc17421 100644
          }
      }
  
-@@ -63,4 +63,4 @@ dependencies {
-     implementation(libs.androidx.annotation)
-     compileOnly(libs.checker.qual)
-     compileOnly(libs.kotlin.annotations.jvm)
--}
-\ No newline at end of file
-+}
 diff --git a/media3ext/src/main/cpp/ffaudio.cpp b/media3ext/src/main/cpp/ffaudio.cpp
-index 6d6169a..443faef 100644
+index 6d6169a..a1dd551 100644
 --- a/media3ext/src/main/cpp/ffaudio.cpp
 +++ b/media3ext/src/main/cpp/ffaudio.cpp
 @@ -2,6 +2,7 @@
@@ -258,7 +230,8 @@ index 6d6169a..443faef 100644
 +            AVChannelLayout inputLayout{};
 +            AVChannelLayout outputLayout{};
 +            result = av_channel_layout_copy(&inputLayout, &frame->ch_layout);
-+            if (result < 0) {
+             if (result < 0) {
+-                logError("swr_init", result);
 +                logError("av_channel_layout_copy", result);
 +                av_frame_free(&frame);
 +                return transformError(result);
@@ -288,8 +261,7 @@ index 6d6169a..443faef 100644
 +            if (result >= 0) {
 +                result = swr_init(resampleContext);
 +            }
-             if (result < 0) {
--                logError("swr_init", result);
++            if (result < 0) {
 +                logError("swr initialization", result);
 +                swr_free(&resampleContext);
                  av_frame_free(&frame);
@@ -383,13 +355,6 @@ index 6d6169a..443faef 100644
      av_packet_free(&packet);
      return decodedPacket;
  }
-@@ -338,4 +392,4 @@ Java_io_github_anilbeesetti_nextlib_media3ext_ffdecoder_FfmpegAudioDecoder_ffmpe
-     if (context) {
-         releaseContext((AVCodecContext *) context);
-     }
--}
-\ No newline at end of file
-+}
 diff --git a/media3ext/src/main/java/io/github/anilbeesetti/nextlib/media3ext/ffdecoder/FfmpegAudioDecoder.java b/media3ext/src/main/java/io/github/anilbeesetti/nextlib/media3ext/ffdecoder/FfmpegAudioDecoder.java
 index 962a408..c9a1e4a 100644
 --- a/media3ext/src/main/java/io/github/anilbeesetti/nextlib/media3ext/ffdecoder/FfmpegAudioDecoder.java
@@ -559,7 +524,7 @@ index f6ce6c1..90a910d 100644
        case SINK_FORMAT_SUPPORTED_DIRECTLY:
          // AC-3 is always 16-bit, so there's no point using floating point. Assume that it's worth
 diff --git a/media3ext/src/main/java/io/github/anilbeesetti/nextlib/media3ext/ffdecoder/FfmpegLibrary.java b/media3ext/src/main/java/io/github/anilbeesetti/nextlib/media3ext/ffdecoder/FfmpegLibrary.java
-index ccaf284..11f225b 100644
+index c0c67fb..7618ea9 100644
 --- a/media3ext/src/main/java/io/github/anilbeesetti/nextlib/media3ext/ffdecoder/FfmpegLibrary.java
 +++ b/media3ext/src/main/java/io/github/anilbeesetti/nextlib/media3ext/ffdecoder/FfmpegLibrary.java
 @@ -13,6 +13,8 @@ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;

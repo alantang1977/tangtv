@@ -18,7 +18,7 @@ public class PreloadPausePolicyTest {
     }
 
     @Test
-    public void pausePolicyHasOnlyCellularAndWifiLikeModes() {
+    public void wifiPolicyRequiresValidatedWifi() {
         assertTrue(PreloadPausePolicy.evaluate(
                 false,
                 PreloadSetting.PAUSE_PRELOAD_WIFI,
@@ -27,11 +27,11 @@ public class PreloadPausePolicyTest {
                 false,
                 PreloadSetting.PAUSE_PRELOAD_WIFI,
                 snapshot(true, true, PlaybackAutoContext.NetworkTransport.CELLULAR)).allowed());
-        assertTrue(PreloadPausePolicy.evaluate(
+        assertFalse(PreloadPausePolicy.evaluate(
                 false,
                 PreloadSetting.PAUSE_PRELOAD_WIFI,
                 snapshot(true, false, PlaybackAutoContext.NetworkTransport.WIFI)).allowed());
-        assertTrue(PreloadPausePolicy.evaluate(
+        assertFalse(PreloadPausePolicy.evaluate(
                 false,
                 PreloadSetting.PAUSE_PRELOAD_WIFI,
                 PlaybackAutoContext.NetworkSnapshot.unknown()).allowed());

@@ -82,7 +82,7 @@ public class ConfigDialog extends BaseAlertDialog {
         Config config = getConfig();
         binding.title.setText(getDialogTitle());
         binding.positive.setText(edit ? R.string.dialog_edit : R.string.dialog_positive);
-        binding.name.setText(edit ? config.getName() : "");
+        binding.name.setText(config.getName());
         binding.url.setText(ori = config.getUrl());
         binding.url.setSelection(TextUtils.isEmpty(ori) ? 0 : ori.length());
     }
@@ -191,7 +191,7 @@ public class ConfigDialog extends BaseAlertDialog {
             config = Config.find(ori, type).url(url).name(name).update();
         } else {
             Config exists = AppDatabase.get().getConfigDao().find(url, type);
-            config = exists != null ? exists : Config.create(type).url(url).name(name).update();
+            config = exists != null ? exists.name(name).update() : Config.create(type).url(url).name(name).update();
         }
         return config;
     }

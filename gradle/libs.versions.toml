@@ -95,6 +95,7 @@ jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna" }
 juniversalchardet = { group = "com.googlecode.juniversalchardet", name = "juniversalchardet", version.ref = "juniversalchardet" }
 jgit = { group = "org.eclipse.jgit", name = "org.eclipse.jgit", version.ref = "jgit" }
 jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
 rtmp-client = { group = "com.github.mcxinyu", name = "LibRtmp-Client-for-Android", version.ref = "rtmpClient" }
 logger = { group = "com.orhanobut", name = "logger", version.ref = "logger" }
 lottie = { group = "com.airbnb.android", name = "lottie", version.ref = "lottie" }
@@ -128,7 +129,6 @@ okhttp-mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver",
 org-jupnp = { group = "org.jupnp", name = "org.jupnp", version.ref = "jupnp" }
 org-jupnp-android = { group = "org.jupnp", name = "org.jupnp.android", version.ref = "jupnp" }
 org-jupnp-support = { group = "org.jupnp", name = "org.jupnp.support", version.ref = "jupnp" }
-junit = { group = "junit", name = "junit", version.ref = "junit" }
 permissionx = { group = "com.guolindev.permissionx", name = "permissionx", version.ref = "permissionx" }
 quickjs-android = { group = "wang.harlon.quickjs", name = "wrapper-android", version.ref = "quickjs" }
 quickjs-java = { group = "wang.harlon.quickjs", name = "wrapper-java", version.ref = "quickjs" }

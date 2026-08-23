@@ -179,7 +179,7 @@ public class CustomWallView extends FrameLayout implements DefaultLifecycleObser
         else binding.image.setImageDrawable(new ColorDrawable(DEFAULT_WALL_COLOR));
     }
 
-    private int getDesignResId(int wall) {
+    public static int getDesignResId(int wall) {
         return switch (wall) {
             case Setting.WALL_AURORA_GLASS -> R.drawable.wallpaper_design_10_aurora_glass;
             case Setting.WALL_SUNSET_PRISM -> R.drawable.wallpaper_design_11_sunset_prism;
@@ -244,8 +244,8 @@ public class CustomWallView extends FrameLayout implements DefaultLifecycleObser
             if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null;
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inSampleSize = getWallSampleSize(bounds);
-            options.inPreferredConfig = Bitmap.Config.RGB_565;
-            options.inDither = true;
+            // Blurred wallpapers are gradient-heavy; RGB_565 quantization creates visible bands and halos.
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
             return BitmapFactory.decodeFile(file.getAbsolutePath(), options);
         } catch (OutOfMemoryError | RuntimeException e) {
             SpiderDebug.log("startup", "wall bitmap decode fallback file=%s error=%s", file.getName(), e.getClass().getSimpleName());

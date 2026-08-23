@@ -23,7 +23,7 @@ android {
     compileSdk libs.versions.compileSdk.get().toInteger()
 
     defaultConfig {
-        applicationId "com.fongmi.android.tangtv"
+        applicationId "com.silent.android.tangtv"
         minSdk libs.versions.minSdk.get().toInteger()
         targetSdk libs.versions.targetSdk.get().toInteger()
         versionCode 560
@@ -122,7 +122,7 @@ androidComponents {
 }
 
 dependencies {
-    implementation fileTree(dir: "libs", include: ["*.aar"])
+    implementation fileTree(dir: "libs", include: ["*.aar", "*.jar"])
     implementation project(':catvod')
     implementation project(':chaquo')
     implementation project(':quickjs')
@@ -161,6 +161,7 @@ dependencies {
     leanbackImplementation libs.zxing.android.embedded
     mobileImplementation libs.biometric
     mobileImplementation libs.zxing.android.embedded
+    testImplementation libs.junit
     annotationProcessor libs.room.compiler
     annotationProcessor libs.eventbus.annotation.processor
     annotationProcessor libs.glide.compiler

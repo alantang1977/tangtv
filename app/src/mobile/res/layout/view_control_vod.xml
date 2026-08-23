@@ -4,7 +4,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black_20">
+    android:background="@color/black_20"
+    android:clickable="false"
+    android:focusable="false">
 
     <androidx.appcompat.widget.LinearLayoutCompat
         android:id="@+id/top"
@@ -67,8 +69,27 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/play_cast"
                 android:scaleType="center"
                 android:src="@drawable/ic_control_cast" />
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/nightMode"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/play_night_mode"
+                android:scaleType="center"
+                android:src="@drawable/ic_control_night_mode_off" />
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/keep"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/keep"
+                android:scaleType="center"
+                android:src="@drawable/ic_control_keep_off" />
 
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/info"
@@ -77,14 +98,6 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:scaleType="center"
                 android:src="@drawable/ic_control_info" />
-
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/keep"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:scaleType="center"
-                android:src="@drawable/ic_control_keep_off" />
 
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/osdDiagnostics"
@@ -171,7 +184,8 @@
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_centerVertical="true"
-        android:layout_marginEnd="4dp" />
+        android:layout_marginEnd="4dp"
+        android:visibility="gone" />
 
     <androidx.appcompat.widget.LinearLayoutCompat
         android:id="@+id/bottom"

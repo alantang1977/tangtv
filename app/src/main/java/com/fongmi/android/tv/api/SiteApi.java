@@ -14,8 +14,10 @@ import com.fongmi.android.tv.bean.Site;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.player.Source;
 import com.fongmi.android.tv.setting.PlayerSetting;
+import com.fongmi.android.tv.utils.PushParser;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.Sniffer;
+import com.fongmi.android.tv.utils.VodDetailCache;
 import com.fongmi.android.tv.web.WebHomeInlineVodStore;
 import com.github.catvod.crawler.Spider;
 import com.github.catvod.crawler.SpiderDebug;
@@ -112,34 +114,63 @@ public class SiteApi {
 
     @NonNull
     public static Result detailContent(@NonNull String key, @NonNull String id) throws Exception {
-        SpiderDebug.log("detail", "key=%s,id=%s", key, id);
+        return detailContent(key, id, false);
+    }
+
+    @NonNull
+    public static Result detailContent(@NonNull String key, @NonNull String id, boolean refresh) throws Exception {
+        SpiderDebug.log("detail", "key=%s,id=%s,refresh=%s", key, id, refresh);
         if (WebHomeInlineVodStore.KEY.equals(key)) return WebHomeInlineVodStore.detail(id);
         Site site = VodConfig.get().getSite(key);
-        if (site.isEmpty() && PUSH.equals(key)) {
-            Vod vod = new Vod();
-            vod.setId(id);
-            vod.setName(id);
-            vod.setPlayUrl(id);
-            vod.setPlayFrom(ResUtil.getString(R.string.push));
-            vod.setPic(ResUtil.getString(R.string.push_image));
-            Source.get().parse(vod.setFlags());
-            return Result.vod(vod);
-        } else if (isSpider(site)) {
-            String detailContent = site.recent().spider().detailContent(Arrays.asList(id));
+        PushParser.Parsed push = PUSH.equals(key) ? PushParser.fromId(id) : null;
+        String requestId = push == null ? id : push.getUrl();
+        if (push != null && (site.isEmpty() || isLocalFileUrl(requestId))) return pushDetail(id, push);
+
+        String sourceKey = detailCacheSourceKey(key, site);
+        if (refresh) VodDetailCache.invalidateContent(sourceKey, id);
+        String cached = refresh ? null : VodDetailCache.getContent(sourceKey, id);
+        if (!TextUtils.isEmpty(cached)) {
+            Result result = Result.fromJson(cached);
+            if (!result.getList().isEmpty()) {
+                SpiderDebug.log("detail-cache", "hit key=%s,id=%s,size=%d", key, id, cached.length());
+                return result;
+            }
+            VodDetailCache.invalidateContent(sourceKey, id);
+        }
+
+        Result result;
+        if (isSpider(site)) {
+            String detailContent = site.recent().spider().detailContent(Arrays.asList(requestId));
             SpiderDebug.log("detail", detailContent);
-            Result result = Result.fromJson(detailContent);
-            Source.get().parse(result.getVod().setFlags());
-            return result;
+            result = Result.fromJson(detailContent);
         } else {
             ArrayMap<String, String> params = new ArrayMap<>();
             params.put("ac", ac(site.getType()));
-            params.put("ids", id);
+            params.put("ids", requestId);
             String detailContent = call(site, params);
             SpiderDebug.log("detail", detailContent);
-            Result result = Result.fromType(site.getType(), detailContent);
-            Source.get().parse(result.getVod().setFlags());
-            return result;
+            result = Result.fromType(site.getType(), detailContent);
         }
+        Source.get().parse(result.getVod().setFlags());
+        result = applyPushTitle(push, result);
+        if (!result.getList().isEmpty()) {
+            String content = result.toString();
+            VodDetailCache.putContent(sourceKey, id, content);
+            SpiderDebug.log("detail-cache", "store key=%s,id=%s,size=%d", key, id, content.length());
+        }
+        return result;
+    }
+
+    private static String detailCacheSourceKey(String key, Site site) {
+        if (site == null) return key;
+        int signature = Objects.hash(site.getType(), site.getApi(), site.getExt(), site.getHeader());
+        return key + "#" + Integer.toHexString(signature);
+    }
+
+    private static Result applyPushTitle(PushParser.Parsed push, Result result) {
+        if (push == null || TextUtils.isEmpty(push.getTitle()) || result.getList().isEmpty()) return result;
+        result.getVod().setName(push.getTitle());
+        return result;
     }
 
     @NonNull
@@ -149,49 +180,129 @@ public class SiteApi {
 
     @NonNull
     public static Result playerContent(@NonNull String key, @NonNull String flag, @NonNull String id, int playerType) throws Exception {
+        return playerContent(key, flag, id, playerType, Source.get(), true);
+    }
+
+    @NonNull
+    public static Result playerContentIsolated(@NonNull String key, @NonNull String flag, @NonNull String id) throws Exception {
+        return playerContentIsolated(key, flag, id, PlayerSetting.getPlayer());
+    }
+
+    @NonNull
+    public static Result playerContentIsolated(@NonNull String key, @NonNull String flag, @NonNull String id, int playerType) throws Exception {
+        return playerContent(key, flag, id, playerType, new Source(), false);
+    }
+
+    @NonNull
+    private static Result playerContent(@NonNull String key, @NonNull String flag, @NonNull String id, int playerType, @NonNull Source source, boolean stopSource) throws Exception {
         SpiderDebug.log("player", "key=%s,flag=%s,id=%s", key, flag, id);
-        Source.get().stop();
+        if (stopSource) source.stop();
         if (WebHomeInlineVodStore.KEY.equals(key)) return WebHomeInlineVodStore.player(flag, id);
         Site site = VodConfig.get().getSite(key);
+        String requestId = PUSH.equals(key) ? resolvePushPlayerUrl(id) : id;
+        if (PUSH.equals(key) && (site.isEmpty() || isLocalFileUrl(requestId))) return pushPlayer(flag, requestId, playerType, source);
         if (site.getType() == 3) {
-            String playerContent = site.recent().spider().playerContent(flag, id, VodConfig.get().getFlags());
-            SpiderDebug.log("player", playerContent);
-            Result result = Result.fromJson(playerContent);
-            if (result.getFlag().isEmpty()) result.setFlag(flag);
-            result.setUrl(Source.get().fetch(result, playerType));
-            result.setHeader(site.getHeader());
-            result.setKey(key);
-            return result;
+            String fallbackReason;
+            try {
+                String playerContent = site.recent().spider().playerContent(flag, requestId, VodConfig.get().getFlags());
+                SpiderDebug.log("player", playerContent);
+                Result result = Result.fromJson(playerContent);
+                if (shouldFallbackPushSiteResult(key, result)) {
+                    fallbackReason = result == null ? "" : result.getMsg();
+                } else {
+                    if (result.getFlag().isEmpty()) result.setFlag(flag);
+                    result.setUrl(source.fetch(result, playerType));
+                    result.setHeader(site.getHeader());
+                    result.setKey(key);
+                    return result;
+                }
+            } catch (Exception e) {
+                if (PUSH.equals(key)) fallbackReason = e.getMessage();
+                else throw e;
+            }
+            return fallbackPushPlayer(flag, requestId, playerType, fallbackReason, source);
         } else if (site.getType() == 4) {
-            ArrayMap<String, String> params = new ArrayMap<>();
-            params.put("play", id);
-            params.put("flag", flag);
-            String playerContent = call(site, params);
-            SpiderDebug.log("player", playerContent);
-            Result result = Result.fromJson(playerContent);
-            if (result.getFlag().isEmpty()) result.setFlag(flag);
-            result.setUrl(Source.get().fetch(result, playerType));
-            result.setHeader(site.getHeader());
-            return result;
-        } else if (site.isEmpty() && "push_agent".equals(key)) {
-            Result result = new Result();
-            result.setUrl(id);
-            result.setParse(0);
-            result.setFlag(flag);
-            result.setUrl(Source.get().fetch(result, playerType));
-            SpiderDebug.log("player", result.toString());
-            return result;
+            String fallbackReason;
+            try {
+                ArrayMap<String, String> params = new ArrayMap<>();
+                params.put("play", requestId);
+                params.put("flag", flag);
+                String playerContent = call(site, params);
+                SpiderDebug.log("player", playerContent);
+                Result result = Result.fromJson(playerContent);
+                if (shouldFallbackPushSiteResult(key, result)) {
+                    fallbackReason = result == null ? "" : result.getMsg();
+                } else {
+                    if (result.getFlag().isEmpty()) result.setFlag(flag);
+                    result.setUrl(source.fetch(result, playerType));
+                    result.setHeader(site.getHeader());
+                    return result;
+                }
+            } catch (Exception e) {
+                if (PUSH.equals(key)) fallbackReason = e.getMessage();
+                else throw e;
+            }
+            return fallbackPushPlayer(flag, requestId, playerType, fallbackReason, source);
         } else {
             Result result = new Result();
-            result.setUrl(id);
+            result.setUrl(requestId);
             result.setFlag(flag);
             result.setHeader(site.getHeader());
             result.setPlayUrl(site.getPlayUrl());
-            result.setParse(Sniffer.isVideoFormat(id) && result.getPlayUrl().isEmpty() ? 0 : 1);
-            result.setUrl(Source.get().fetch(result, playerType));
+            result.setParse(Sniffer.isVideoFormat(requestId) && result.getPlayUrl().isEmpty() ? 0 : 1);
+            result.setUrl(source.fetch(result, playerType));
             SpiderDebug.log("player", result.toString());
             return result;
         }
+    }
+
+    static String resolvePushPlayerUrl(String id) {
+        return PushParser.fromId(id).getUrl();
+    }
+
+    static boolean isLocalFileUrl(String url) {
+        return url.regionMatches(true, 0, "file:", 0, 5);
+    }
+
+    static boolean shouldSniffPushUrl(String url) {
+        if (!shouldSniffPushUrl(url, false)) return false;
+        return !Sniffer.isVideoFormat(url);
+    }
+
+    static boolean shouldSniffPushUrl(String url, boolean videoFormat) {
+        if (url == null || url.isEmpty() || isLocalFileUrl(url)) return false;
+        boolean webUrl = url.regionMatches(true, 0, "http://", 0, 7) || url.regionMatches(true, 0, "https://", 0, 8);
+        return webUrl && !videoFormat;
+    }
+
+    static boolean shouldFallbackPushSiteResult(String key, Result result) {
+        return PUSH.equals(key) && (result == null || result.hasMsg() || result.getUrl().isEmpty());
+    }
+
+    private static Result fallbackPushPlayer(String flag, String url, int playerType, String reason, Source source) throws Exception {
+        SpiderDebug.log("player", "push site fallback reason=%s", TextUtils.isEmpty(reason) ? "empty result" : reason);
+        return pushPlayer(flag, url, playerType, source);
+    }
+
+    private static Result pushPlayer(String flag, String url, int playerType, Source source) throws Exception {
+        Result result = new Result();
+        result.setUrl(url);
+        result.setParse(shouldSniffPushUrl(url) ? 1 : 0);
+        result.setFlag(flag);
+        result.setUrl(source.fetch(result, playerType));
+        SpiderDebug.log("player", result.toString());
+        return result;
+    }
+
+    private static Result pushDetail(@NonNull String id, PushParser.Parsed push) throws Exception {
+        Vod vod = new Vod();
+        vod.setId(id);
+        vod.setName(push.getName());
+        vod.setPlayUrl(push.getUrl());
+        vod.setPlayFrom(ResUtil.getString(R.string.push));
+        vod.setPic(ResUtil.getString(R.string.push_image));
+        Source.get().parse(vod.setFlags());
+        return Result.vod(vod);
     }
 
     @NonNull

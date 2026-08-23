@@ -19,15 +19,7 @@ import java.util.Locale;
 public class LutEligibility {
 
     public static String getUnavailableReason(PlayerEngine engine, PlaySpec spec) {
-        return getUnavailableReason(engine, spec, false);
-    }
-
-    public static String getUnavailableReason(PlayerEngine engine, PlaySpec spec,
-                                              boolean allowMpvSurfaceDirect) {
-        if (!allowMpvSurfaceDirect
-                && engine instanceof MpvPlayerEngine mpv && mpv.isSurfaceDirect()) {
-            return ResUtil.getString(R.string.lut_unavailable_output_mode);
-        }
+        if (engine instanceof MpvPlayerEngine mpv && mpv.isSurfaceDirect()) return ResUtil.getString(R.string.lut_unavailable_output_mode);
         if (engine == null || !engine.supportsLut()) return ResUtil.getString(R.string.lut_unavailable_player);
         if (spec != null && spec.getDrm() != null) return ResUtil.getString(R.string.lut_unavailable_drm);
         if (!engine.supportsNativeLut() && PlayerSetting.isTunnel()) return ResUtil.getString(R.string.lut_unavailable_tunnel);

@@ -3,7 +3,9 @@ package com.fongmi.android.tv.ui.custom;
 import android.content.Context;
 import android.os.SystemClock;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
@@ -26,6 +28,11 @@ import java.util.concurrent.TimeUnit;
 
 public class CustomSeekView extends FrameLayout implements Player.Listener, TimeBar.OnScrubListener {
 
+    public interface SeekListener {
+        void onSeekStarted();
+    }
+
+    private static final String TAG = "CustomSeekView";
     private static final int MAX_UPDATE_INTERVAL_MS = 1000;
     private static final int MIN_UPDATE_INTERVAL_MS = 200;
     private static final long DISK_RANGE_GAP_TOLERANCE_MS = 2000;
@@ -45,11 +52,10 @@ public class CustomSeekView extends FrameLayout implements Player.Listener, Time
     private boolean scrubbing;
     private boolean attached;
     private Player player;
+    private SeekListener seekListener;
     private Player progressPlayer;
     private long lastPausedBufferLogAtMs;
     private long lastPausedBufferedPosition;
-    private long lastBufferReadLogAtMs;
-    private long lastBufferReadEffectiveMs = -1;
     private long pendingSeekPosition = C.TIME_UNSET;
     private long pendingSeekOrigin = C.TIME_UNSET;
     private long pendingSeekDeadlineMs;
@@ -70,6 +76,10 @@ public class CustomSeekView extends FrameLayout implements Player.Listener, Time
         timeBar = findViewById(R.id.timeBar);
         runnable = this::updateProgress;
         timeBar.addListener(this);
+        // Make this view focusable and delegate to timeBar
+        setFocusable(true);
+        setFocusableInTouchMode(false);
+        setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
         resetView();
     }
 
@@ -79,6 +89,10 @@ public class CustomSeekView extends FrameLayout implements Player.Listener, Time
         this.player = player;
         if (player != null) player.addListener(this);
         if (attached) updateTimeline();
+    }
+
+    public void setSeekListener(SeekListener seekListener) {
+        this.seekListener = seekListener;
     }
 
     /**
@@ -161,20 +175,7 @@ public class CustomSeekView extends FrameLayout implements Player.Listener, Time
                 mediaKey, buffered, DISK_RANGE_GAP_TOLERANCE_MS);
         long effective = Math.max(buffered, diskBuffered);
         long duration = progress.getDuration();
-        long bounded = duration > 0 ? Math.min(effective, duration) : effective;
-        long now = SystemClock.elapsedRealtime();
-        if (SpiderDebug.isEnabled()
-                && (bounded != lastBufferReadEffectiveMs
-                || now - lastBufferReadLogAtMs >= PAUSED_BUFFER_LOG_INTERVAL_MS)) {
-            lastBufferReadLogAtMs = now;
-            lastBufferReadEffectiveMs = bounded;
-            SpiderDebug.log("playback-progress",
-                    "action=buffer-read source=%s positionMs=%d nativeBufferedMs=%d diskBufferedMs=%d effectiveBufferedMs=%d key=%s",
-                    progress == player ? "controller" : "direct-engine",
-                    Math.max(0, progress.getCurrentPosition()), buffered, diskBuffered, bounded,
-                    Integer.toHexString(mediaKey == null ? 0 : mediaKey.hashCode()));
-        }
-        return bounded;
+        return duration > 0 ? Math.min(effective, duration) : effective;
     }
 
     private void logPausedBufferProgress(Player progress, long position, long buffered) {
@@ -224,10 +225,16 @@ public class CustomSeekView extends FrameLayout implements Player.Listener, Time
     }
 
     private void seekToTimeBarPosition(long positionMs) {
+        Player commandPlayer = player;
+        if (commandPlayer == null) {
+            updateProgress();
+            return;
+        }
+        if (seekListener != null) seekListener.onSeekStarted();
         beginPendingSeek(positionMs);
-        player.seekTo(positionMs);
+        commandPlayer.seekTo(positionMs);
         updateProgress();
-        player.play();
+        commandPlayer.play();
     }
 
     public void previewSeekPosition(long positionMs) {
@@ -290,7 +297,29 @@ public class CustomSeekView extends FrameLayout implements Player.Listener, Time
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         attached = true;
+        // Sync focus navigation from parent to timeBar
+        int nextFocusUpId = getNextFocusUpId();
+        int nextFocusDownId = getNextFocusDownId();
+        Log.d(TAG, "onAttachedToWindow - nextFocusUpId: " + nextFocusUpId + ", nextFocusDownId: " + nextFocusDownId);
+        if (nextFocusUpId != NO_ID) {
+            timeBar.setNextFocusUpId(nextFocusUpId);
+            Log.d(TAG, "Set timeBar nextFocusUpId to: " + nextFocusUpId);
+        }
+        if (nextFocusDownId != NO_ID) {
+            timeBar.setNextFocusDownId(nextFocusDownId);
+            Log.d(TAG, "Set timeBar nextFocusDownId to: " + nextFocusDownId);
+        }
         updateTimeline();
+    }
+
+    @Override
+    public boolean requestFocus(int direction, android.graphics.Rect previouslyFocusedRect) {
+        Log.d(TAG, "requestFocus called with direction: " + direction);
+        // Delegate focus to timeBar
+        if (timeBar != null && timeBar.getVisibility() == VISIBLE) {
+            return timeBar.requestFocus(direction, previouslyFocusedRect);
+        }
+        return super.requestFocus(direction, previouslyFocusedRect);
     }
 
     @Override

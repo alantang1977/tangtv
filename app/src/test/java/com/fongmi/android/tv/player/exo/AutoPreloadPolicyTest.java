@@ -133,7 +133,7 @@ public class AutoPreloadPolicyTest {
     }
 
     @Test
-    public void meteredAndRoamingDegradeWhileDataSaverPauses() {
+    public void meteredRoamingAndDataSaverPause() {
         AutoPreloadPolicy.Decision metered = new AutoPreloadPolicy().evaluate(
                 withSystem(0, system(true, true, true, false,
                         PlaybackAutoContext.DataSaverState.DISABLED,
@@ -156,12 +156,8 @@ public class AutoPreloadPolicyTest {
         assertEquals("metered", metered.reason());
         assertEquals("roaming", roaming.reason());
         assertEquals("data-saver", dataSaver.reason());
-        assertTrue(metered.enabled());
-        assertTrue(roaming.enabled());
-        assertEquals(1, metered.threads());
-        assertEquals(1, roaming.threads());
-        assertEquals(10_000, metered.durationMs());
-        assertEquals(10_000, roaming.durationMs());
+        assertFalse(metered.enabled());
+        assertFalse(roaming.enabled());
         assertFalse(dataSaver.enabled());
     }
 

@@ -8,7 +8,6 @@ import android.media.MediaFormat;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.net.Uri;
-import android.net.TrafficStats;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
@@ -31,6 +30,7 @@ import com.fongmi.android.tv.player.GpuLoadMonitor;
 import com.fongmi.android.tv.player.PlayerManager;
 import com.fongmi.android.tv.player.PlaybackPanelResourceMonitor;
 import com.fongmi.android.tv.player.PlaybackDiagnosticsSourcePolicy;
+import com.fongmi.android.tv.player.PlaybackSpeedMeter;
 import com.fongmi.android.tv.player.PlaybackRoute;
 import com.fongmi.android.tv.player.engine.PlayerEngine;
 import com.fongmi.android.tv.player.exo.PlaybackAnalyticsListener;
@@ -53,8 +53,6 @@ public class PlayerOsdController {
         String getTitle();
     }
 
-    private static final DecimalFormat SPEED_FORMAT = new DecimalFormat("#.0");
-    private static final int UID = App.get().getApplicationInfo().uid;
     private static volatile String cachedDeviceText;
     private static volatile String cachedSystemText;
     private static volatile String cachedWebViewText;
@@ -75,15 +73,16 @@ public class PlayerOsdController {
     private final float miniSp;
     private final PlaybackPanelResourceMonitor resourceMonitor;
 
+    private boolean suppressed;
     private final DecimalFormat frameFormat;
     private final DecimalFormat refreshFormat;
     private final DecimalFormat bitrateFormat;
-    private long lastTotalRxBytes;
-    private long lastTimeStamp;
+    private final PlaybackSpeedMeter speedMeter = new PlaybackSpeedMeter();
     private long lastSpeedKBps;
     private String lastSpeedText;
     private boolean controlsVisible;
     private boolean diagnosticsVisible;
+    private boolean persistentSuppressed;
     private boolean started;
     private PlayerManager diagnosticsSamplingPlayer;
 
@@ -111,11 +110,18 @@ public class PlayerOsdController {
 
     public void start() {
         started = true;
-        if (!PlayerSetting.isOsdEnabled()) {
+        if (suppressed) {
+            root.setVisibility(View.GONE);
+            return;
+        }
+        // 即使用户关闭所有 OSD，控制栏显示时也需要强制显示标题/分辨率/时间
+        // 所以不能在 !isOsdEnabled() 时直接 return
+        if (!PlayerSetting.isOsdEnabled() && !controlsVisible) {
             root.setVisibility(View.GONE);
             return;
         }
         resetSpeed();
+        App.removeCallbacks(update);
         App.post(update, 0);
     }
 
@@ -123,15 +129,38 @@ public class PlayerOsdController {
         started = false;
         stopDiagnosticsSampling();
         App.removeCallbacks(update);
+        root.setVisibility(View.GONE);
     }
 
     public void release() {
         stop();
     }
 
+    public void setSuppressed(boolean suppressed) {
+        if (this.suppressed == suppressed) return;
+        this.suppressed = suppressed;
+        App.removeCallbacks(update);
+        if (suppressed) root.setVisibility(View.GONE);
+        else if (started) start();
+    }
+
     public void setControlsVisible(boolean controlsVisible) {
         if (this.controlsVisible == controlsVisible) return;
         this.controlsVisible = controlsVisible;
+        if (started) {
+            // 控制栏显示时，即使 OSD 全关也要启动更新循环（为了强制显示时间）
+            if (controlsVisible && !PlayerSetting.isOsdEnabled()) {
+                resetSpeed();
+                App.removeCallbacks(update);
+                App.post(update, 0);
+            }
+            render();
+        }
+    }
+
+    public void setPersistentSuppressed(boolean persistentSuppressed) {
+        if (this.persistentSuppressed == persistentSuppressed) return;
+        this.persistentSuppressed = persistentSuppressed;
         if (started) render();
     }
 
@@ -159,20 +188,47 @@ public class PlayerOsdController {
     }
 
     private boolean render() {
+        if (suppressed) {
+            root.setVisibility(View.GONE);
+            return false;
+        }
+        setTextSize(miniSp);
+        PlayerManager player = source.getPlayer();
+        updateSpeed(player);
+
+        // 控制栏显示时的处理：
+        // - leanback: suppressed=false，强制显示 OSD 的标题/分辨率/时间（因为控制栏没有自己的 title/size）
+        // - mobile: suppressed=true，已在上面 return，不会执行此分支（mobile 控制栏有自己的 title/size）
+        if (controlsVisible) {
+            stopDiagnosticsSampling();
+            setTopLeftForControls(player);
+            setTopRightForControls();
+            bottomLeft.setVisibility(View.GONE);
+            bottomRight.setVisibility(View.GONE);
+            diagnosticsPanel.setVisibility(View.GONE);
+            if (miniProgress != null) miniProgress.setVisibility(View.GONE);
+            // 如果标题或时间至少有一个显示，则显示 root
+            boolean hasVisible = topLeft.getVisibility() == View.VISIBLE || topRight.getVisibility() == View.VISIBLE;
+            root.setVisibility(hasVisible ? View.VISIBLE : View.GONE);
+            return true;
+        }
+
+        // 控制栏隐藏时，若用户关闭所有 OSD 屏显，停止刷新并隐藏
         boolean enabled = PlayerSetting.isOsdEnabled();
         if (!enabled) {
             stopDiagnosticsSampling();
             root.setVisibility(View.GONE);
             return false;
         }
-        root.setVisibility(controlsVisible ? View.GONE : View.VISIBLE);
-        if (controlsVisible) {
-            stopDiagnosticsSampling();
+
+        // 控制栏隐藏时，按用户设置显示
+        root.setVisibility(View.VISIBLE);
+        if (persistentSuppressed) {
+            hidePersistent();
+            setDiagnosticsPanel(player);
+            root.setVisibility(diagnosticsPanel.getVisibility() == View.VISIBLE ? View.VISIBLE : View.GONE);
             return true;
         }
-        setTextSize(miniSp);
-        PlayerManager player = source.getPlayer();
-        updateSpeed();
         setTopLeft(player);
         setTopRight();
         setBottomLeft(player);
@@ -183,12 +239,22 @@ public class PlayerOsdController {
     }
 
     private void setTopLeft(PlayerManager player) {
-        if ((!PlayerSetting.isOsdTitle() && !PlayerSetting.isOsdResolution()) || diagnosticsVisible) {
+        boolean showTitle = PlayerSetting.isOsdTitle();
+        boolean showResolution = PlayerSetting.isOsdResolution();
+        if ((!showTitle && !showResolution) || diagnosticsVisible) {
             topLeft.setVisibility(View.GONE);
             return;
         }
-        String title = PlayerSetting.isOsdTitle() ? source.getTitle() : "";
-        String size = PlayerSetting.isOsdResolution() && player != null ? player.getSizeText() : "";
+        String title = showTitle ? source.getTitle() : "";
+        String size = showResolution && player != null ? player.getSizeText() : "";
+        topLeft.setText(join("\n", title, size));
+        topLeft.setVisibility(TextUtils.isEmpty(topLeft.getText()) ? View.GONE : View.VISIBLE);
+    }
+
+    private void setTopLeftForControls(PlayerManager player) {
+        // 控制栏显示时，强制显示标题和分辨率
+        String title = source.getTitle();
+        String size = player != null ? player.getSizeText() : "";
         topLeft.setText(join("\n", title, size));
         topLeft.setVisibility(TextUtils.isEmpty(topLeft.getText()) ? View.GONE : View.VISIBLE);
     }
@@ -196,6 +262,12 @@ public class PlayerOsdController {
     private void setTopRight() {
         topRight.setVisibility(PlayerSetting.isOsdTime() ? View.VISIBLE : View.GONE);
         if (PlayerSetting.isOsdTime()) topRight.setText(timeFormat.format(new Date()));
+    }
+
+    private void setTopRightForControls() {
+        // 控制栏显示时，强制显示时间，无论用户设置
+        topRight.setText(timeFormat.format(new Date()));
+        topRight.setVisibility(View.VISIBLE);
     }
 
     private void setBottomLeft(PlayerManager player) {
@@ -290,27 +362,36 @@ public class PlayerOsdController {
 
     private void setTextSize(float sp) {
         topLeft.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
+        topLeft.setTextColor(0xFFFFFFFF);
         topRight.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
+        topRight.setTextColor(0xFFFFFFFF);
         bottomLeft.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
+        bottomLeft.setTextColor(0xFFFFFFFF);
         bottomRight.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
+        bottomRight.setTextColor(0xFFFFFFFF);
+        diagnostics.setTextColor(0xFFFFFFFF);
         diagnostics.setTextSize(TypedValue.COMPLEX_UNIT_SP, getDiagnosticsSp());
+        diagnosticsExtra.setTextColor(0xFFFFFFFF);
         diagnosticsExtra.setTextSize(TypedValue.COMPLEX_UNIT_SP, getDiagnosticsSp());
     }
 
-    private void updateSpeed() {
-        long total = TrafficStats.getUidRxBytes(UID);
-        if (total == TrafficStats.UNSUPPORTED) {
-            lastSpeedKBps = 0;
-            lastSpeedText = "";
+    private void hidePersistent() {
+        topLeft.setVisibility(View.GONE);
+        topRight.setVisibility(View.GONE);
+        bottomLeft.setVisibility(View.GONE);
+        bottomRight.setVisibility(View.GONE);
+        miniProgress.setVisibility(View.GONE);
+    }
+
+    private void updateSpeed(PlayerManager player) {
+        // No player means no playback to report on; app-wide traffic would mislead here.
+        if (player == null) {
+            resetSpeed();
             return;
         }
-        long now = System.currentTimeMillis();
-        long rxKb = total / 1024;
-        long speed = (rxKb - lastTotalRxBytes) * 1000 / Math.max(now - lastTimeStamp, 1);
-        lastTimeStamp = now;
-        lastTotalRxBytes = rxKb;
-        lastSpeedKBps = Math.max(0, speed);
-        lastSpeedText = formatSpeed(lastSpeedKBps);
+        speedMeter.sample(player);
+        lastSpeedKBps = speedMeter.getBytesPerSecond() / 1024;
+        lastSpeedText = speedMeter.getText();
     }
 
     private DiagnosticsText getDiagnostics(PlayerManager player) {
@@ -330,10 +411,7 @@ public class PlayerOsdController {
                 "可支撑 " + new DecimalFormat("0.00x").format(player.getNetworkProtectionSupportedSpeed()),
                 "当前 " + new DecimalFormat("0.00x").format(player.getEffectiveSpeed()));
         boolean localSource = PlaybackDiagnosticsSourcePolicy.isLocal(player.getUrl());
-        String currentNetworkSpeed = !TextUtils.isEmpty(lastSpeedText)
-                ? lastSpeedText : getBandwidthEstimateText(snapshot);
         String network = localSource ? "本地文件 / 不检测网速" : player.isExo() ? join(" / ",
-                !TextUtils.isEmpty(currentNetworkSpeed) ? "当前 " + currentNetworkSpeed : "",
                 consumption > 0 ? "消费需求 " + formatBitrate(consumption) : "",
                 stableThroughput > 0 ? "稳定吞吐 " + formatBitrate(stableThroughput) : "",
                 stableThroughput > 0 && consumption > 0 ? "网络余量 " + formatSignedBitrate(stableThroughput - consumption) : "")
@@ -820,14 +898,6 @@ public class PlayerOsdController {
         return bitrateFormat.format(kb / 1024f) + "MB";
     }
 
-    private String formatSpeed(long kbps) {
-        return kbps < 1000 ? kbps + " KB/s" : SPEED_FORMAT.format(kbps / 1024f) + " MB/s";
-    }
-
-    private String formatByteSpeed(long bytesPerSecond) {
-        return formatSpeed(Math.max(0, bytesPerSecond / 1024));
-    }
-
     private String formatDuration(long ms) {
         if (ms <= 0) return "";
         if (ms >= 60_000) return Util.timeMs(ms);
@@ -1097,9 +1167,7 @@ public class PlayerOsdController {
     }
 
     private void resetSpeed() {
-        long total = TrafficStats.getUidRxBytes(UID);
-        lastTotalRxBytes = total == TrafficStats.UNSUPPORTED ? 0 : total / 1024;
-        lastTimeStamp = System.currentTimeMillis();
+        speedMeter.reset();
         lastSpeedKBps = 0;
         lastSpeedText = "";
     }
