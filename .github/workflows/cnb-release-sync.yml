@@ -69,10 +69,9 @@ jobs:
           CNB_TOKEN: ${{ secrets.CNB_TOKEN }}
           CNB_RELEASE_TAG: ${{ steps.meta.outputs.tag }}
           CNB_RELEASE_LATEST: "false"
-          CNB_REPO_SLUG: ${{ inputs.cnb_repo_slug || 'tangtang.com.cn.kul/tangtv' }}
-          CNB_REPO_URL: ${{ inputs.cnb_repo_url || 'https://cnb.cool/tangtang.com.cn.kul/tangtv.git' }}
         run: |
           export CNB_RELEASE_TITLE="$(jq -r '.name // empty' github-release.json)"
           export CNB_RELEASE_NOTES="$(jq -r '.body // empty' github-release.json)"
           export CNB_RELEASE_PRERELEASE="$(jq -r '.isPrerelease // false' github-release.json)"
-          .github/scripts/sync-cnb-release.sh
+          # 使用 bash 调用脚本，避免因缺少可执行权限导致 Permission denied
+          bash .github/scripts/sync-cnb-release.sh
