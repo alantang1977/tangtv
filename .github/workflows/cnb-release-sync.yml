@@ -7,11 +7,11 @@ on:
         required: false
         type: string
       cnb_repo_url:
-        description: "CNB repo URL, blank = tangtang.com.cn.kul/tangtv"
+        description: "CNB repo URL, blank = tangtang.com.cn.kul/juntv"
         required: false
         type: string
       cnb_repo_slug:
-        description: "CNB repo slug, blank = tangtang.com.cn.kul/tangtv"
+        description: "CNB repo slug, blank = tangtang.com.cn.kul/juntv"
         required: false
         type: string
 permissions:
@@ -21,9 +21,8 @@ env:
   GH_REPO: ${{ github.repository }}
   CNB_API_ENDPOINT: https://api.cnb.cool
   CNB_WEB_ENDPOINT: https://cnb.cool
-  CNB_REPO_SLUG: ${{ inputs.cnb_repo_slug || 'tangtang.com.cn.kul/tangtv' }}
-  CNB_REPO_URL: ${{ inputs.cnb_repo_url || 'https://cnb.cool/tangtang.com.cn.kul/tangtv.git' }}
-
+  CNB_REPO_SLUG: ${{ inputs.cnb_repo_slug || 'tangtang.com.cn.kul/juntv' }}
+  CNB_REPO_URL: ${{ inputs.cnb_repo_url || 'https://cnb.cool/tangtang.com.cn.kul/juntv.git' }}
 jobs:
   sync:
     name: Sync GitHub release assets to CNB
