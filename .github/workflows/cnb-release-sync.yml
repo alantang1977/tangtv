@@ -23,6 +23,7 @@ env:
   CNB_WEB_ENDPOINT: https://cnb.cool
   CNB_REPO_SLUG: ${{ inputs.cnb_repo_slug || 'tangtang.com.cn.kul/tangtv' }}
   CNB_REPO_URL: ${{ inputs.cnb_repo_url || 'https://cnb.cool/tangtang.com.cn.kul/tangtv.git' }}
+
 jobs:
   sync:
     name: Sync GitHub release assets to CNB
