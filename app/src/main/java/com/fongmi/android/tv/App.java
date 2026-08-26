@@ -120,6 +120,12 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
     private void registerContentHandlers() {
         com.fongmi.android.tv.content.ContentDispatcher.registerHandler(new com.fongmi.android.tv.content.AudioContentHandler());
+        com.fongmi.android.tv.content.ContentDispatcher.registerHandler(new com.fongmi.android.tv.content.ReaderContentHandler());
+        registerReaderFallback();
+    }
+
+    private void registerReaderFallback() {
+        Product.registerReaderFallback();
     }
 
     @Override

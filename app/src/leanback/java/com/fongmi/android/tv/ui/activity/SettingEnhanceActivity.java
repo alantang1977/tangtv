@@ -4,12 +4,16 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.InputType;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.viewbinding.ViewBinding;
 
 import com.fongmi.android.tv.R;
@@ -17,7 +21,12 @@ import com.fongmi.android.tv.api.config.ImportedAdRuleCandidateStore;
 import com.fongmi.android.tv.api.config.RuleConfig;
 import com.fongmi.android.tv.api.config.UserAdRuleStore;
 import com.fongmi.android.tv.ad.audio.AdAudioRuleStore;
+import com.fongmi.android.tv.ad.audio.AdAudioRuleSnapshot;
 import com.fongmi.android.tv.ad.audio.AdAudioSetting;
+import com.fongmi.android.tv.ad.audio.AdSkipPolicyController;
+import com.fongmi.android.tv.ad.audio.SpeechAdConfig;
+import com.fongmi.android.tv.ad.audio.SpeechAdSetting;
+import com.fongmi.android.tv.subtitle.RealtimeSubtitleSpeechRecognitionFactory;
 import com.fongmi.android.tv.bean.AudioConfig;
 import com.fongmi.android.tv.bean.ShortDramaConfig;
 import com.fongmi.android.tv.gitcloud.GitCloudAccountStore;
@@ -37,6 +46,7 @@ import com.fongmi.android.tv.ui.dialog.AudioSourceDialog;
 import com.fongmi.android.tv.ui.dialog.ShortDramaSourceDialog;
 import com.fongmi.android.tv.ui.dialog.CspWarmupDialog;
 import com.fongmi.android.tv.ui.dialog.CustomCspDialog;
+import com.fongmi.android.tv.ui.dialog.LightDialog;
 import com.fongmi.android.tv.ui.dialog.DebugLogDialog;
 import com.fongmi.android.tv.ui.dialog.GitCloudDialog;
 import com.fongmi.android.tv.ui.dialog.LoginStateLearnDialog;
@@ -63,7 +73,7 @@ public class SettingEnhanceActivity extends BaseActivity {
     private static final String URL_CNB = "https://cnb.cool/fish2018/ext";
 
     private ActivitySettingEnhanceBinding mBinding;
-    private volatile AdAudioRuleStore.Snapshot adAudioSnapshot = AdAudioRuleStore.get().current();
+    private volatile AdAudioRuleSnapshot adAudioSnapshot = AdAudioRuleStore.get().current();
     private final ActivityResultLauncher<String[]> adAudioRulePicker =
             registerForActivityResult(new ActivityResultContracts.OpenDocument(), this::importAdAudioRules);
 
@@ -99,6 +109,11 @@ public class SettingEnhanceActivity extends BaseActivity {
         mBinding.siteName.setOnClickListener(this::setSiteName);
         mBinding.audioSource.setOnClickListener(this::setAudioSource);
         mBinding.shortDramaSource.setOnClickListener(this::setShortDramaSource);
+        mBinding.adRuleManage.setOnClickListener(view -> AdRuleManageDialog.create().show(this, this::setText));
+        mBinding.speechAdEnabled.setOnClickListener(this::toggleSpeechAdEnabled);
+        mBinding.speechAdKeywords.setOnClickListener(this::editSpeechAdKeywords);
+        mBinding.speechAdSkipSeconds.setOnClickListener(this::editSpeechAdSkipSeconds);
+        mBinding.speechAdSkipMode.setOnClickListener(this::selectSpeechAdSkipMode);
         mBinding.adAudioFingerprint.setOnClickListener(this::toggleAdAudioFingerprint);
         mBinding.adAudioFingerprint.setOnLongClickListener(this::manageAdAudioRules);
         mBinding.adRuleManage.setOnClickListener(view -> AdRuleManageDialog.create().show(this, this::setText));
@@ -147,6 +162,10 @@ public class SettingEnhanceActivity extends BaseActivity {
                 mBinding.siteName,
                 mBinding.audioSource,
                 mBinding.shortDramaSource,
+                mBinding.speechAdEnabled,
+                mBinding.speechAdKeywords,
+                mBinding.speechAdSkipSeconds,
+                mBinding.speechAdSkipMode,
                 mBinding.adAudioFingerprint,
                 mBinding.adRuleManage,
                 mBinding.siteHealthSort,
@@ -163,6 +182,12 @@ public class SettingEnhanceActivity extends BaseActivity {
         safeSet("siteName", mBinding.siteNameText, () -> getString(R.string.setting_site_name_summary, SiteNameStore.count()));
         safeSet("audioSource", mBinding.audioSourceText, () -> getSwitch(!AudioConfig.objectFrom(Setting.getAudioConfig()).getDisplayRules().isEmpty()));
         safeSet("shortDramaSource", mBinding.shortDramaSourceText, () -> getSwitch(!ShortDramaConfig.objectFrom(Setting.getShortDramaConfig()).getDisplayRules().isEmpty()));
+        SpeechAdConfig speech = SpeechAdSetting.snapshot();
+        safeSet("speechAdEnabled", mBinding.speechAdEnabledText, () -> getSpeechAdEnabledText(speech));
+        safeSet("speechAdKeywords", mBinding.speechAdKeywordsText, () -> getString(R.string.speech_ad_keyword_count, speech.keywords().values().size()));
+        safeSet("speechAdSkipSeconds", mBinding.speechAdSkipSecondsText, () -> getString(R.string.speech_ad_skip_seconds_value, speech.skipSeconds()));
+        safeSet("speechAdSkipMode", mBinding.speechAdSkipModeText, () -> speech.mode() == AdSkipPolicyController.Mode.AUTO
+                ? getString(R.string.speech_ad_skip_mode_auto) : getString(R.string.speech_ad_skip_mode_prompt));
         safeSet("adAudioFingerprint", mBinding.adAudioFingerprintText, this::getAdAudioFingerprintText);
         safeSet("adRuleManage", mBinding.adRuleManageText, () -> getString(R.string.ad_rule_count_with_pending,
                 UserAdRuleStore.load().size() + RuleConfig.get().getDefaultRules().size(),
@@ -299,9 +324,100 @@ public class SettingEnhanceActivity extends BaseActivity {
         return true;
     }
 
+    private String getSpeechAdEnabledText(SpeechAdConfig speech) {
+        String text = getSwitch(speech.enabled());
+        if (speech.enabled() && !RealtimeSubtitleSpeechRecognitionFactory.isSelectedModelReady()) {
+            text += " · " + getString(R.string.speech_ad_model_not_ready);
+        }
+        return text;
+    }
+
+    private void toggleSpeechAdEnabled(View view) {
+        SpeechAdSetting.setEnabled(!SpeechAdSetting.snapshot().enabled());
+        notifyAdAudioRuntime();
+        setText();
+    }
+
+    private void editSpeechAdKeywords(View view) {
+        SpeechAdConfig speech = SpeechAdSetting.snapshot();
+        EditText input = new EditText(this);
+        input.setGravity(Gravity.TOP | Gravity.START);
+        input.setMinLines(4);
+        input.setMaxLines(8);
+        input.setSingleLine(false);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        input.setText(String.join("\n", speech.keywords().values()));
+        input.setSelectAllOnFocus(false);
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this, R.style.Theme_WebHTV_LightDialog)
+                .setTitle(R.string.speech_ad_keywords)
+                .setView(input)
+                .setNegativeButton(R.string.dialog_negative, null)
+                .setPositiveButton(R.string.dialog_positive, null)
+                .create();
+        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(button -> {
+            SpeechAdSetting.setKeywords(input.getText().toString());
+            notifyAdAudioRuntime();
+            setText();
+            dialog.dismiss();
+        }));
+        dialog.show();
+        LightDialog.apply(dialog);
+    }
+
+    private void editSpeechAdSkipSeconds(View view) {
+        EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        input.setSelectAllOnFocus(true);
+        input.setText(String.valueOf(SpeechAdSetting.snapshot().skipSeconds()));
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this, R.style.Theme_WebHTV_LightDialog)
+                .setTitle(R.string.speech_ad_skip_seconds)
+                .setView(input)
+                .setNegativeButton(R.string.dialog_negative, null)
+                .setPositiveButton(R.string.dialog_positive, null)
+                .create();
+        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(button -> {
+            String value = input.getText().toString().trim();
+            try {
+                int seconds = Integer.parseInt(value);
+                if (seconds < 1 || seconds > 120) throw new NumberFormatException();
+                SpeechAdSetting.setSkipSeconds(seconds);
+                notifyAdAudioRuntime();
+                setText();
+                dialog.dismiss();
+            } catch (NumberFormatException error) {
+                input.setError(getString(R.string.speech_ad_skip_seconds_invalid));
+                input.requestFocus();
+            }
+        }));
+        dialog.show();
+        LightDialog.apply(dialog);
+    }
+
+    private void selectSpeechAdSkipMode(View view) {
+        SpeechAdConfig speech = SpeechAdSetting.snapshot();
+        String[] modes = {
+                getString(R.string.speech_ad_skip_mode_prompt),
+                getString(R.string.speech_ad_skip_mode_auto)
+        };
+        int checked = speech.mode() == AdSkipPolicyController.Mode.AUTO ? 1 : 0;
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this, R.style.Theme_WebHTV_LightDialog)
+                .setTitle(R.string.speech_ad_skip_mode)
+                .setNegativeButton(R.string.dialog_negative, null)
+                .setSingleChoiceItems(modes, checked, (shown, which) -> {
+                    SpeechAdSetting.setMode(which == 1
+                            ? AdSkipPolicyController.Mode.AUTO
+                            : AdSkipPolicyController.Mode.PROMPT);
+                    notifyAdAudioRuntime();
+                    setText();
+                    shown.dismiss();
+                })
+                .create();
+        dialog.show();
+        LightDialog.apply(dialog);
+    }
     private String getAdAudioFingerprintText() {
         String enabled = getSwitch(AdAudioSetting.isEnabled());
-        AdAudioRuleStore.Snapshot snapshot = adAudioSnapshot;
+        AdAudioRuleSnapshot snapshot = adAudioSnapshot;
         if (snapshot == null || snapshot.hasError()) {
             return enabled + " · " + getString(R.string.setting_ad_audio_rule_error);
         }
@@ -379,7 +495,7 @@ public class SettingEnhanceActivity extends BaseActivity {
     private void notifyAdAudioRuntime() {
         PlaybackService service = Server.get().getService();
         if (service == null || service.player() == null || service.player().isReleased()) return;
-        service.player().reloadAdAudioRules();
+        service.player().reloadAdAudioSettings();
     }
 
     private boolean clearWebHomeExtension(View view) {

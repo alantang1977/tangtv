@@ -8,6 +8,7 @@ import androidx.fragment.app.FragmentActivity;
 
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.ad.audio.AdSkipCoordinator;
+import com.fongmi.android.tv.ad.audio.SpeechAdSignalProvider;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.lang.ref.WeakReference;
@@ -58,12 +59,17 @@ public final class AdSkipPromptPresenter implements AdSkipCoordinator.UiPort, Au
         dismissInternal();
         long token = ++presentationToken;
         AtomicBoolean handled = new AtomicBoolean();
+        boolean speech = SpeechAdSignalProvider.RULE_ID.equals(prompt.ruleId());
+        int title = speech
+                ? R.string.ad_audio_speech_candidate_title
+                : (prompt.fullMatch() ? R.string.ad_audio_match_title : R.string.ad_audio_candidate_title);
+        long duration = prompt.skipDurationSeconds();
+        String message = speech
+                ? owner.getString(R.string.ad_audio_speech_candidate_message, duration)
+                : owner.getString(R.string.ad_audio_candidate_message, prompt.ruleId(), duration);
         dialog = new MaterialAlertDialogBuilder(owner, R.style.ThemeOverlay_WebHTV_LightDialog)
-                .setTitle(prompt.fullMatch()
-                        ? R.string.ad_audio_match_title
-                        : R.string.ad_audio_candidate_title)
-                .setMessage(owner.getString(R.string.ad_audio_candidate_message,
-                        prompt.ruleId(), prompt.skipDurationSeconds()))
+                .setTitle(title)
+                .setMessage(message)
                 .setPositiveButton(R.string.ad_audio_skip, (ignored, which) ->
                         act(token, handled, actions::confirm))
                 .setNegativeButton(R.string.ad_audio_ignore, (ignored, which) ->

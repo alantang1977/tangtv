@@ -25,6 +25,7 @@ import com.fongmi.android.tv.player.PlaybackTrace;
 import com.fongmi.android.tv.player.exo.ExoUtil;
 import com.fongmi.android.tv.player.exo.TrackUtil;
 import com.fongmi.android.tv.player.lut.MpvLutShader;
+import com.fongmi.android.tv.player.lut.LutSetting;
 import com.fongmi.android.tv.player.mpv.MpvConfigStore;
 import com.fongmi.android.tv.player.mpv.MpvAutoControlPolicy;
 import com.fongmi.android.tv.player.mpv.MpvAutoOutputPolicy;
@@ -53,6 +54,7 @@ public class MpvPlayerEngine implements PlayerEngine {
     private boolean retriedFormat;
     private boolean surfaceDirect;
     private Boolean surfaceDirectOverride;
+    private boolean lutAllowed = true;
     private String vulkanBackendOverride;
     private String vulkanBackend = MpvVulkanBackendPolicy.AUTO;
     private boolean vulkanRenderer;
@@ -61,8 +63,9 @@ public class MpvPlayerEngine implements PlayerEngine {
     private final BiConsumer<Integer, Integer> videoSizeProbeListener;
     private int decode;
 
-    public MpvPlayerEngine(int decode, Player.Listener listener, BiConsumer<Integer, Integer> videoSizeProbeListener) {
+    public MpvPlayerEngine(int decode, boolean lutAllowed, Player.Listener listener, BiConsumer<Integer, Integer> videoSizeProbeListener) {
         this.decode = decode;
+        this.lutAllowed = lutAllowed;
         this.videoSizeProbeListener = videoSizeProbeListener;
         this.player = buildPlayer(listener);
     }
@@ -270,6 +273,13 @@ public class MpvPlayerEngine implements PlayerEngine {
         surfaceDirectOverride = value;
     }
 
+    // 直播等场景会禁用 LUT，此时不能因为全局 LUT 开关而放弃电视直出，
+    // 否则与 PlayerManager 的 lutAllowed && LutSetting.isEnabled() 判断相反，
+    // 会在启播后多触发一次播放器重建。仅影响下一次 buildConfig()。
+    public void setLutAllowed(boolean allowed) {
+        lutAllowed = allowed;
+    }
+
     public void setVulkanBackendOverride(@Nullable String value) {
         vulkanBackendOverride = value;
     }
@@ -383,6 +393,19 @@ public class MpvPlayerEngine implements PlayerEngine {
     public VideoPlaybackDetails getVideoPlaybackDetails() {
         MpvPlayer.VideoTrackDiagnostics details =
                 player.getSelectedVideoTrackDiagnostics();
+        // A failed direct MediaCodec attempt can make mpv report vid=no while
+        // retaining the actual video track in track-list. Preserve that source
+        // metadata so automatic output can move to GPU instead of treating a
+        // failed Dolby Vision stream as ordinary video.
+        if (details == null || (details.dolbyVisionProfile() <= 0
+                && details.sourceCodecs().isEmpty())) {
+            MpvPlayer.VideoTrackDiagnostics available =
+                    player.getAvailableVideoTrackDiagnostics();
+            if (available != null && (!available.sourceCodecs().isEmpty()
+                    || available.dolbyVisionProfile() > 0)) {
+                details = available;
+            }
+        }
         String currentVo = player.getObservedCurrentVideoOutput();
         boolean fallbackConfigured = isConfiguredDv7Hdr10Fallback(
                 details, isHard(),
@@ -706,7 +729,7 @@ public class MpvPlayerEngine implements PlayerEngine {
         boolean autoDirectEligible = !zeroCopyBlocked && MpvAutoOutputPolicy.canStartSurfaceDirect(
                 decode == HARD,
                 Util.isLeanback(),
-                MpvPerformanceSetting.isInterpolation(),
+                MpvPerformanceSetting.isInterpolation() || lutAllowed && LutSetting.isEnabled(),
                 MpvConfigStore.hasGpuVideoProcessing());
         surfaceDirect = surfaceDirectOverride == null
                 ? MpvPerformanceSetting.shouldUseSurfaceDirect(autoDirectEligible, Util.isLeanback(), decode == HARD)

@@ -32,6 +32,7 @@ import androidx.media3.ui.PlayerView;
 
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.Result;
+import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.player.PlaybackAutoContext;
 import com.fongmi.android.tv.player.PlaybackServiceReleasePolicy;
 import com.fongmi.android.tv.player.PlaybackTelemetry;
@@ -48,6 +49,7 @@ import com.fongmi.android.tv.subtitle.RealtimeSubtitleController;
 import com.fongmi.android.tv.ui.base.BaseActivity;
 import com.fongmi.android.tv.ui.dialog.AdSkipPromptPresenter;
 import com.fongmi.android.tv.ui.dialog.VideoAspectModeDialog;
+import com.fongmi.android.tv.ui.novel.NovelRouter;
 import com.fongmi.android.tv.ui.custom.CustomSeekView;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.github.catvod.crawler.SpiderDebug;
@@ -66,6 +68,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     private boolean redirect;
     private boolean playbackExiting;
     private String preparedPlaybackKey;
+    private boolean nativeOutputPending;
     private boolean bound;
     private boolean stop;
     private boolean lock;
@@ -370,6 +373,12 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
 
     protected void startPlayer(String key, Result result, boolean useParse, long timeout,
                                MediaMetadata metadata, long startPositionMs) {
+        // 小说/漫画阅读器路由（播放内核前的最后一道拦截）
+        // novel:// / pics:// / manga:// 是「阅读内容协议」而非播放地址。
+        // 正常情况下 ContentDispatcher 已在更早的汇聚点分流；这里兜底处理漏网的解析结果。
+        if (NovelRouter.isReaderUrl(result)) {
+            if (NovelRouter.routeReaderEngine(this, result, key, getReaderVod())) return;
+        }
         if (rejectUnsupportedDrm(key, result)) {
             return;
         } else if (result.getDrm() != null && !FrameworkMediaDrm.isCryptoSchemeSupported(result.getDrm().getUUID())) {
@@ -388,6 +397,15 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
             player().start(PlaySpec.from(result, key, metadata), timeout, PlayerSetting.isAutoPlay(), startPositionMs);
         }
         syncKeepScreenOn();
+    }
+
+    /**
+     * 阅读器路由所需的当前 Vod 上下文（章节列表/书名/海报）。
+     * 子类（VideoActivity / TmdbDetailActivity）覆写以返回正在播放的 Vod；
+     * 默认 null 时阅读器仍会显示当前章内容（内联 payload），只是无章节导航。
+     */
+    protected Vod getReaderVod() {
+        return null;
     }
 
     private boolean rejectUnsupportedDrm(String key, Result result) {
@@ -615,9 +633,18 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         boolean nativePlayer = player().isNativePlayer();
         View shutter = getExoView().findViewById(androidx.media3.ui.R.id.exo_shutter);
         if (nativePlayer) {
-            getExoView().setShutterBackgroundColor(Color.TRANSPARENT);
-            if (shutter != null) shutter.setVisibility(View.GONE);
+            boolean keepClosed = nativeOutputPending
+                    || player().shouldKeepVideoShutterClosed();
+            View videoSurface = getExoView().getVideoSurfaceView();
+            // Native MPV uses SurfaceView, which is composed above the normal
+            // PlayerView shutter. Alpha hides its buffer without replacing or
+            // detaching the Surface while automatic output is being decided.
+            if (videoSurface != null) videoSurface.setAlpha(keepClosed ? 0f : 1f);
+            getExoView().setShutterBackgroundColor(keepClosed ? Color.BLACK : Color.TRANSPARENT);
+            if (shutter != null) shutter.setVisibility(keepClosed ? View.VISIBLE : View.GONE);
         } else if (restoreExo) {
+            View videoSurface = getExoView().getVideoSurfaceView();
+            if (videoSurface != null) videoSurface.setAlpha(1f);
             getExoView().setShutterBackgroundColor(Color.BLACK);
             if (shutter != null) shutter.setVisibility(View.VISIBLE);
         }
@@ -798,8 +825,23 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         }
 
         @Override
+        public void onPlayerOutputPending() {
+            if (!isOwner()) return;
+            nativeOutputPending = true;
+            syncShutter();
+        }
+
+        @Override
+        public void onPlayerOutputReady() {
+            if (!isOwner()) return;
+            nativeOutputPending = false;
+            syncShutter();
+        }
+
+        @Override
         public void onPlayerRebuild(Player player, boolean resetVideoSurface) {
             if (isOwner()) {
+                nativeOutputPending = player().shouldKeepVideoShutterClosed();
                 getSeekView().setProgressPlayer(player);
                 if (resetVideoSurface) resetVideoSurfaceForDecoderSwitch();
                 setRender();
@@ -846,6 +888,10 @@ public void onPlayWhenReadyChanged(boolean playWhenReady, int reason) {
         if (SpiderDebug.isEnabled()) SpiderDebug.log("playback-lifecycle", "state changed state=%d %s", state, lifecycleState());
         syncKeepScreenOn();
         if (!isOwner()) return;
+        // Ownership is established after onServiceConnected/onResume have already run, so
+        // the earlier bind attempts were rejected by the isOwner() guard. Bind here too or
+        // the ad-audio runtime never gets a UI and stays deactivated for the whole session.
+        bindAdAudioPrompt();
         syncShutter();
         onStateChanged(state);
     }

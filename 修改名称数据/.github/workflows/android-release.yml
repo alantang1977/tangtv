@@ -1,0 +1,328 @@
+name: Android Release
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag, blank = v<versionName>-yyyyMMddHHmm or v<versionName>-beta-yyyyMMddHHmm"
+        required: false
+        type: string
+      release_channel:
+        description: "Release channel, auto uses beta on dev/fongmi-sync and stable on main"
+        required: false
+        default: auto
+        type: choice
+        options:
+          - auto
+          - stable
+          - beta
+      release_notes:
+        description: "Release notes, use \\n for Markdown newlines"
+        required: false
+        type: string
+      prerelease:
+        description: "Mark as pre-release"
+        required: false
+        default: false
+        type: boolean
+      sync_cnb:
+        description: "Optionally mirror APKs to CNB Release and sync CNB manifests"
+        required: false
+        default: false
+        type: boolean
+permissions:
+  contents: write
+concurrency:
+  group: android-release-update-channel
+  cancel-in-progress: false
+env:
+  TZ: Asia/Shanghai
+  CNB_API_ENDPOINT: https://api.cnb.cool
+  CNB_WEB_ENDPOINT: https://cnb.cool
+  CNB_REPO_SLUG: tangtang.com.cn.kul/juntv
+  CNB_REPO_URL: https://cnb.cool/tangtang.com.cn.kul/juntv.git
+  UPDATE_CHANNEL_TAG: update-channel
+jobs:
+  release:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Verify bundled MPV native assets
+        run: bash scripts/verify_mpv_native_assets.sh --require-elf
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android packages
+        run: |
+          # API 37 is not published in sdkmanager's stable channel; install the platform archive directly.
+          sdkmanager "platform-tools" "platforms;android-28" "build-tools;36.0.0"
+          curl -fsSL -o /tmp/platform-37.zip https://dl.google.com/android/repository/platform-37.0_r01.zip
+          rm -rf /tmp/platform-37 "$ANDROID_HOME/platforms/android-37"
+          mkdir -p /tmp/platform-37 "$ANDROID_HOME/platforms"
+          unzip -q /tmp/platform-37.zip -d /tmp/platform-37
+          platform_jar="$(find /tmp/platform-37 -name android.jar -print -quit)"
+          test -n "$platform_jar"
+          mv "$(dirname "$platform_jar")" "$ANDROID_HOME/platforms/android-37"
+      - name: Run release-critical tests
+        run: |
+          chmod +x ./gradlew
+          ./gradlew \
+            :app:testMobileArm64_v8aDebugUnitTest \
+            --tests 'com.fongmi.android.tv.player.danmaku.*' \
+            --tests 'com.fongmi.android.tv.UpdateChannelTest' \
+            --tests 'com.fongmi.android.tv.UpdaterFutureTest' \
+            --tests 'com.fongmi.android.tv.utils.GithubTest' \
+            --tests 'com.fongmi.android.tv.utils.GithubProxyTest' \
+            --tests 'com.fongmi.android.tv.ui.dialog.AboutDialogLayoutTest' \
+            --tests 'com.fongmi.android.tv.ui.dialog.UpdateDialogChannelVisibilityTest' \
+            --no-daemon
+          ./gradlew \
+            :app:testLeanbackArm64_v8aDebugUnitTest \
+            --tests 'com.fongmi.android.tv.ui.dialog.UpdateDialogLayoutTest' \
+            --no-daemon
+      - name: Resolve release tag
+        id: meta
+        run: |
+          VERSION_NAME="$(sed -n 's/^[[:space:]]*versionName[[:space:]]*"\([^"]*\)".*/\1/p' app/build.gradle | head -1)"
+          VERSION_CODE="$(sed -n 's/^[[:space:]]*versionCode[[:space:]]*\([0-9][0-9]*\).*/\1/p' app/build.gradle | head -1)"
+          CHANNEL="${{ inputs.release_channel }}"
+          if [ "$CHANNEL" = "auto" ] || [ -z "$CHANNEL" ]; then
+            if [ "${{ github.ref_name }}" = "dev" ] || [ "${{ github.ref_name }}" = "fongmi-sync" ]; then
+              CHANNEL="beta"
+            else
+              CHANNEL="stable"
+            fi
+          fi
+          COMMIT_EPOCH="$(git show -s --format=%ct "$GITHUB_SHA")"
+          TAG_TIME="$(date -d "@$COMMIT_EPOCH" +%Y%m%d%H%M)"
+          if [ "$CHANNEL" = "beta" ]; then
+            APK_SUFFIX="-beta"
+            TAG_PATTERN="^v${VERSION_NAME}-beta-[0-9]{12}$"
+            TAG_DEFAULT="v${VERSION_NAME}-beta-$TAG_TIME"
+            TAG_EXPECT="v${VERSION_NAME}-beta-yyyyMMddHHmm"
+          else
+            APK_SUFFIX=""
+            TAG_PATTERN="^v${VERSION_NAME}-[0-9]{12}$"
+            TAG_DEFAULT="v${VERSION_NAME}-$TAG_TIME"
+            TAG_EXPECT="v${VERSION_NAME}-yyyyMMddHHmm"
+          fi
+          TAG="${{ inputs.release_tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="$TAG_DEFAULT"
+          fi
+          if ! printf '%s' "$TAG" | grep -Eq "$TAG_PATTERN"; then
+            echo "::error title=Invalid release tag::Expected $TAG_EXPECT, got: $TAG"
+            exit 1
+          fi
+          if EXISTING_TAG_SHA="$(git rev-parse "$TAG^{commit}" 2>/dev/null)"; then
+            if [ "$EXISTING_TAG_SHA" != "$GITHUB_SHA" ]; then
+              echo "::error title=Existing release tag targets another commit::$TAG points to $EXISTING_TAG_SHA, expected $GITHUB_SHA"
+              exit 1
+            fi
+            echo "::notice title=Reusing release tag::$TAG already points to this commit"
+          fi
+          {
+            echo "tag=$TAG"
+            echo "title=${TAG#v}"
+            echo "version_name=$VERSION_NAME"
+            echo "version_code=$VERSION_CODE"
+            echo "short_sha=$(git rev-parse --short=7 HEAD)"
+            echo "channel=$CHANNEL"
+            echo "apk_suffix=$APK_SUFFIX"
+          } >> "$GITHUB_OUTPUT"
+      - name: Configure release signing
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          KS_BASE64="${RELEASE_KEYSTORE_BASE64:-$KEYSTORE_BASE64}"
+          STORE_PASSWORD="${RELEASE_STORE_PASSWORD:-$KEY_PASSWORD}"
+          ALIAS="${RELEASE_KEY_ALIAS:-$KEY_ALIAS}"
+          KEY_PASS="${RELEASE_KEY_PASSWORD:-$STORE_PASSWORD}"
+          if [ -z "$KS_BASE64" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$ALIAS" ]; then
+            echo "::error title=Release signing not configured::Configure RELEASE_KEYSTORE_BASE64, RELEASE_KEY_ALIAS and RELEASE_STORE_PASSWORD in repository secrets."
+            exit 1
+          fi
+          mkdir -p app/signing
+          printf '%s' "$KS_BASE64" | base64 --decode > app/signing/release.jks
+          {
+            echo "storeFile=$GITHUB_WORKSPACE/app/signing/release.jks"
+            echo "keyAlias=$ALIAS"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyPassword=$KEY_PASS"
+          } > local.properties
+          echo "Release signing configured"
+      - name: Build four release APKs
+        env:
+          WEBHTV_RELEASE_TAG: ${{ steps.meta.outputs.tag }}
+          WEBHTV_APK_SUFFIX: ${{ steps.meta.outputs.apk_suffix }}
+        run: |
+          chmod +x ./gradlew
+          rm -rf Release/apk
+          ./gradlew \
+            :app:assembleMobileArm64_v8aRelease \
+            :app:assembleMobileArmeabi_v7aRelease \
+            :app:assembleLeanbackArm64_v8aRelease \
+            :app:assembleLeanbackArmeabi_v7aRelease \
+            --no-daemon
+      - name: Collect artifacts
+        run: |
+          rm -rf dist
+          mkdir -p dist
+          cp Release/apk/*.apk dist/
+          ls -lh dist/
+      - name: Prepare release notes input
+        id: release_notes
+        env:
+          RELEASE_NOTES_RAW: ${{ inputs.release_notes }}
+        run: |
+          python3 - <<'PY'
+          import os
+          raw = os.environ.get("RELEASE_NOTES_RAW", "").strip()
+          notes = (
+              raw
+              .replace("\\r\\n", "\n")
+              .replace("\\n", "\n")
+              .replace("\\t", "\t")
+              .replace('\\"', '"')
+              .replace("\\'", "'")
+          )
+          delimiter = "RELEASE_NOTES_EOF"
+          while delimiter in notes:
+              delimiter += "_"
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write(f"has_notes={'true' if notes else 'false'}\n")
+              fh.write(f"notes<<{delimiter}\n")
+              fh.write(notes)
+              if notes and not notes.endswith("\n"):
+                  fh.write("\n")
+              fh.write(f"{delimiter}\n")
+          PY
+      - name: Generate update manifests
+        env:
+          RELEASE_NOTES: ${{ steps.release_notes.outputs.notes }}
+          GITHUB_RELEASE_DOWNLOAD_BASE: https://github.com/${{ github.repository }}/releases/download/${{ steps.meta.outputs.tag }}
+        run: |
+          python3 - <<'PY'
+          import glob
+          import hashlib
+          import json
+          import os
+          tag = "${{ steps.meta.outputs.tag }}"
+          notes = os.environ.get("RELEASE_NOTES", "").strip()
+          release_download_base = os.environ["GITHUB_RELEASE_DOWNLOAD_BASE"]
+          for apk in glob.glob("dist/*.apk"):
+              base = os.path.splitext(os.path.basename(apk))[0]
+              with open(apk, "rb") as fh:
+                  content = fh.read()
+              data = {
+                  "name": tag,
+                  "desc": f"{tag} - ${{ steps.meta.outputs.short_sha }}",
+                  "channel": "${{ steps.meta.outputs.channel }}",
+                  "code": int("${{ steps.meta.outputs.version_code }}"),
+                  "apk": f"{release_download_base}/{base}.apk",
+                  "size": len(content),
+                  "sha256": hashlib.sha256(content).hexdigest(),
+              }
+              if notes:
+                  data["notes"] = notes
+              with open(f"dist/{base}.json", "w", encoding="utf-8") as fh:
+                  json.dump(data, fh, ensure_ascii=False, indent=2)
+                  fh.write("\n")
+          PY
+          ls -lh dist/
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_NOTES: ${{ steps.release_notes.outputs.notes }}
+        run: |
+          PRERELEASE_FLAG=""
+          if [ "${{ inputs.prerelease }}" = "true" ] || [ "${{ steps.meta.outputs.channel }}" = "beta" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+          NOTES="${RELEASE_NOTES:-手动触发 GitHub Actions 构建发布。}"
+          if gh release view "${{ steps.meta.outputs.tag }}" >/dev/null 2>&1; then
+            gh release upload "${{ steps.meta.outputs.tag }}" dist/*.apk dist/*.json --clobber
+          else
+            gh release create "${{ steps.meta.outputs.tag }}" \
+              --target "$GITHUB_SHA" \
+              --title "${{ steps.meta.outputs.title }}" \
+              --notes "$NOTES" \
+              $PRERELEASE_FLAG \
+              dist/*.apk dist/*.json
+          fi
+      - name: Publish update channel manifests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          rm -rf channel-manifests other-channel-manifests
+          mkdir -p channel-manifests other-channel-manifests
+          cp dist/*.json channel-manifests/
+          if [ "${{ steps.meta.outputs.channel }}" = "stable" ]; then
+            OTHER_TAG="$(gh release list --limit 100 --json tagName,isDraft,isPrerelease \
+              --jq '[.[] | select((.isDraft == false) and (.isPrerelease == true) and (.tagName | test("-beta-[0-9]{12}$")))] | first | .tagName // ""')"
+            OTHER_PATTERN="*-beta.json"
+          else
+            OTHER_TAG="$(gh release list --limit 100 --json tagName,isDraft,isPrerelease \
+              --jq '[.[] | select((.isDraft == false) and (.isPrerelease == false) and (.tagName | test("^v.+-[0-9]{12}$")))] | first | .tagName // ""')"
+            OTHER_PATTERN="*.json"
+          fi
+          if [ -n "$OTHER_TAG" ]; then
+            if gh release download "$OTHER_TAG" --pattern "$OTHER_PATTERN" --dir other-channel-manifests; then
+              for manifest in other-channel-manifests/*.json; do
+                [ -e "$manifest" ] || continue
+                if [ "${{ steps.meta.outputs.channel }}" = "beta" ] && [[ "$(basename "$manifest")" == *-beta.json ]]; then
+                  continue
+                fi
+                cp "$manifest" channel-manifests/
+              done
+            else
+              echo "::warning title=Channel manifest seed failed::Could not download $OTHER_PATTERN from $OTHER_TAG."
+            fi
+          fi
+          if ! gh release view "$UPDATE_CHANNEL_TAG" >/dev/null 2>&1; then
+            gh release create "$UPDATE_CHANNEL_TAG" \
+              --target "$GITHUB_SHA" \
+              --title "Update channel manifests" \
+              --notes "Machine-managed stable and beta update manifests." \
+              --prerelease
+          fi
+          gh release upload "$UPDATE_CHANNEL_TAG" channel-manifests/*.json --clobber
+      - name: Sync to CNB
+        if: ${{ inputs.sync_cnb }}
+        env:
+          CNB_TOKEN: ${{ secrets.CNB_TOKEN }}
+          CNB_RELEASE_TAG: ${{ steps.meta.outputs.tag }}
+          CNB_RELEASE_TITLE: ${{ steps.meta.outputs.title }}
+          CNB_RELEASE_NOTES: ${{ steps.release_notes.outputs.notes }}
+          CNB_RELEASE_PRERELEASE: ${{ inputs.prerelease == true || steps.meta.outputs.channel == 'beta' }}
+          CNB_RELEASE_LATEST: ${{ steps.meta.outputs.channel == 'stable' }}
+        run: |
+          # 使用 bash 调用脚本，避免因缺少可执行权限导致 Permission denied
+          bash .github/scripts/sync-cnb-release.sh
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: webhtv-${{ steps.meta.outputs.tag }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30

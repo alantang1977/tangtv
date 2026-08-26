@@ -24,6 +24,7 @@ import androidx.leanback.widget.ArrayObjectAdapter;
 import androidx.leanback.widget.HorizontalGridView;
 import androidx.leanback.widget.ItemBridgeAdapter;
 import androidx.appcompat.widget.LinearLayoutCompat;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.leanback.widget.OnChildViewHolderSelectedListener;
 import androidx.leanback.widget.VerticalGridView;
@@ -225,7 +226,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
-public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.Listener, TrackDialog.Listener, ArrayAdapter.OnClickListener, FlagAdapter.OnClickListener, EpisodeAdapter.OnClickListener, QualityAdapter.OnClickListener, QuickAdapter.OnClickListener, ParseAdapter.OnClickListener, Clock.Callback, SubtitlePlaybackSession.Host, com.fongmi.android.tv.ui.host.TmdbDetailHost, ControlDialog.Listener, CastDialog.Listener {
+public class VideoActivity extends PlaybackActivity implements CustomKeyDownVod.Listener, TrackDialog.Listener, ArrayAdapter.OnClickListener, FlagAdapter.OnClickListener, EpisodeAdapter.OnClickListener, QualityAdapter.OnClickListener, QuickAdapter.OnClickListener, ParseAdapter.OnClickListener, Clock.Callback, SubtitlePlaybackSession.Host, com.fongmi.android.tv.ui.host.TmdbDetailHost, ControlDialog.Listener, CastDialog.Listener, com.fongmi.android.tv.ui.novel.NovelReaderHost {
     private static final long LYRICS_OFFSET_MIN_MS = -5000L;
     private static final long LYRICS_OFFSET_MAX_MS = 5000L;
     private static final long LYRICS_OFFSET_STEP_MS = 500L;
@@ -518,6 +519,11 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
         return true;
     }
 
+    @Override
+    protected boolean customWallMotion() {
+        return false;
+    }
+
     public static void file(FragmentActivity activity, String path) {
         file(activity, path, "");
     }
@@ -622,6 +628,11 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
             SpiderDebug.log("video-flow", "dispatched to content handler key=%s", key);
             return;
         }
+        startSkippingDispatch(activity, key, id, name, pic, mark, collect, cast, tmdbItem, wallPic, content, launch);
+    }
+
+    /** 跳过 ContentDispatcher 的启动路径（供阅读器等 handler 判定内容不归自己管时回退）。 */
+    public static void startSkippingDispatch(Activity activity, String key, String id, String name, String pic, String mark, boolean collect, boolean cast, com.fongmi.android.tv.bean.TmdbItem tmdbItem, String wallPic, String content, long launch) {
         if (tmdbItem == null && shouldOpenLegacyTmdbDetail(key, id, cast)) {
             TmdbDetailActivity.start(activity, key, id, name, pic, mark, null, Setting.getDetailOpenMode());
             return;
@@ -1290,6 +1301,7 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
         mBroken = new ArrayList<>();
         mR1 = this::hideControl;
         mR2 = this::updateFocus;
+        mR3 = this::setTraffic;
         mR4 = this::showEmpty;
         mSeekProgressFallback = this::hideSeekProgressIfReady;
         mAudioRefreshLyricsRunnable = this::refreshLyricsNow;
@@ -1359,7 +1371,7 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
         mBinding.control.action.reset.setOnClickListener(guarded(this::onReset));
         mBinding.control.action.title.setOnClickListener(guarded(this::onTitle));
         mBinding.control.action.player.setOnClickListener(guarded(this::onPlayerKernel));
-        mBinding.control.action.player.setOnLongClickListener(view -> onChooseLong());
+        mBinding.control.action.player.setOnLongClickListener(view -> onPlayerKernelLong());
         mBinding.control.action.decode.setOnClickListener(guarded(this::onDecode));
         mBinding.control.action.playParams.setOnClickListener(guarded(this::onPlayParams));
         mBinding.control.action.multiThreadProxy.setOnClickListener(guarded(this::onMultiThreadProxy));
@@ -2415,15 +2427,18 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
     }
 
     private void showTmdbEpisodeFallback() {
-        if (mBinding.episodeLoadingIndicator.getVisibility() != View.VISIBLE) return;
         if (!isTmdbSourceEnabled() || mTmdbUIAdapter == null || !mTmdbUIAdapter.isReady()) return;
         if (mTmdbUIAdapter.isEpisodeMetadataLoaded()) {
             refreshEpisodeTitles();
             return;
         }
+        // 不能再以「占位符可见」为前提：选集现在会先上屏，占位符只在一集都没有时出现。
+        // 超时后必须置位 fallbackReleased，否则 tmdbEpisodeEnrichmentPending 永远为真，
+        // TMDB 匹配失败时表头会永久挂着。
         mTmdbEpisodeFallbackReleased = true;
         SpiderDebug.log("tmdb-tv", "episode metadata timeout fallback, reveal native list");
-        finishEpisodeLoading();
+        if (mBinding.episodeLoadingIndicator.getVisibility() == View.VISIBLE) finishEpisodeLoading();
+        else refreshEpisodeTitles();
     }
 
     private void setText(Vod item) {
@@ -2491,6 +2506,29 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
     private boolean isIntentTmdbPlayback() {
         ArrayList<String> values = getIntent().getStringArrayListExtra("tmdb_episode_titles");
         return values != null && !values.isEmpty();
+    }
+
+    @Override
+    protected Vod getReaderVod() {
+        // 把当前正在播放的 Vod（含章节列表）交给阅读器路由，支持小说/漫画章节导航
+        return mVod;
+    }
+
+    /**
+     * 小说/漫画阅读器切换章节时，由播放器执行解析任务（复用完整 playerContent 链路，
+     * 含 parse=1 二次解析）。解析结果经 NovelRouter.routeReaderEngine 回传给前台阅读页。
+     */
+    @Override
+    public void labPlayEpisode(String chapterUrl) {
+        if (chapterUrl == null || chapterUrl.isEmpty()) return;
+        Flag flag = getFlag();
+        if (flag == null || flag.getEpisodes() == null) return;
+        for (Episode ep : flag.getEpisodes()) {
+            if (chapterUrl.equals(ep.getUrl())) {
+                getPlayer(flag, ep);
+                return;
+            }
+        }
     }
 
     private void getPlayer(Flag flag, Episode episode) {
@@ -2630,12 +2668,15 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
         boolean tmdbAdapterReady = mTmdbUIAdapter != null && mTmdbUIAdapter.isReady();
         boolean tmdbEpisodeMetadataLoaded = mTmdbUIAdapter != null && mTmdbUIAdapter.isEpisodeMetadataLoaded();
         if (tmdbEpisodeMetadataLoaded) App.removeCallbacks(mTmdbEpisodeTimeout);
-        // 快速直达播放会跳过全屏 TMDB loading，但卡片数据返回前仍不能先闪出原生文字选集。
-        // 超时后保留已经揭开的原生列表，避免稍后的核心详情刷新再次把它隐藏。
+        // 富集是否仍在进行中。超时后保留已经揭开的原生列表，避免稍后的核心详情刷新再次把它隐藏。
         boolean tmdbEpisodeEnrichmentPending = !mTmdbEpisodeFallbackReleased
                 && (mTmdbDetailLoading || (tmdbAdapterReady && !tmdbEpisodeMetadataLoaded));
+        // 站源集数已可渲染时不再隐藏列表：先出纯文本，TMDB 到达后由 updateFlag / refreshTmdbEpisodeTitles
+        // 原地换成卡片。只有一集都还没有时才需要占位符。
         boolean waitTmdbEpisodes = EpisodeDisplayPolicy.shouldWaitForTmdbEpisodes(tmdbMode, tmdbEpisodeEnrichmentPending, tmdbAdapterReady, tmdbEpisodeMetadataLoaded, items);
-        boolean showTmdbEpisodeChrome = EpisodeDisplayPolicy.shouldShowTmdbEpisodeChrome(tmdbMode, waitTmdbEpisodes, items);
+        // chrome 跟随「富集中」而非「隐藏中」：站源选集先上屏时表头就位，TMDB 卡片到达后
+        // 不再二次插入表头造成列表跳动。
+        boolean showTmdbEpisodeChrome = EpisodeDisplayPolicy.shouldShowTmdbEpisodeChrome(tmdbMode, tmdbEpisodeEnrichmentPending, items);
         boolean useTmdbCards = EpisodeDisplayPolicy.shouldUseTmdbEpisodeCards(tmdbMode, items);
         mBinding.episodeContainer.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
         mBinding.control.action.episodes.setVisibility(items.size() < 2 ? View.GONE : View.VISIBLE);
@@ -2646,8 +2687,11 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
             return;
         }
 
-        if (showTmdbEpisodeChrome && hasMultiple) episodeGridMode = Setting.getTmdbEpisodeGridMode();
-        if (!showTmdbEpisodeChrome || !hasMultiple) episodeGridMode = false;
+        // 网格模式跟随「是否真有卡片数据」而非 chrome 可见性：富集中的纯文本选集若进了
+        // 按卡片宽度算 spanCount 的网格会明显错位，而此时 episodeViewMode 按钮又因
+        // useTmdbCards=false 被隐藏，用户无法切回列表。
+        if (useTmdbCards && hasMultiple) episodeGridMode = Setting.getTmdbEpisodeGridMode();
+        if (!useTmdbCards || !hasMultiple) episodeGridMode = false;
         mBinding.episodeHeader.setVisibility(showTmdbEpisodeChrome && !isEmpty ? View.VISIBLE : View.GONE);
         mBinding.episodeReverse.setVisibility(showTmdbEpisodeChrome && hasMultiple ? View.VISIBLE : View.GONE);
         mBinding.episodeViewMode.setVisibility(showTmdbEpisodeChrome && hasMultiple && useTmdbCards ? View.VISIBLE : View.GONE);
@@ -2723,8 +2767,8 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
         setR2Callback();
     }
 
-    // TMDB 加载结束后兜底：若仍卡在剧集加载指示器（电影无集数、未匹配到、获取失败等），
-    // 隐藏指示器并以普通文本模式揭开选集列表，避免「正在加载剧集信息...」永久停留
+    // 兜底：占位符只在站源一集都没返回时出现（有集数就直接上屏了）。这里负责在 TMDB
+    // 结束或超时后把它收掉，避免「正在加载剧集信息...」永久停留。
     private void finishEpisodeLoading() {
         if (mBinding.episodeLoadingIndicator.getVisibility() != View.VISIBLE) return;
         if (isTmdbSourceEnabled()
@@ -2887,6 +2931,8 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
         updateEpisodeFileNameButton();
         updateEpisodeReverseText();
         updateFocus();
+        // 占位符可见时（站源一集都没有）不能把空列表揭出来。选集有内容时占位符恒不可见，
+        // 所以这里实际上总是揭开——保留判断是为了覆盖"零集占位"那条路径。
         setEpisodeContentVisible(mBinding.episodeLoadingIndicator.getVisibility() != View.VISIBLE);
         if (scrollToCurrent) scrollToCurrentEpisode();
     }
@@ -2918,10 +2964,6 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
             mBinding.episode.setAlpha(1f);
             mBinding.episodeGrid.setVisibility(View.GONE);
         }
-    }
-
-    private View getActiveEpisodeContentView() {
-        return episodeGridMode ? mBinding.episodeGrid : mBinding.episode;
     }
 
     private void clearEpisodeGridDecoration() {
@@ -3485,7 +3527,16 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
         hideControl();
         Flag flag = getFlag();
         boolean tmdbCard = flag != null && EpisodeDisplayPolicy.shouldUseTmdbEpisodeCards(isTmdbSourceEnabled(), flag.getEpisodes());
-        EpisodeListDialog.create().flags(mFlagAdapter.getItems()).tmdbCard(tmdbCard).show(this);
+        EpisodeListDialog.create().flags(mFlagAdapter.getItems()).tmdbCard(tmdbCard).fallbackStill(getEpisodeFallbackStillUrl()).seasons(getEpisodeDialogSeasons(), getEpisodeDialogSeasonCounts()).show(this);
+    }
+
+    private java.util.List<Integer> getEpisodeDialogSeasons() {
+        return new java.util.ArrayList<>(getEpisodeDialogSeasonCounts().keySet());
+    }
+
+    private java.util.Map<Integer, Integer> getEpisodeDialogSeasonCounts() {
+        if (mTmdbUIAdapter == null || !mTmdbUIAdapter.isLoaded()) return java.util.Map.of();
+        return mTmdbUIAdapter.getSeasonEpisodeCounts();
     }
 
     private void onRepeat() {
@@ -3796,26 +3847,14 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
         syncHistory();
     }
 
-    private void onChoose() {
-        String[] kernel = ResUtil.getStringArray(R.array.select_player_kernel);
-        String[] items = Arrays.copyOf(kernel, kernel.length + 1);
-        items[kernel.length] = "外调";
-        new androidx.appcompat.app.AlertDialog.Builder(this).setItems(items, (dialog, which) -> {
-            if (which < kernel.length) {
-                clearLyrics();
-                player().switchPlayerManually(which);
-                setPlayer();
-                setDecode();
-            } else {
-                PlayerHelper.choose(this, player().getUrl(), player().getHeaders(), player().isVod(), player().getPosition(), mBinding.widget.title.getText());
-                setRedirect(true);
-            }
-        }).show();
-    }
-
     private void onPlayerKernel() {
         if (playerKernelSwitchRefreshing) return;
-        PlayerKernelDialog.show(this, player().getPlayerType(), this::switchPlayerKernel);
+        PlayerKernelDialog.show(this, player().getPlayerType(), this::switchPlayerKernel, this::onExternalPlayer);
+    }
+
+    private void onExternalPlayer() {
+        PlayerHelper.choose(this, player().getUrl(), player().getHeaders(), player().isVod(), player().getPosition(), mBinding.widget.title.getText());
+        setRedirect(true);
     }
 
     private void switchPlayerKernel(int type) {
@@ -4030,6 +4069,7 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
 
         if (mSeekProgressFallback != null) App.removeCallbacks(mSeekProgressFallback);
         mBinding.progress.getRoot().setVisibility(View.VISIBLE);
+        App.post(mR3, 0);
         hideCenter();
         hideError();
     }
@@ -4037,6 +4077,8 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
     private void hideProgress() {
         if (mSeekProgressFallback != null) App.removeCallbacks(mSeekProgressFallback);
         mBinding.progress.getRoot().setVisibility(View.GONE);
+        App.removeCallbacks(mR3);
+        Traffic.reset(mBinding.progress.traffic);
     }
 
     private void showPlaybackContent() {
@@ -4301,14 +4343,15 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
     }
 
     private String getEpisodeFallbackStillUrl() {
-        // 分集无 TMDB 剧照时的兜底图：优先取当前 TMDB 条目自己的图（backdrop→poster），
-        // 这样切换条目后兜底图跟随当前剧集，而非停留在进场时固定的 getPic()/tmdb_vod_pic
-        // （那些是 intent 里进场时的值，切换条目不变，会导致所有卡片显示切换前那部剧的海报）。
+        // 分集无 TMDB 剧照时的兜底图，顺序对齐详情页 episodeFallbackStillUrl()：海报优先，再退 backdrop。
+        // getPosterUrl() 内部已带 tmdbItem.getPosterUrl() 兜底，比 getPhotos()（backdrops 列表，
+        // tmdbDetail 未就绪时为空）可靠。取当前 TMDB 条目自己的图，切换条目后兜底图才会跟随当前剧集，
+        // 而非停留在进场时固定的 getPic()/tmdb_vod_pic（那些切换条目不变，会显示切换前那部剧的海报）。
         if (mTmdbUIAdapter != null && mTmdbUIAdapter.isLoaded()) {
-            java.util.List<String> photos = mTmdbUIAdapter.getPhotos();
-            if (photos != null && !photos.isEmpty() && !TextUtils.isEmpty(photos.get(0))) return photos.get(0);
             String poster = mTmdbUIAdapter.getPosterUrl();
             if (!TextUtils.isEmpty(poster)) return poster;
+            java.util.List<String> photos = mTmdbUIAdapter.getPhotos();
+            if (photos != null && !photos.isEmpty() && !TextUtils.isEmpty(photos.get(0))) return photos.get(0);
         }
         if (!TextUtils.isEmpty(getPic())) return getPic();
         if (!TextUtils.isEmpty(getTmdbVodPic())) return getTmdbVodPic();
@@ -4710,25 +4753,9 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
         items.forEach(item -> mFlagAdapter.getItems().stream()
                 .filter(item::equals).findFirst().ifPresentOrElse(target -> {
                     target.mergeEpisodes(item.getEpisodes(), mHistory.isRevSort());
-                    if (target.equals(activated)) {
-                        boolean useTmdbCard = EpisodeDisplayPolicy.shouldUseTmdbEpisodeCards(isTmdbSourceEnabled(), target.getEpisodes());
-
-                        if (useTmdbCard && mBinding.episodeLoadingIndicator.getVisibility() == View.VISIBLE) {
-                            // TMDB数据加载完成，执行淡入动画
-                            setEpisodeAdapter(target.getEpisodes());
-                            mBinding.episodeLoadingIndicator.setVisibility(View.GONE);
-                            setEpisodeContentVisible(true);
-                            View episodeView = getActiveEpisodeContentView();
-                            episodeView.setAlpha(0f);
-                            episodeView.animate()
-                                    .alpha(1f)
-                                    .setDuration(300)
-                                    .start();
-                        } else {
-                            // 普通更新或初始加载
-                            setEpisodeAdapter(target.getEpisodes());
-                        }
-                    }
+                    // 选集不再等 TMDB 才上屏，占位符只在「一集都没有」时出现，与「已有卡片数据」
+                    // 互斥，原先那条淡入分支已无法命中，故只保留常规刷新。
+                    if (target.equals(activated)) setEpisodeAdapter(target.getEpisodes());
                 }, () -> mFlagAdapter.add(item)));
     }
 
@@ -4776,6 +4803,14 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
     protected void onPlayerRebuilt() {
         setPlayerKernel();
         setDecode();
+        refreshControlDialog();
+    }
+
+    // 设置弹窗自己不会跟着引擎重建刷新，回退期间开着弹窗就会一直显示旧的内核/解码。
+    private void refreshControlDialog() {
+        for (Fragment fragment : getSupportFragmentManager().getFragments()) {
+            if (fragment instanceof ControlDialog dialog) dialog.setPlayer();
+        }
     }
 
     @Override
@@ -4783,11 +4818,14 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
         refreshLyrics();
         setTrackVisible();
         mClock.setCallback(this);
+        // 轨道要等新引擎 prepare 完才回来，重建那一刻按钮还是隐藏态，弹窗必须在这里再抄一次。
+        refreshControlDialog();
     }
 
     @Override
     protected void onTitlesChanged() {
         setTitleVisible();
+        refreshControlDialog();
     }
 
     @Override
@@ -5338,8 +5376,10 @@ private long mInitialPlaybackPosition = C.TIME_UNSET;
         boolean tmdbMode = isTmdbSourceEnabled();
         boolean useTmdbCards = EpisodeDisplayPolicy.shouldUseTmdbEpisodeCards(tmdbMode, items);
         boolean showTmdbEpisodeChrome = EpisodeDisplayPolicy.shouldShowTmdbEpisodeChrome(tmdbMode, false, items);
-        if (showTmdbEpisodeChrome && hasMultiple) episodeGridMode = Setting.getTmdbEpisodeGridMode();
-        if (!showTmdbEpisodeChrome || !hasMultiple) episodeGridMode = false;
+        // 与 setEpisodeAdapter 保持同一判据：网格模式只跟随「真有卡片数据」。此处 chrome
+        // 参数传 false 时两者恰好等价，显式写成 useTmdbCards 是为了以后改策略时不会漏掉这里。
+        if (useTmdbCards && hasMultiple) episodeGridMode = Setting.getTmdbEpisodeGridMode();
+        if (!useTmdbCards || !hasMultiple) episodeGridMode = false;
         mBinding.episodeHeader.setVisibility(showTmdbEpisodeChrome && !items.isEmpty() ? View.VISIBLE : View.GONE);
         mBinding.episodeReverse.setVisibility(showTmdbEpisodeChrome && hasMultiple ? View.VISIBLE : View.GONE);
         mBinding.episodeViewMode.setVisibility(showTmdbEpisodeChrome && hasMultiple && useTmdbCards ? View.VISIBLE : View.GONE);
@@ -8680,12 +8720,7 @@ public void onLutSelected(LutPreset preset) {
         setR1Callback();
     }
 
-private boolean onChooseLong() {
-        onChoose();
-        return true;
-    }
-
-private void setTraffic() {
+    private void setTraffic() {
         Traffic.setSpeed(mBinding.progress.traffic, service() == null ? null : player());
         App.post(mR3, 1000);
     }

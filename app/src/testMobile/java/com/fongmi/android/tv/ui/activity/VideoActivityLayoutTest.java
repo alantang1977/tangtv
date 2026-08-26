@@ -1,5 +1,8 @@
 package com.fongmi.android.tv.ui.activity;
 
+import com.fongmi.android.tv.bean.Episode;
+import com.fongmi.android.tv.ui.helper.EpisodeDisplayPolicy;
+
 import org.junit.Test;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -17,6 +20,7 @@ import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -1378,7 +1382,7 @@ public class VideoActivityLayoutTest {
     }
 
     @Test
-    public void leanbackFastTmdbPlaybackKeepsEpisodesHiddenUntilEpisodeMetadataFinishes() throws Exception {
+    public void leanbackScrapedEpisodesRenderBeforeTmdbMetadataFinishes() throws Exception {
         Path sourcePath = findLeanbackJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
         String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
         int setEpisode = source.indexOf("private void setEpisodeAdapter(List<Episode> items, boolean scrollToCurrent)");
@@ -1388,7 +1392,10 @@ public class VideoActivityLayoutTest {
         int pending = body.indexOf("boolean tmdbEpisodeEnrichmentPending = !mTmdbEpisodeFallbackReleased", metadata);
         int pendingCondition = body.indexOf("&& (mTmdbDetailLoading || (tmdbAdapterReady && !tmdbEpisodeMetadataLoaded));", pending);
         int wait = body.indexOf("EpisodeDisplayPolicy.shouldWaitForTmdbEpisodes(tmdbMode, tmdbEpisodeEnrichmentPending, tmdbAdapterReady, tmdbEpisodeMetadataLoaded, items);", pendingCondition);
-        int hide = body.indexOf("setEpisodeContentVisible(false);", wait);
+        // 网格模式必须跟随「真有卡片数据」，否则纯文本项会被塞进按卡片宽度算 spanCount 的
+        // 网格，而 episodeViewMode 按钮此时因 useTmdbCards=false 隐藏，用户切不回列表。
+        int gridFollowsCards = body.indexOf("if (useTmdbCards && hasMultiple) episodeGridMode = Setting.getTmdbEpisodeGridMode();", wait);
+        int gridResetFollowsCards = body.indexOf("if (!useTmdbCards || !hasMultiple) episodeGridMode = false;", gridFollowsCards);
         int finishLoading = source.indexOf("private void finishEpisodeLoading()");
         int refreshTitles = source.indexOf("private void refreshEpisodeTitles()", finishLoading);
         String finishBody = finishLoading >= 0 && refreshTitles > finishLoading ? source.substring(finishLoading, refreshTitles) : "";
@@ -1396,9 +1403,39 @@ public class VideoActivityLayoutTest {
 
         assertTrue(sourcePath + " is missing setEpisodeAdapter", setEpisode >= 0);
         assertTrue("native-enhanced playback must track episode metadata separately from core TMDB detail", metadata >= 0);
-        assertTrue("the episode area must remain pending after core detail loads but before episode metadata finishes", pending > metadata && pendingCondition > pending && wait > pendingCondition);
-        assertTrue("the temporary native text row must stay hidden while TMDB episode enrichment is pending", hide > wait);
+        assertTrue("the episode area must still know enrichment is pending after core detail loads", pending > metadata && pendingCondition > pending && wait > pendingCondition);
+        assertTrue("episode grid mode must follow real TMDB card data, not chrome visibility", gridFollowsCards > wait && gridResetFollowsCards > gridFollowsCards);
+        // 隐藏选集只允许发生在 waitTmdbEpisodes 分支里，而该分支的条件由 EpisodeDisplayPolicy
+        // 收窄为「一集都没有」。用真实的策略调用来断言，而不是匹配源码缩进（文件是 CRLF，
+        // 带 \n 的字面量匹配会恒假，成为空断言）。
+        assertFalse("scraped episodes must render instead of being hidden while enrichment is pending",
+                EpisodeDisplayPolicy.shouldWaitForTmdbEpisodes(true, true, true, false, List.of(Episode.create("第1集", "u1"))));
+        assertTrue("with no episode at all the placeholder is still the only thing to show",
+                EpisodeDisplayPolicy.shouldWaitForTmdbEpisodes(true, true, true, false, List.of()));
+        assertEquals("hiding the episode content must remain confined to the wait branch", 1, countOccurrences(body, "setEpisodeContentVisible(false);"));
         assertTrue("core TMDB completion must not trigger the plain-list fallback while episode metadata is still loading", metadataGuard >= 0);
+    }
+
+    private static int countOccurrences(String text, String token) {
+        int count = 0;
+        for (int at = text.indexOf(token); at >= 0; at = text.indexOf(token, at + token.length())) count++;
+        return count;
+    }
+
+    @Test
+    public void leanbackTmdbCardUpgradeHasSingleRefreshPath() throws Exception {
+        Path sourcePath = findLeanbackJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+        int updateFlag = source.indexOf("private void updateFlag(Flag activated, List<Flag> items)");
+        int nextMethod = source.indexOf("\n    private final PlaybackService.NavigationCallback", updateFlag);
+        String body = updateFlag >= 0 && nextMethod > updateFlag ? source.substring(updateFlag, nextMethod) : "";
+
+        assertTrue(sourcePath + " is missing updateFlag", updateFlag >= 0);
+        assertTrue("the activated line must rebind episodes so TMDB cards replace the plain text rows",
+                body.contains("if (target.equals(activated)) setEpisodeAdapter(target.getEpisodes());"));
+        // 占位符只在「一集都没有」时可见，与「已有卡片数据」互斥，那条淡入分支已无法命中。
+        assertFalse("the unreachable placeholder fade-in branch must not come back",
+                body.contains("mBinding.episodeLoadingIndicator.getVisibility() == View.VISIBLE"));
     }
 
     @Test
@@ -1415,9 +1452,9 @@ public class VideoActivityLayoutTest {
         int terminalCancel = source.indexOf("if (tmdbEpisodeMetadataLoaded) App.removeCallbacks(mTmdbEpisodeTimeout);", setEpisode);
         int fallbackAwarePending = source.indexOf("boolean tmdbEpisodeEnrichmentPending = !mTmdbEpisodeFallbackReleased", setEpisode);
         int fallback = source.indexOf("private void showTmdbEpisodeFallback()");
-        int indicatorGuard = source.indexOf("mBinding.episodeLoadingIndicator.getVisibility() != View.VISIBLE", fallback);
-        int release = source.indexOf("mTmdbEpisodeFallbackReleased = true;", indicatorGuard);
-        int finish = source.indexOf("finishEpisodeLoading();", release);
+        int metadataShortCircuit = source.indexOf("if (mTmdbUIAdapter.isEpisodeMetadataLoaded())", fallback);
+        int release = source.indexOf("mTmdbEpisodeFallbackReleased = true;", metadataShortCircuit);
+        int indicatorBranch = source.indexOf("if (mBinding.episodeLoadingIndicator.getVisibility() == View.VISIBLE) finishEpisodeLoading();", release);
         int finishMethod = source.indexOf("private void finishEpisodeLoading()");
         int allowTimedFallback = source.indexOf("&& !mTmdbEpisodeFallbackReleased", finishMethod);
         int destroy = source.indexOf("protected void onDestroy()");
@@ -1427,8 +1464,10 @@ public class VideoActivityLayoutTest {
         assertTrue("each enhanced detail load must reset and schedule the episode fallback", reset > setDetail && schedule > reset);
         assertTrue("completed episode metadata must cancel the fallback timer", terminalCancel > setEpisode);
         assertTrue("once timeout fallback is released, later core-detail refreshes must not hide the native list again", fallbackAwarePending > terminalCancel);
-        assertTrue("the timeout must only release a visible placeholder, then reveal the native episode list",
-                fallback >= 0 && indicatorGuard > fallback && release > indicatorGuard && finish > release);
+        // 选集现在先上屏，占位符只在「一集都没有」时出现，所以超时不能再以占位符可见为前提：
+        // 必须无条件置位 fallbackReleased 让表头收起，再按占位符是否可见决定走哪条揭开路径。
+        assertTrue("the timeout must release the pending flag regardless of placeholder visibility, then reveal the native episode list",
+                fallback >= 0 && metadataShortCircuit > fallback && release > metadataShortCircuit && indicatorBranch > release);
         assertTrue("finishEpisodeLoading must allow the explicit timeout fallback through its metadata guard", allowTimedFallback > finishMethod);
         assertTrue("episode timeout callback must be removed when the activity is destroyed", destroyCancel > destroy);
     }
@@ -1979,7 +2018,7 @@ public class VideoActivityLayoutTest {
                 span >= 0
                         && activity.indexOf("return TmdbEpisodeGridPolicy.tvAdaptiveSpanCount(getResources().getConfiguration().screenWidthDp);", span) > span
                         && setEpisode >= 0
-                        && activity.indexOf("if (showTmdbEpisodeChrome && hasMultiple) episodeGridMode = Setting.getTmdbEpisodeGridMode();", setEpisode) > setEpisode
+                        && activity.indexOf("if (useTmdbCards && hasMultiple) episodeGridMode = Setting.getTmdbEpisodeGridMode();", setEpisode) > setEpisode
                         && activity.indexOf("mBinding.episodeViewMode.setVisibility(showTmdbEpisodeChrome && hasMultiple && useTmdbCards ? View.VISIBLE : View.GONE);", setEpisode) > setEpisode
                         && toggle >= 0
                         && activity.indexOf("if (mBinding.episodeViewMode.getVisibility() != View.VISIBLE) return;", toggle) > toggle
@@ -2197,6 +2236,26 @@ public class VideoActivityLayoutTest {
                 source.indexOf("if (tmdbCard) binding.episode.setFocusScrollStrategy(BaseGridView.FOCUS_SCROLL_ITEM);", recycler) > recycler);
         assertFalse("TMDB episode dialog must not swallow normal up/down focus navigation",
                 source.contains("handleTmdbEpisodeGridKey"));
+    }
+
+    @Test
+    public void leanbackPlaybackEpisodeDialogFallsBackToLastCardOnPartialRow() throws Exception {
+        Path sourcePath = findLeanbackJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "dialog", "EpisodeListDialog.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+        int key = source.indexOf("private boolean onEpisodeKey(KeyEvent event)");
+        int lower = source.indexOf("private boolean focusLowerFromEpisode()");
+        int lowerEnd = source.indexOf("\n    private ", lower + 1);
+        String lowerBody = lower >= 0 && lowerEnd > lower ? source.substring(lower, lowerEnd) : "";
+
+        assertTrue(sourcePath + " is missing playback episode down key handling", key >= 0 && lower > key);
+        assertTrue("playback episode grid must route the down key through the partial row fallback",
+                source.indexOf("if (KeyUtil.isDownKey(event)) return focusLowerFromEpisode();", key) > key);
+        assertTrue("playback episode grid must defer to Leanback while a card sits directly below",
+                lowerBody.contains("if (position == RecyclerView.NO_POSITION || position + column < count) return false;"));
+        assertTrue("playback episode grid must reuse the shared grid policy so a short last row stays reachable",
+                lowerBody.contains("TmdbEpisodeGridPolicy.verticalFocusTarget(position, column, count, true)")
+                        && lowerBody.contains("if (target == TmdbEpisodeGridPolicy.NO_FOCUS_TARGET) return false;")
+                        && lowerBody.contains("focusPosition(binding.episode, target);"));
     }
 
     @Test

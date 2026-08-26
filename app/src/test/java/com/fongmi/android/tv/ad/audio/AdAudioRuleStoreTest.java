@@ -21,8 +21,8 @@ public class AdAudioRuleStoreTest {
     public void importedSnapshotSurvivesRestart() throws Exception {
         Path directory = temporaryFolder.newFolder().toPath();
 
-        AdAudioRuleStore.Snapshot imported = new AdAudioRuleStore(directory).importJson(validRuleJson("rule-a"));
-        AdAudioRuleStore.Snapshot reloaded = new AdAudioRuleStore(directory).load();
+        AdAudioRuleSnapshot imported = new AdAudioRuleStore(directory).importJson(validRuleJson("rule-a"));
+        AdAudioRuleSnapshot reloaded = new AdAudioRuleStore(directory).load();
 
         assertEquals("rule-a", imported.ruleSet().rules().get(0).id());
         assertEquals("rule-a", reloaded.ruleSet().rules().get(0).id());
@@ -38,7 +38,7 @@ public class AdAudioRuleStoreTest {
 
         assertThrows(IllegalArgumentException.class, () -> store.importJson("{\"rules\":["));
 
-        AdAudioRuleStore.Snapshot reloaded = new AdAudioRuleStore(directory).load();
+        AdAudioRuleSnapshot reloaded = new AdAudioRuleStore(directory).load();
         assertEquals("rule-a", reloaded.ruleSet().rules().get(0).id());
         assertFalse(Files.exists(directory.resolve("ad-audio-rules.json.tmp")));
     }
@@ -60,7 +60,7 @@ public class AdAudioRuleStoreTest {
         Path directory = temporaryFolder.newFolder().toPath();
         Files.writeString(directory.resolve("ad-audio-rules.json"), "not-json");
 
-        AdAudioRuleStore.Snapshot snapshot = new AdAudioRuleStore(directory).load();
+        AdAudioRuleSnapshot snapshot = new AdAudioRuleStore(directory).load();
 
         assertTrue(snapshot.ruleSet().rules().isEmpty());
         assertTrue(snapshot.hasError());
@@ -73,7 +73,7 @@ public class AdAudioRuleStoreTest {
         store.importJson(validRuleJson("rule-a"));
         Files.writeString(directory.resolve("ad-audio-rules.json.tmp"), "partial");
 
-        AdAudioRuleStore.Snapshot snapshot = store.clear();
+        AdAudioRuleSnapshot snapshot = store.clear();
 
         assertTrue(snapshot.ruleSet().rules().isEmpty());
         assertFalse(Files.exists(directory.resolve("ad-audio-rules.json")));

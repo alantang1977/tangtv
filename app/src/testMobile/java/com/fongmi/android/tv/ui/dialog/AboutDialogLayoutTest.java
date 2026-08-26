@@ -129,22 +129,31 @@ public class AboutDialogLayoutTest {
     }
 
     @Test
-    public void githubProxyDialogUsesRoomierTvDimensions() {
-        assertEquals(1274, AboutDialog.resolveGithubProxyWidth(1920, 1080));
-        assertEquals(850, AboutDialog.resolveGithubProxyWidth(1280, 720));
-        assertEquals(994, AboutDialog.resolveGithubProxyWidth(1080, 1920));
-        assertEquals(886, AboutDialog.resolveGithubProxyHeight(1080));
-        assertEquals(259, AboutDialog.resolveGithubProxyListHeight(1080));
-    }
-
-    @Test
-    public void githubProxyDialogAppliesDedicatedTvWindowSizing() throws Exception {
+    public void githubProxyDialogFillsTheScreenOnTv() throws Exception {
         String source = read(findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "dialog", "AboutDialog.java")));
 
         assertTrue(source.contains("configureGithubProxyWindow(activity, githubDialog, binding);"));
-        assertTrue(source.contains("resolveGithubProxyWidth(screenWidth, screenHeight)"));
-        assertTrue(source.contains("resolveGithubProxyHeight(screenHeight)"));
-        assertTrue(source.contains("resolveGithubProxyListHeight(screenHeight)"));
+        // 电视端改为铺满全屏，不再按屏幕比例手算宽高——手算需要同时算对屏宽高、content
+        // 高度与各类 inset，任何一项在某些盒子上出错就会裁掉底部内容。
+        assertFalse("TV GitHub proxy dialog should no longer derive its window size from screen ratios",
+                source.contains("resolveGithubProxyWidth")
+                        || source.contains("resolveGithubProxyHeight")
+                        || source.contains("resolveGithubProxyListHeight"));
+        assertTrue("TV GitHub proxy dialog should fill the screen",
+                source.contains("params.height = WindowManager.LayoutParams.MATCH_PARENT;"));
+    }
+
+    @Test
+    public void aboutDialogFillsTheScreenOnTvButKeepsWrapContentOnPhones() throws Exception {
+        String source = read(findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "dialog", "AboutDialog.java")));
+
+        // 电视端走独立的全屏分支，手机端保持原有 wrap_content 行为不变。
+        assertTrue("TV should take a dedicated fullscreen path",
+                source.contains("if (Util.isLeanback()) return configureFullscreenWindow(window, binding);"));
+        assertTrue("The scroll area should absorb leftover space so the action buttons stay pinned",
+                source.contains("weight = 1"));
+        assertTrue("Phones must keep sizing the window to their content",
+                source.contains("params.height = WindowManager.LayoutParams.WRAP_CONTENT;"));
     }
 
 

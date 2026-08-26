@@ -31,6 +31,7 @@ import com.fongmi.android.tv.bean.Track;
 import com.fongmi.android.tv.databinding.DialogTrackBinding;
 import com.fongmi.android.tv.player.PlayerHelper;
 import com.fongmi.android.tv.player.PlayerManager;
+import com.fongmi.android.tv.player.exo.TrackUtil;
 import com.fongmi.android.tv.service.AiSubtitleTranslationService;
 import com.fongmi.android.tv.setting.PlaybackPerformanceSetting;
 import com.fongmi.android.tv.setting.PlayerSetting;
@@ -543,7 +544,10 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
     }
 
     private void addTrack(List<Track> items) {
-        List<Tracks.Group> groups = player.getCurrentTracks().getGroups();
+        // 只取一次轨道快照：MPV/IJK 的快照由原生回调线程写入，分两次读可能拿到不同的轨道集合。
+        Tracks tracks = player.getCurrentTracks();
+        List<Tracks.Group> groups = tracks.getGroups();
+        Format active = activeVideoFormat(tracks);
         for (int i = 0; i < groups.size(); i++) {
             Tracks.Group trackGroup = groups.get(i);
             if (trackGroup.getType() != type) continue;
@@ -555,11 +559,26 @@ public final class TrackDialog extends BaseBottomSheetDialog implements TrackAda
                 // switching must target this stable id directly; the formatted description
                 // is only persisted for restoring a preference on the next playback.
                 Track item = new Track(type, name, PlayerHelper.describeFormat(format)).playerId(format.id);
-                item.setSelected(secondarySubtitle ? player.isSecondarySubtitleSelected(format) : trackGroup.isTrackSelected(j));
+                item.setSelected(isSelected(trackGroup, j, format, active));
                 items.add(item);
             }
         }
         addPendingSubtitleTrack(items);
+    }
+
+    private boolean isSelected(Tracks.Group trackGroup, int trackIndex, Format format, Format active) {
+        if (secondarySubtitle) return player.isSecondarySubtitleSelected(format);
+        // 自适应选轨会同时选中同组里的多条轨道，列表因此会高亮出多项。已经确认当前正在解码的
+        // 那一条时只高亮它，其余情况仍沿用播放器的选中标记。
+        // 这里按引用比对：uniqueActiveFormat 返回的就是轨道列表里的那个实例，而字段完全相同的
+        // 两条轨道用 equals 会同时命中，反而又变成多项高亮。media3 的 TrackGroup.indexOf 同样按引用定位。
+        if (active != null) return format == active;
+        return trackGroup.isTrackSelected(trackIndex);
+    }
+
+    private Format activeVideoFormat(Tracks tracks) {
+        if (secondarySubtitle || type != C.TRACK_TYPE_VIDEO) return null;
+        return TrackUtil.uniqueActiveFormat(tracks, type, player.getVideoFormat());
     }
 
     private void addPendingSubtitleTrack(List<Track> items) {

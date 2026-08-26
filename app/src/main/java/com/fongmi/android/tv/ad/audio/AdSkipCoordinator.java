@@ -123,6 +123,30 @@ public final class AdSkipCoordinator implements AutoCloseable {
         showCandidate(candidate, key);
     }
 
+    public void onCandidate(AdAudioSignalProvider.AdAudioCandidate candidate) {
+        Objects.requireNonNull(candidate, "candidate");
+        onCandidate(toLegacyCandidate(candidate));
+    }
+
+    public synchronized boolean onAutoCandidate(
+            AdAudioSignalProvider.AdAudioCandidate candidate) {
+        Objects.requireNonNull(candidate, "candidate");
+        if (closed || state == State.PROMPT_PENDING
+                || state == State.SEEKING || state == State.UNDO_WINDOW) {
+            return false;
+        }
+        AdAudioConsumer.Candidate legacy = toLegacyCandidate(candidate);
+        CandidateKey key = CandidateKey.of(legacy);
+        if (key.equals(suppressedKey)) return false;
+        if (state == State.SUPPRESSED) {
+            state = State.IDLE;
+            suppressedKey = null;
+        }
+        Target target = targetFor(legacy);
+        if (target == null) return false;
+        return applyAutomaticSeek(legacy, target);
+    }
+
     public synchronized void reset(long sessionId) {
         if (closed) return;
         actionToken++;
@@ -153,7 +177,11 @@ public final class AdSkipCoordinator implements AutoCloseable {
 
     private void showCandidate(AdAudioConsumer.Candidate candidate, CandidateKey key) {
         Target target = targetFor(candidate);
-        if (target == null) return;
+        if (target == null) {
+            AdAudioDiagnostics.log("prompt dropped rule=%s endMs=%d",
+                    candidate.event().ruleId(), candidate.event().endTimeMs());
+            return;
+        }
         activeCandidate = candidate;
         activeKey = key;
         undoContext = null;
@@ -163,6 +191,8 @@ public final class AdSkipCoordinator implements AutoCloseable {
         Prompt prompt = new Prompt(candidate.sessionId(), candidate.generation(),
                 candidate.event().ruleId(), target.positionMs,
                 Math.max(1L, (remainingMs + 999L) / 1_000L), isFull(candidate));
+        AdAudioDiagnostics.log("prompt shown rule=%s targetMs=%d fromMs=%d",
+                prompt.ruleId(), prompt.targetMediaMs(), target.snapshot.positionMs());
         ui.showCandidate(prompt, new TokenActions(token));
     }
 
@@ -193,6 +223,30 @@ public final class AdSkipCoordinator implements AutoCloseable {
         ui.showUndo(new UndoPrompt(undoContext.sessionId, undoContext.generation,
                 undoContext.ruleId, undoContext.originalPositionMs,
                 undoContext.targetPositionMs, undoWindowMs), new TokenActions(undoToken));
+    }
+
+    private boolean applyAutomaticSeek(AdAudioConsumer.Candidate candidate, Target target) {
+        long originalPositionMs = target.snapshot.positionMs();
+        state = State.SEEKING;
+        SeekResult seek = playback.seekTo(
+                candidate.sessionId(), candidate.generation(), target.positionMs);
+        if (seek == null || !seek.applied() || seek.sessionId() != candidate.sessionId()) {
+            diagnostics.record(AdAudioDiagnostics.Code.SEEK_REJECTED);
+            clearState();
+            return false;
+        }
+        long now = elapsedRealtime.getAsLong();
+        long deadline = saturatedAdd(now, undoWindowMs);
+        undoContext = new UndoContext(candidate.sessionId(), seek.generation(),
+                candidate.event().ruleId(), originalPositionMs, target.positionMs, deadline);
+        activeCandidate = null;
+        activeKey = null;
+        state = State.UNDO_WINDOW;
+        long undoToken = ++actionToken;
+        ui.showUndo(new UndoPrompt(undoContext.sessionId, undoContext.generation,
+                undoContext.ruleId, undoContext.originalPositionMs,
+                undoContext.targetPositionMs, undoWindowMs), new TokenActions(undoToken));
+        return true;
     }
 
     private synchronized void ignore(long token) {
@@ -303,6 +357,16 @@ public final class AdSkipCoordinator implements AutoCloseable {
         return candidate != null && candidate.event().type() == AudioFingerprintMatcher.Type.FULL_MATCHED;
     }
 
+    private static AdAudioConsumer.Candidate toLegacyCandidate(
+            AdAudioSignalProvider.AdAudioCandidate candidate) {
+        AudioFingerprintMatcher.MatchEvent event = new AudioFingerprintMatcher.MatchEvent(
+                candidate.fullMatch() ? AudioFingerprintMatcher.Type.FULL_MATCHED
+                        : AudioFingerprintMatcher.Type.START_MATCHED,
+                candidate.ruleId(), candidate.startMs(), candidate.endMs(),
+                (float) candidate.similarity(), 0);
+        return new AdAudioConsumer.Candidate(candidate.sessionId(), candidate.generation(), event);
+    }
+
     private static long clamp(long value, long minimum, long maximum) {
         return Math.max(minimum, Math.min(maximum, value));
     }
@@ -312,9 +376,15 @@ public final class AdSkipCoordinator implements AutoCloseable {
         return left + right;
     }
 
-    private record CandidateKey(long sessionId, long generation, String ruleId) {
+    private record CandidateKey(long sessionId, long generation, String ruleId,
+                                long startMs, long endMs) {
         static CandidateKey of(AdAudioConsumer.Candidate candidate) {
-            return new CandidateKey(candidate.sessionId(), candidate.generation(), candidate.event().ruleId());
+            // The matched interval is part of the identity, otherwise ignoring one
+            // occurrence silences every later match of the same rule. START_MATCHED and
+            // FULL_MATCHED share an interval, so prompt upgrades still collapse onto one key.
+            return new CandidateKey(candidate.sessionId(), candidate.generation(),
+                    candidate.event().ruleId(), candidate.event().startTimeMs(),
+                    candidate.event().endTimeMs());
         }
     }
 

@@ -151,6 +151,49 @@ public class AdSkipCoordinatorTest {
         assertEquals("ad-2", ui.lastPrompt.ruleId());
     }
 
+    @Test
+    public void automaticCandidateSeeksImmediatelyAndKeepsUndo() {
+        ManualTime time = new ManualTime();
+        FakePlaybackPort playback = new FakePlaybackPort(snapshot(
+                1L, 1L, 5_000L, 100_000L, true, false,
+                freshClock(1L, 0L, 30_000L, 5_000L)));
+        FakeUiPort ui = new FakeUiPort();
+        AdSkipCoordinator coordinator = new AdSkipCoordinator(playback, ui, 5_000L, time);
+
+        boolean applied = coordinator.onAutoCandidate(providerCandidate(
+                1L, 1L, "ad", 0L, 10_000L, true));
+
+        assertTrue(applied);
+        assertEquals(0, ui.candidateShows);
+        assertEquals(List.of(10_000L), playback.seekTargets);
+        assertEquals(AdSkipCoordinator.State.UNDO_WINDOW, coordinator.state());
+
+        ui.actions.undo();
+
+        assertEquals(List.of(10_000L, 5_000L), playback.seekTargets);
+        assertEquals(AdSkipCoordinator.State.IDLE, coordinator.state());
+    }
+
+    @Test
+    public void ignoreSuppressesOnlyTheMatchedIntervalNotEveryLaterMatchOfTheRule() {
+        FakePlaybackPort playback = new FakePlaybackPort(snapshot(
+                1L, 1L, 5_000L, 1_500_000L, true, false,
+                freshClock(1L, 0L, 1_000_000L, 5_000L)));
+        FakeUiPort ui = new FakeUiPort();
+        AdSkipCoordinator coordinator = new AdSkipCoordinator(playback, ui, 5_000L);
+
+        coordinator.onCandidate(candidate(1L, 1L, "speech-keyword", 60_000L, 75_000L,
+                AudioFingerprintMatcher.Type.FULL_MATCHED));
+        ui.actions.ignore();
+        coordinator.onCandidate(candidate(1L, 1L, "speech-keyword", 60_000L, 75_000L,
+                AudioFingerprintMatcher.Type.FULL_MATCHED));
+        coordinator.onCandidate(candidate(1L, 1L, "speech-keyword", 900_000L, 915_000L,
+                AudioFingerprintMatcher.Type.FULL_MATCHED));
+
+        assertEquals(2, ui.candidateShows);
+        assertEquals(915_000L, ui.lastPrompt.targetMediaMs());
+    }
+
     private static AdSkipCoordinator.PlaybackSnapshot snapshot(
             long session, long generation, long position, long duration,
             boolean seekable, boolean live, PlaybackMediaClock.Snapshot clock) {
@@ -168,6 +211,14 @@ public class AdSkipCoordinatorTest {
             AudioFingerprintMatcher.Type type) {
         return new AdAudioConsumer.Candidate(session, generation,
                 new AudioFingerprintMatcher.MatchEvent(type, ruleId, start, end, 0.9f, 6));
+    }
+
+    private static AdAudioSignalProvider.AdAudioCandidate providerCandidate(
+            long session, long generation, String ruleId, long start, long end,
+            boolean fullMatch) {
+        return new AdAudioSignalProvider.AdAudioCandidate(
+                session, generation, ruleId, "rules-v1", start, end,
+                fullMatch, 0.9d, "pcm");
     }
 
     private static final class ManualTime implements LongSupplier {

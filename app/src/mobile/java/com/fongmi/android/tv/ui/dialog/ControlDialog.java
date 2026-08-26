@@ -487,10 +487,14 @@ if (binding == null || controls == null || player == null) return;
         binding.reset.setText(controls.reset.getText());
         setLut();
         setEpisodeColumn();
+        // 播放失败回退会同时改内核和软硬解，两个标签都得跟着宿主刷新，否则弹窗里只有内核在变。
+        binding.decode.setText(controls.decode.getText());
         binding.decode.setVisibility(controls.decode.getVisibility());
         binding.danmaku.setVisibility(controls.danmaku.getVisibility());
         setImmersiveAudioVisible();
-        setTrackVisible();
+        // setTitleVisible 会带上 setTrackVisible；章节可见性也参与轨道行的计算，
+        // 只抄轨道不抄章节的话，回退后弹窗会拿旧章节状态算出错的轨道行。
+        setTitleVisible();
     }
 
     public void setLut() {

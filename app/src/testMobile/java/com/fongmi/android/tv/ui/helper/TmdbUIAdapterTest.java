@@ -8,6 +8,8 @@ import com.fongmi.android.tv.bean.TmdbSeasonMatchCache;
 import com.fongmi.android.tv.bean.TmdbSeasonScope;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.utils.Task;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonObject;
 
 import org.junit.Test;
 
@@ -119,6 +121,11 @@ public class TmdbUIAdapterTest {
         assertEquals(1, source.get(0).getTmdbEpisode().getSeasonNumber());
         assertEquals(2, source.get(3).getTmdbEpisode().getSeasonNumber());
         assertEquals(1, source.get(3).getTmdbEpisode().getNumber());
+        // 分段已通过 shouldApplyMapped 校验，必须标记 mapped，
+        // 否则第二季分段的源集号与本季集号不同，会被严格匹配当成无效匹配而丢掉刮削结果
+        assertTrue(source.get(3).isTmdbEpisodeMapped());
+        assertTrue(EpisodeDisplayPolicy.hasTmdbEpisodeData(List.of(source.get(3))));
+        assertTrue(TmdbEpisodeMatcher.shouldApply(source.get(3), source.get(3).getTmdbEpisode()));
     }
 
     @Test
@@ -426,12 +433,18 @@ public class TmdbUIAdapterTest {
         String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
         int constants = source.indexOf("VOD_REFRESH_COALESCE_MS");
         int backgroundDelay = source.indexOf("TMDB_STARTUP_BACKGROUND_DELAY_MS", constants);
-        int firstRefresh = source.indexOf("notifyVodChanged(vod, generation, RefreshEvent.Type.VOD_CORE);", backgroundDelay);
+        int episodeDelay = source.indexOf("TMDB_STARTUP_EPISODE_DELAY_MS", backgroundDelay);
+        int firstRefresh = source.indexOf("notifyVodChanged(vod, generation, RefreshEvent.Type.VOD_CORE);", episodeDelay);
         int deferredLoads = source.indexOf("scheduleStartupBackgroundLoads(vod, item, detail, generation);", firstRefresh);
         int scheduler = source.indexOf("private void scheduleStartupBackgroundLoads", deferredLoads);
-        int episode = source.indexOf("loadEpisodeTitlesAsync(vod, item, generation, metadataGeneration, selectedSeason);", scheduler);
-        int related = source.indexOf("loadRelatedRecommendationsAsync(vod, item, detail, generation);", episode);
+        // 选集不排在 1200ms 之后：它是首屏内容，单独立刻排程。
+        int episodeScheduleCall = source.indexOf("scheduleStartupEpisodeLoad(vod, item, generation);", scheduler);
+        int related = source.indexOf("loadRelatedRecommendationsAsync(vod, item, detail, generation);", episodeScheduleCall);
         int personal = source.indexOf("loadPersonalRecommendationsAsync(vod, item, detail, generation);", related);
+        int backgroundPost = source.indexOf("App.post(pendingStartupBackgroundLoads, TMDB_STARTUP_BACKGROUND_DELAY_MS);", personal);
+        int episodeScheduler = source.indexOf("private void scheduleStartupEpisodeLoad", backgroundPost);
+        int episode = source.indexOf("loadEpisodeTitlesAsync(vod, item, generation, metadataGeneration, selectedSeason);", episodeScheduler);
+        int episodePost = source.indexOf("App.post(pendingStartupEpisodeLoad, TMDB_STARTUP_EPISODE_DELAY_MS);", episode);
         int notify = source.indexOf("private void notifyVodChanged");
         int pending = source.indexOf("pendingVodRefresh", notify);
         int post = source.indexOf("App.post(pendingVodRefresh, VOD_REFRESH_COALESCE_MS);", pending);
@@ -440,15 +453,72 @@ public class TmdbUIAdapterTest {
         int personalMethod = source.indexOf("private void loadPersonalRecommendationsAsync");
         int personalNotify = source.indexOf("notifyVodChanged(vod, generation, RefreshEvent.Type.VOD_PERSONAL);", personalMethod);
 
-        assertTrue(sourcePath + " is missing TMDB playback refresh throttle constants", constants >= 0 && backgroundDelay > constants);
+        assertTrue(sourcePath + " is missing TMDB playback refresh throttle constants", constants >= 0 && backgroundDelay > constants && episodeDelay > backgroundDelay);
         assertTrue("TMDB detail should queue one lightweight VOD refresh before deferred background work",
-                firstRefresh > backgroundDelay && deferredLoads > firstRefresh);
-        assertTrue("episode titles and recommendation loads should start after the first-frame delay",
-                scheduler > deferredLoads && episode > scheduler && related > episode && personal > related);
+                firstRefresh > episodeDelay && deferredLoads > firstRefresh);
+        assertTrue("recommendation loads should stay behind the first-frame delay",
+                scheduler > deferredLoads && related > episodeScheduleCall && personal > related && backgroundPost > personal);
+        assertTrue("episode titles must be scheduled without the first-frame delay so the episode list is not gated on it",
+                episodeScheduleCall > scheduler && episodeScheduler > backgroundPost && episode > episodeScheduler && episodePost > episode);
         assertTrue("VOD refreshes should be coalesced on the main thread instead of posting every async result",
                 notify >= 0 && pending > notify && post > pending);
         assertTrue("related and personal recommendation completion should reuse the coalesced VOD refresh path",
                 relatedNotify > relatedMethod && personalNotify > personalMethod);
+    }
+
+    @Test
+    public void seasonWarmUpOnlyGuessesWhenEvidenceIsUnambiguous() {
+        JsonObject multiSeason = detailWithSeasons("[{\"season_number\":0},{\"season_number\":1},{\"season_number\":2}]");
+        JsonObject singleSeason = detailWithSeasons("[{\"season_number\":0},{\"season_number\":1}]");
+
+        // 多季且没有 Intent 季号：证据不足，不猜，避免白拉一整季。
+        assertEquals(-1, TmdbUIAdapter.likelySeasonNumber(multiSeason, -1));
+        // 单一正片季：可以放心预热。
+        assertEquals(1, TmdbUIAdapter.likelySeasonNumber(singleSeason, -1));
+        // Intent 指定的季号优先，但必须真的存在于 TMDB。
+        assertEquals(2, TmdbUIAdapter.likelySeasonNumber(multiSeason, 2));
+        assertEquals(-1, TmdbUIAdapter.likelySeasonNumber(multiSeason, 9));
+        assertEquals(-1, TmdbUIAdapter.likelySeasonNumber(detailWithSeasons("[]"), 1));
+    }
+
+    private static JsonObject detailWithSeasons(String seasonsJson) {
+        return JsonParser.parseString("{\"seasons\":" + seasonsJson + "}").getAsJsonObject();
+    }
+
+    @Test
+    public void episodeLoadsUseTheirOwnWidePoolAndCacheIsScopedToOneDetailRequest() throws Exception {
+        Path sourcePath = findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "helper", "TmdbUIAdapter.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+        // recommendationExecutor 只有 3 条线程，推荐 / 个性化 / AI 推荐都在里面。选集不再延迟后
+        // 若继续共用会排在推荐后面，反而更慢，所以必须走 largeExecutor。
+        int episodeScope = source.indexOf("this.episodeTasks = new Task.Scope(Task.largeExecutor());");
+        int episodeSubmit = source.indexOf("episodeTasks.submit(", episodeScope);
+        int beginRequest = source.indexOf("public void beginDetailRequest()");
+        int cancelEpisodes = source.indexOf("episodeTasks.cancelAll();", beginRequest);
+        // 季缓存必须在 beginDetailRequest 清空：它在 prefetch 预热之前调用，所以既不会挡住
+        // 强制刷新，也不会冲掉预热结果。放到 resetLoadState 会被 load() 冲掉预热。
+        int clearCache = source.indexOf("seasonEpisodeCache.clear();", cancelEpisodes);
+        int releaseMethod = source.indexOf("public void release()");
+        int closeEpisodes = source.indexOf("episodeTasks.close();", releaseMethod);
+        int resetMethod = source.indexOf("private int resetLoadState()");
+        int resetEnd = source.indexOf("\n    private void captureSourceSeason", resetMethod);
+        String resetBody = resetMethod >= 0 && resetEnd > resetMethod ? source.substring(resetMethod, resetEnd) : "";
+        int prefetchMethod = source.indexOf("public void prefetch(TmdbItem item)");
+        int prefetchEnd = source.indexOf("\n    /**", prefetchMethod);
+        String prefetchBody = prefetchMethod >= 0 && prefetchEnd > prefetchMethod ? source.substring(prefetchMethod, prefetchEnd) : "";
+
+        assertTrue("episode metadata must not share the 3-thread recommendation pool", episodeScope >= 0 && episodeSubmit > episodeScope);
+        assertTrue("a new detail request must cancel in-flight episode work", cancelEpisodes > beginRequest);
+        assertTrue("the season memory cache must be cleared per detail request so refresh is not shadowed", clearCache > cancelEpisodes);
+        assertTrue("destroying the adapter must close the episode scope", closeEpisodes > releaseMethod);
+        assertFalse("clearing the season cache in resetLoadState would discard the prefetch warm-up", resetBody.contains("seasonEpisodeCache.clear();"));
+        // 季预热若同步跑在 prefetch 的 Callable 里，会阻塞 future，进而延后 loadDetailSync
+        // 和整个详情页首屏——那正好和优化目标相反。
+        assertTrue("the season warm-up must be dispatched asynchronously", prefetchBody.contains("warmLikelySeasonAsync(loadedItem, detail, intentSeason);"));
+        assertFalse("the season warm-up must not block the prefetch future", prefetchBody.contains("seasonEpisodes(loadedItem"));
+        // Intent 内部是非线程安全的 Bundle，主线程会并发改它，季号必须在主线程算好再传进去。
+        assertTrue("the intent season must be read on the calling thread, not inside the background callable",
+                prefetchBody.indexOf("int intentSeason = intentSeasonNumber();") < prefetchBody.indexOf("detailPrefetch.start("));
     }
 
     @Test

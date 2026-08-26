@@ -114,7 +114,7 @@ public class PlayerControlFocusIntegrationTest {
         assertTrue("inline player choice must append an external dispatch option",
                 show >= 0
                         && activity.indexOf("String[] items = Arrays.copyOf(kernels, kernels.length + 1);", show) > show
-                        && activity.indexOf("items[kernels.length] = \"外调\";", show) > show);
+                        && activity.indexOf("items[kernels.length] = getString(R.string.player_kernel_external);", show) > show);
         assertTrue("inline player choice dialog must show the expanded item list",
                 show >= 0 && activity.indexOf("setItems(items", show) > show);
         assertTrue("inline player choice dialog should stay compact on mobile like native enhanced",
@@ -124,6 +124,68 @@ public class PlayerControlFocusIntegrationTest {
                 show >= 0 && switchMethod > show
                         && activity.indexOf("openInlineExternal()", show) > show
                         && activity.indexOf("openInlineExternal()", show) < switchMethod);
+    }
+
+    @Test
+    public void sharedPlayerKernelDialogOffersExternalDispatchWhereverPlaybackRuns() throws Exception {
+        Path dialogPath = findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "dialog", "PlayerKernelDialog.java"));
+        String dialog = new String(Files.readAllBytes(dialogPath), StandardCharsets.UTF_8);
+
+        assertTrue(dialogPath + " must expose an external dispatch callback so playback screens can append the option",
+                dialog.contains("public interface ExternalListener"));
+        assertTrue("the external row must be appended past the kernel array rather than replacing a kernel",
+                dialog.contains("Arrays.copyOf(kernel, kernel.length + 1)")
+                        && dialog.contains("items[kernel.length] = label;"));
+        assertTrue("the external label must come from resources instead of a hardcoded literal",
+                dialog.contains("R.string.player_kernel_external") && !dialog.contains("\"外调\""));
+        int notify = dialog.indexOf("private static void notifySelected(");
+        assertTrue(dialogPath + " is missing notifySelected", notify >= 0);
+        int dispatch = dialog.indexOf("if (external != null && selected >= count)", notify);
+        int clamp = dialog.indexOf("PlayerSetting.sanitizePlayer(selected)", notify);
+        assertTrue("notifySelected must dispatch the appended row externally", dispatch >= 0);
+        assertTrue("notifySelected must still clamp real kernel selections", clamp >= 0);
+        assertTrue("the external dispatch must be decided before the kernel clamp can rewrite the index",
+                dispatch < clamp);
+        assertTrue("screens that pass no external callback must keep the plain kernel list",
+                dialog.contains("if (external == null) return kernel;"));
+
+        assertPlaybackScreenOffersExternalDispatch(findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "LiveActivity.java")));
+        assertPlaybackScreenOffersExternalDispatch(findLeanbackJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "LiveActivity.java")));
+        assertPlaybackScreenOffersExternalDispatch(findLeanbackJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "CastActivity.java")));
+        assertPlaybackScreenOffersExternalDispatch(findLeanbackJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java")));
+    }
+
+    private static void assertPlaybackScreenOffersExternalDispatch(Path sourcePath) throws Exception {
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+        int kernel = source.indexOf("private void onPlayerKernel()");
+        int external = source.indexOf("private void onExternalPlayer()");
+
+        assertTrue(sourcePath + " is missing onPlayerKernel", kernel >= 0);
+        assertTrue(sourcePath + " is missing onExternalPlayer", external >= 0);
+
+        String kernelBody = enclosingMethodBody(source, kernel);
+        String externalBody = enclosingMethodBody(source, external);
+
+        assertTrue(sourcePath + " must offer external dispatch in its player kernel dialog",
+                kernelBody.contains("this::onExternalPlayer"));
+        assertTrue(sourcePath + " must launch the external player from onExternalPlayer",
+                externalBody.contains("PlayerHelper.choose("));
+        assertTrue(sourcePath + " must mark the redirect so returning from the external player is handled",
+                externalBody.contains("setRedirect(true);"));
+        assertFalse(sourcePath + " must not keep the orphaned hand-rolled kernel chooser",
+                source.contains("private void onChoose()"));
+    }
+
+    private static String enclosingMethodBody(String source, int declaration) {
+        int open = source.indexOf('{', declaration);
+        if (open < 0) return "";
+        int depth = 0;
+        for (int index = open; index < source.length(); index++) {
+            char current = source.charAt(index);
+            if (current == '{') depth++;
+            else if (current == '}' && --depth == 0) return source.substring(open, index + 1);
+        }
+        return "";
     }
 
     @Test

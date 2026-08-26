@@ -51,7 +51,13 @@ public class EpisodeHoriHolder extends BaseEpisodeHolder {
         int position = getBindingAdapterPosition();
         int episodeNumber = item.getNumber() > 0 ? item.getNumber() : position + 1;
         TmdbEpisode tmdbEpisode = item.getTmdbEpisode();
-        if (!TmdbEpisodeMatcher.shouldApply(item, tmdbEpisode, episodeNumber)) {
+        // 跨季映射的集走两参版：源集号是扁平号（如 62），TMDB 是本季集号（如 S2E1），
+        // 三参版会因 tmdbEpisode.getNumber() != episodeNumber 而否决。两参版对已带
+        // mapped 标记的集只校验身份，不要求两个集号相等。
+        boolean valid = item.isTmdbEpisodeMapped()
+                ? TmdbEpisodeMatcher.shouldApply(item, tmdbEpisode)
+                : TmdbEpisodeMatcher.shouldApply(item, tmdbEpisode, episodeNumber);
+        if (!valid) {
             tmdbEpisode = null;
         }
         if (EpisodeCardPolicy.shouldShowCard(useTmdbCard, tmdbEpisode != null, !TextUtils.isEmpty(fallbackStillUrl))) bindCard(item, tmdbEpisode);

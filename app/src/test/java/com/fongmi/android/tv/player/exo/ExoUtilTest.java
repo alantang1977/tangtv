@@ -94,6 +94,53 @@ public class ExoUtilTest {
     }
 
     @Test
+    public void videoLimits_startFromTheHighestTrackInsideTheConstraints() throws Exception {
+        String source = readMainSource("player/exo/ExoUtil.java");
+        int start = source.indexOf("private static void applyVideoLimit(");
+        int end = source.indexOf("public static EnhancedVideoProfile getEnhancedVideoProfile()", start);
+        assertTrue(start >= 0 && end > start);
+        String limit = source.substring(start, end);
+
+        assertTrue("起播必须选约束内画质最高的轨道，否则 HLS 多码率直链会停在最低档",
+                limit.contains("builder.setForceHighestSupportedBitrate(true)"));
+        assertFalse(limit.contains("builder.setForceHighestSupportedBitrate(false)"));
+    }
+
+    @Test
+    public void automaticConstraintController_downgradesOnThroughputShortfall() throws Exception {
+        String source = readMainSource("player/exo/ExoUtil.java");
+        int start = source.indexOf("private static class AutomaticVideoConstraintController");
+        int end = source.indexOf("private static class LegacyAdaptiveVideoProfileController", start);
+        assertTrue(start >= 0 && end > start);
+        String controller = source.substring(start, end);
+
+        // 固定选最高画质后原生 ABR 不再兜底吞吐，这个自动档控制器必须自己按带宽和重缓冲降档，
+        // 否则弱网会锁在最高档一直重缓冲且无法恢复。
+        assertTrue("自动档必须监听带宽估算",
+                controller.contains("public void onBandwidthEstimate("));
+        assertTrue("带宽不足要走吞吐降档",
+                controller.contains("ExoAdaptiveVideoBitratePolicy.shouldDowngrade(selectedBitrate, bitrateEstimate)")
+                        && controller.contains("ExoAutomaticVideoConstraintPolicy.Fault.THROUGHPUT"));
+        // appliedLimit 是设备能力上限（4K 档可达 20Mbps），拿它当轨道码率比对会让正常片源持续误降档。
+        assertTrue("轨道码率未知时必须放弃带宽判断，而不是退回设备上限",
+                controller.contains("if (selectedBitrate <= 0) return;")
+                        && !controller.contains("selectedBitrate = appliedLimit.maxVideoBitrate()"));
+        assertTrue("起播后再次进入缓冲同样是吞吐不足的证据",
+                controller.contains("state == Player.STATE_BUFFERING && everReady")
+                        && controller.contains("\"rebuffer\""));
+        assertTrue("换片要重置起播标记，避免上一片的状态误触发降档",
+                controller.contains("everReady = false;"));
+        // bindSession 才会重置 everReady，若先读 everReady 再对齐会话，换片后的首次缓冲会被
+        // 当成重缓冲而白降一档。
+        int stateChanged = controller.indexOf("public void onPlaybackStateChanged(");
+        int bindFirst = controller.indexOf("bindEventSession();", stateChanged);
+        int readsEverReady = controller.indexOf(
+                "boolean rebuffered = state == Player.STATE_BUFFERING && everReady;", stateChanged);
+        assertTrue("重缓冲判断前必须先对齐会话",
+                stateChanged >= 0 && bindFirst > stateChanged && readsEverReady > bindFirst);
+    }
+
+    @Test
     public void ffmpegRendererPolicy_usesFullNextLibRenderersInNextLibMode() {
         assertTrue(ExoUtil.useFfmpegAudioFallback(PlayerSetting.FFMPEG_MODE_NEXTLIB));
         assertTrue(ExoUtil.useFfmpegVideoRenderer(PlayerSetting.FFMPEG_MODE_NEXTLIB));

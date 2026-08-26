@@ -411,7 +411,10 @@ public class PlayerOsdController {
                 "可支撑 " + new DecimalFormat("0.00x").format(player.getNetworkProtectionSupportedSpeed()),
                 "当前 " + new DecimalFormat("0.00x").format(player.getEffectiveSpeed()));
         boolean localSource = PlaybackDiagnosticsSourcePolicy.isLocal(player.getUrl());
+        String currentNetworkSpeed = !TextUtils.isEmpty(lastSpeedText)
+                ? lastSpeedText : getBandwidthEstimateText(snapshot);
         String network = localSource ? "本地文件 / 不检测网速" : player.isExo() ? join(" / ",
+                !TextUtils.isEmpty(currentNetworkSpeed) ? "当前 " + currentNetworkSpeed : "",
                 consumption > 0 ? "消费需求 " + formatBitrate(consumption) : "",
                 stableThroughput > 0 ? "稳定吞吐 " + formatBitrate(stableThroughput) : "",
                 stableThroughput > 0 && consumption > 0 ? "网络余量 " + formatSignedBitrate(stableThroughput - consumption) : "")

@@ -123,8 +123,8 @@ public final class PlaybackPerformanceCatalog {
     }
 
     private static void addMpv(List<PlaybackPerformanceOption> options) {
-        options.add(option(MPV_OUTPUT, BASIC, "输出模式", "怎么选：保持“自动”（默认）最省心；电视播放4K且不需要MPV字幕/LUT/shader/滤镜时会自动用“电视直出”，这是当前最低GPU开销、最优先保证流畅的路径。需要MPV完整图像处理选“GPU完整”；自动判断不正确时可手动选“电视直出”。代价：电视直出不经过OpenGL/Vulkan，MPV原生字幕和GPU滤镜不可用。"));
-        options.add(option(MPV_RENDER, BASIC, "渲染后端", "怎么选：GPU完整模式先选 OpenGL，兼容性最好；确认设备 Vulkan 驱动稳定且需要 gpu-next/libplacebo 时再选 Vulkan。电视直出时本参数不参与视频输出，切换也不会变快。代价：Vulkan可能更高效，也可能因驱动问题卡顿、黑屏并自动回退OpenGL。"));
+        options.add(option(MPV_OUTPUT, BASIC, "输出模式", "怎么选：保持“自动”（默认）最省心；电视播放4K且不需要MPV字幕/LUT/shader/滤镜时会在确认设备支持当前视频后自动用“电视直出”，这是当前最低GPU开销、最优先保证流畅的路径。需要MPV完整图像处理选“GPU渲染”；自动判断不正确时可手动选“电视直出”。代价：电视直出不经过OpenGL/Vulkan，MPV原生字幕和GPU滤镜不可用。"));
+        options.add(option(MPV_RENDER, BASIC, "渲染后端", "怎么选：GPU渲染模式先选 OpenGL，兼容性最好；确认设备 Vulkan 驱动稳定且需要 gpu-next/libplacebo 时再选 Vulkan。电视直出时本参数不参与视频输出，切换也不会变快。代价：Vulkan可能更高效，也可能因驱动问题卡顿、黑屏并自动回退OpenGL。"));
         options.add(option(MPV_VULKAN_BACKEND, BASIC, "Vulkan 视频路径", "怎么选：仅在渲染后端为 Vulkan 且使用 MediaCodec 硬解时生效，默认 direct。direct 直接采样 AHardwareBuffer，转换步骤少；如果设备出现 GPU 负载逐渐升高、卡顿或驱动兼容问题，可改用 legacy。legacy 使用旧版三输出 compute conversion；stable 使用四输出有界 fence 池，适合 direct 不兼容且 legacy 存在同步问题时尝试。选择“播放性能优先”时本选项覆盖 mpv.conf；选择“mpv.conf优先”时，android-vulkan-aimagereader-backend 等同名配置覆盖本选项。切换后需要重新进入播放。"));
         options.add(option(MPV_HWDEC, BASIC, "硬解路径", "怎么选：保持“自动回退”（默认）；它先试 mediacodec 零拷贝，失败再试兼容复制。电视4K追求最高流畅可选“零拷贝优先”；只有零拷贝黑屏、崩溃或解码异常时选“兼容复制”。代价：兼容复制会复制每帧，4K 10bit内存带宽开销大，可能明显卡顿。"));
         options.add(option(MPV_FRAME_RATE, BASIC, "帧率匹配", "怎么选：电影、剧集在电视上保持“仅无缝”（默认），可减少24/25fps抖动；切换后黑屏、闪屏或电视刷新率异常时关闭。代价：仅无缝不会强制切换不兼容模式，旧Android自动忽略。"));
@@ -135,7 +135,7 @@ public final class PlaybackPerformanceCatalog {
         addPreload(options, true);
         options.add(option(MPV_SYNC, DECODE, "同步模式", "怎么选：保持“音频同步”（默认），兼容性最好。只有屏幕刷新率与视频不匹配、能感到规律性微抖且未开启音频直通时，才试“显示重采样”。代价：显示重采样会轻微调整音频速度并增加处理，直通音频不适用。"));
         options.add(option(MPV_FRAME_DROP, DECODE, "丢帧策略", "怎么选：保持“输出丢帧”（默认），跟不上时优先丢渲染帧以维持音画进度；卡顿仍严重可试“解码丢帧”；不要为追求完整画面关闭丢帧，除非设备性能充足。代价：策略越积极，跳帧越明显。"));
-        options.add(option(MPV_INTERPOLATION, DECODE, "平滑运动", "怎么选：默认关闭。只有GPU余量充足、使用GPU完整＋显示重采样且想改善低帧率运动时才开启；电视4K、HDR、LUT或已经卡顿时必须关闭。代价：会明显增加GPU负载，电视直出时不生效。"));
+        options.add(option(MPV_INTERPOLATION, DECODE, "平滑运动", "怎么选：默认关闭。只有GPU余量充足、使用GPU渲染＋显示重采样且想改善低帧率运动时才开启；电视4K、HDR、LUT或已经卡顿时必须关闭。代价：会明显增加GPU负载，电视直出时不生效。"));
         options.add(option(MPV_SOFT_TUNE, DECODE, "软解降负载", "作用：仅软件解码时减少滤波和解码工作。默认“温和”；软解仍掉帧可选“积极”；硬解视频无需靠它提速。代价：模式越积极，细节和画面连续性损失越大。"));
         options.add(option(MPV_VERBOSE_LOG, DECODE, "详细日志", "怎么选：正常播放保持“正常”（默认）；只在排查崩溃、解码或缓冲问题时临时打开详细日志。代价：增加JNI、字符串处理和日志I/O，可能干扰低性能设备的流畅度。"));
         options.add(option(DV7_HDR10_FALLBACK, DECODE, "DV7回退HDR10", "作用：MPV 自动输出使用 GPU 路径时，允许 Dolby Vision Profile 7 使用 HDR10 基底层播放，默认开启。关闭后会优先尝试原生 DV7 电视直出，适配能力声明不完整但实际可解码的设备；若设备确实不支持，可能黑屏或播放失败，MPV 字幕、LUT 和 GPU 滤镜也可能不可用。"));

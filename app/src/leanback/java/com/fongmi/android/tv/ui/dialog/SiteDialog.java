@@ -63,6 +63,7 @@ public class SiteDialog extends BaseAlertDialog implements SiteAdapter.OnClickLi
     private long reorderStartedAt;
     private long showStart;
     private boolean groupReordering;
+    private boolean groupSwitching;
     private boolean action;
     private boolean listLoaded;
     private int type;
@@ -304,6 +305,67 @@ public class SiteDialog extends BaseAlertDialog implements SiteAdapter.OnClickLi
         return true;
     }
 
+    @Override
+    public boolean onItemKeyHorizontal(int position, boolean left) {
+        if (binding == null || adapter == null || groupReordering) return false;
+        // 仅在该方向没有其它可聚焦目标时才翻组：action 模式下右侧有按钮列，右键让位给它
+        if (!left && binding.action.getVisibility() == View.VISIBLE) return false;
+        if (!isRowEdge(position, left)) return false;
+        if (binding.groupList.getChildCount() == 0) return true;
+        moveGroupFocus(left ? -1 : 1);
+        return true;
+    }
+
+    private boolean isRowEdge(int position, boolean left) {
+        int count = getCount();
+        if (left) return position % count == 0;
+        return position % count == count - 1 || position == adapter.getItemCount() - 1;
+    }
+
+    private void moveGroupFocus(int direction) {
+        int current = indexOfGroup(selectedGroup);
+        if (current < 0) return;
+        int target = current + direction;
+        if (target < 0 || target >= binding.groupList.getChildCount()) return;
+        View view = binding.groupList.getChildAt(target);
+        if (view == null) return;
+        groupSwitching = true;
+        selectGroup((String) view.getTag(), view);
+        focusFirstSite();
+    }
+
+    private int indexOfGroup(String group) {
+        for (int i = 0; i < binding.groupList.getChildCount(); i++) {
+            if (TextUtils.equals(group, (String) binding.groupList.getChildAt(i).getTag())) return i;
+        }
+        return -1;
+    }
+
+    private void focusFirstSite() {
+        DialogSiteBinding current = binding;
+        if (current == null) {
+            groupSwitching = false;
+            return;
+        }
+        current.recycler.post(() -> {
+            if (binding != current || adapter == null || adapter.getItemCount() == 0) {
+                groupSwitching = false;
+                if (binding == current) requestGroupFocus();
+                return;
+            }
+            current.recycler.post(() -> {
+                if (binding != current) {
+                    groupSwitching = false;
+                    return;
+                }
+                RecyclerView.ViewHolder holder = current.recycler.findViewHolderForLayoutPosition(0);
+                boolean focused = holder != null && holder.itemView.requestFocus();
+                if (!focused) requestGroupFocus();
+                groupSwitching = false;
+            });
+        });
+    }
+
     private void loadConfig(FragmentActivity activity, Config config) {
         if (config.getUrl().equals(VodConfig.getUrl())) return;
         VodConfig.load(config, new Callback() {
@@ -430,7 +492,7 @@ public class SiteDialog extends BaseAlertDialog implements SiteAdapter.OnClickLi
         button.setClickable(true);
         button.setNextFocusDownId(binding.recycler.getId());
         button.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) selectGroup(group, button);
+            if (hasFocus && !groupSwitching) selectGroup(group, button);
         });
         button.setOnClickListener(v -> onGroupClick(group, v));
         button.setOnKeyListener((v, keyCode, event) -> onGroupKey(group, keyCode, event));
@@ -503,6 +565,7 @@ public class SiteDialog extends BaseAlertDialog implements SiteAdapter.OnClickLi
 
     private void resetGroupReorderState() {
         groupReordering = false;
+        groupSwitching = false;
         reorderingGroup = "";
         originalGroups = null;
         reorderStartedAt = 0;
@@ -545,7 +608,7 @@ public class SiteDialog extends BaseAlertDialog implements SiteAdapter.OnClickLi
         adapter.filter(selectedGroup, "");
         setRecyclerHeight(adapter.getItemCount());
         scrollRecyclerToTop();
-        if (!TextUtils.isEmpty(selectedGroup)) centerGroup(view);
+        centerGroup(view);
     }
 
     private void scrollRecyclerToTop() {

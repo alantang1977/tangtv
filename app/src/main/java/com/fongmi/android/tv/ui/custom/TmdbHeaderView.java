@@ -739,7 +739,7 @@ public class TmdbHeaderView {
         }
         TextView source = headerRoot.findViewById(R.id.tmdbFusionSource);
         if (source != null) {
-            String siteName = currentSite() == null ? "" : currentSite().getName();
+            String siteName = currentSite() == null ? "" : currentSite().getDisplayName();
             source.setText(TextUtils.isEmpty(siteName) ? "" : "站源： " + siteName);
             source.setVisibility(TextUtils.isEmpty(siteName) ? View.GONE : View.VISIBLE);
         }

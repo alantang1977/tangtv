@@ -385,11 +385,15 @@ public class ControlDialog extends BaseBottomSheetDialog implements ParseAdapter
         binding.reset.setText(parent.control.action.reset.getText());
         setLut();
         setEpisodeColumn();
+        // 播放失败回退会同时改内核和软硬解，两个标签都得跟着宿主刷新，否则弹窗里只有内核在变。
+        binding.decode.setText(parent.control.action.decode.getText());
         binding.decode.setVisibility(parent.control.action.decode.getVisibility());
         binding.danmaku.setVisibility(parent.control.action.danmaku.getVisibility());
         setKaraokeVisible();
         setImmersiveAudioVisible();
-        setTrackVisible();
+        // setTitleVisible 会带上 setTrackVisible；章节可见性也参与轨道行的计算，
+        // 只抄轨道不抄章节的话，回退后弹窗会拿旧章节状态算出错的轨道行。
+        setTitleVisible();
     }
 
     public void setLut() {

@@ -721,7 +721,7 @@
                             android:contentDescription="@string/detail_episode_reverse"
                             android:focusable="true"
                             android:scaleType="center"
-                            android:src="@drawable/ic_action_reverse"
+                            android:src="@drawable/ic_action_sort_asc"
                             android:visibility="gone"
                             tools:visibility="visible" />
 
@@ -736,7 +736,7 @@
                             android:focusable="true"
                             android:padding="8dp"
                             android:scaleType="center"
-                            android:src="@drawable/ic_action_rename"
+                            android:src="@drawable/ic_action_name_full"
                             android:visibility="gone"
                             tools:visibility="visible" />
 
@@ -750,7 +750,7 @@
                             android:focusable="true"
                             android:padding="8dp"
                             android:scaleType="center"
-                            android:src="@drawable/ic_site_grid"
+                            android:src="@drawable/ic_site_list"
                             android:visibility="gone"
                             tools:visibility="visible" />
 

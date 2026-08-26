@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.setting.LiveSetting;
+import com.fongmi.android.tv.utils.BrightnessPolicy;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.Util;
 
@@ -206,9 +207,7 @@ public class PlayerGesture extends GestureDetector.SimpleOnGestureListener imple
 
     private void setBright(float deltaY) {
         int height = Math.max(videoView.getMeasuredHeight(), 1);
-        float brightness = deltaY * 2.0f / height + bright;
-        if (brightness < 0) brightness = 0f;
-        if (brightness > 1.0f) brightness = 1.0f;
+        float brightness = BrightnessPolicy.scroll(bright, deltaY, height);
         WindowManager.LayoutParams attributes = activity.getWindow().getAttributes();
         attributes.screenBrightness = brightness;
         activity.getWindow().setAttributes(attributes);

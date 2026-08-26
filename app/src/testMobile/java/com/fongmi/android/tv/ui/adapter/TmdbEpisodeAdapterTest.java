@@ -71,6 +71,20 @@ public class TmdbEpisodeAdapterTest {
     }
 
     @Test
+    public void gridEpisodeCardsUseSymmetricHorizontalMargins() throws Exception {
+        String source = tmdbEpisodeAdapterSource();
+        int method = source.indexOf("private void applyCardSize(ViewHolder holder, boolean compact)");
+        int methodEnd = source.indexOf("private boolean nativeEnhancedMobileGrid", method);
+        String body = method >= 0 && methodEnd > method ? source.substring(method, methodEnd) : "";
+
+        assertTrue("grid episode cards must split their spacing between start and end so outer margins stay balanced",
+                body.contains("int gridSpacing = dp(holder.itemView, isNativeEnhanced() ? 12 : 8);")
+                        && body.contains("int marginStart = mode == Mode.GRID ? gridSpacing / 2 : 0;")
+                        && body.contains("marginParams.setMarginStart(marginStart);")
+                        && body.contains("marginParams.getMarginStart() != marginStart"));
+    }
+
+    @Test
     public void unchangedEpisodeViewportDoesNotNotifyWholePageAgain() throws Exception {
         String source = tmdbEpisodeAdapterSource();
         int method = source.indexOf("public void setItems(List<Episode> episodes, Map<Integer, TmdbEpisode> tmdbEpisodes, Map<Episode, Integer> numbers, Episode selected)");

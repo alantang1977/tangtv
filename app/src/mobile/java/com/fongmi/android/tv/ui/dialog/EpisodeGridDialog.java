@@ -103,7 +103,9 @@ public class EpisodeGridDialog extends BaseBottomSheetDialog {
     private void updateEpisodeFileNameButton() {
         binding.episodeFileName.setVisibility(tmdbCard ? View.VISIBLE : View.GONE);
         if (!tmdbCard) return;
+        // 图标表达当前标题状态，描述表达点击后的动作。
         boolean showScraped = Setting.getTmdbEpisodeShowScrapedName();
+        binding.episodeFileName.setImageResource(showScraped ? R.drawable.ic_action_name_short : R.drawable.ic_action_name_full);
         binding.episodeFileName.setContentDescription(getString(showScraped ? R.string.detail_episode_file_name_original_action : R.string.detail_episode_file_name_scraped_action));
     }
 

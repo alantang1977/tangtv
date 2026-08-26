@@ -68,7 +68,7 @@ public final class MpvPerformanceSetting {
         int mode = getOutputMode();
         if (mode == OUTPUT_SURFACE_DIRECT && isZeroCopyBlocked()) return "电视直出（设备保护：GPU）";
         return switch (mode) {
-            case OUTPUT_GPU -> "GPU完整";
+            case OUTPUT_GPU -> "GPU渲染";
             case OUTPUT_SURFACE_DIRECT -> "电视直出";
             default -> "自动";
         };

@@ -23,7 +23,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
-public final class AdAudioRuleStore {
+public final class AdAudioRuleStore implements AdAudioRuleSource {
 
     public static final int MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 
@@ -34,7 +34,7 @@ public final class AdAudioRuleStore {
     private final Path directory;
     private final Path rulesFile;
     private final Path temporaryFile;
-    private Snapshot snapshot;
+    private AdAudioRuleSnapshot snapshot;
 
     public AdAudioRuleStore(Path directory) {
         if (directory == null) throw new IllegalArgumentException("directory is required");
@@ -48,7 +48,8 @@ public final class AdAudioRuleStore {
         return Holder.INSTANCE;
     }
 
-    public synchronized Snapshot load() {
+    @Override
+    public synchronized AdAudioRuleSnapshot load() {
         if (!Files.exists(rulesFile)) {
             snapshot = emptySnapshot("");
             return snapshot;
@@ -61,23 +62,23 @@ public final class AdAudioRuleStore {
         return snapshot;
     }
 
-    public synchronized Snapshot current() {
+    public synchronized AdAudioRuleSnapshot current() {
         return snapshot;
     }
 
-    public synchronized Snapshot importJson(String json) {
+    public synchronized AdAudioRuleSnapshot importJson(String json) {
         if (json == null) throw new IllegalArgumentException("rule JSON is required");
         byte[] input = json.getBytes(StandardCharsets.UTF_8);
         if (input.length > MAX_IMPORT_BYTES) throw new IllegalArgumentException("rule JSON is too large");
         return persist(json);
     }
 
-    public synchronized Snapshot importStream(InputStream input) throws IOException {
+    public synchronized AdAudioRuleSnapshot importStream(InputStream input) throws IOException {
         if (input == null) throw new IllegalArgumentException("rule input is required");
         return persist(readUtf8(input));
     }
 
-    public synchronized Snapshot importUri(ContentResolver resolver, Uri uri) throws IOException {
+    public synchronized AdAudioRuleSnapshot importUri(ContentResolver resolver, Uri uri) throws IOException {
         if (resolver == null || uri == null) throw new IllegalArgumentException("rule URI is required");
         String mimeType = resolver.getType(uri);
         String displayName = displayName(resolver, uri);
@@ -88,7 +89,7 @@ public final class AdAudioRuleStore {
         }
     }
 
-    public synchronized Snapshot clear() {
+    public synchronized AdAudioRuleSnapshot clear() {
         try {
             Files.deleteIfExists(temporaryFile);
             Files.deleteIfExists(rulesFile);
@@ -99,12 +100,13 @@ public final class AdAudioRuleStore {
         return snapshot;
     }
 
-    private Snapshot persist(String json) {
+    private AdAudioRuleSnapshot persist(String json) {
         AudioFingerprintRuleSet ruleSet = AudioFingerprintRuleCodec.fromJson(json);
         String canonicalJson = AudioFingerprintRuleCodec.toJson(ruleSet);
         byte[] data = canonicalJson.getBytes(StandardCharsets.UTF_8);
         if (data.length > MAX_IMPORT_BYTES) throw new IllegalArgumentException("rule JSON is too large");
-        Snapshot next = new Snapshot(LOCAL_SOURCE_ID, versionOf(data), ruleSet, List.of(), "");
+        AdAudioRuleSnapshot next = new AdAudioRuleSnapshot(
+                LOCAL_SOURCE_ID, versionOf(data), ruleSet, List.of(), "");
         try {
             Files.createDirectories(directory);
             try (FileOutputStream output = new FileOutputStream(temporaryFile.toFile())) {
@@ -123,10 +125,11 @@ public final class AdAudioRuleStore {
         }
     }
 
-    private static Snapshot parse(String json) {
+    private static AdAudioRuleSnapshot parse(String json) {
         AudioFingerprintRuleSet ruleSet = AudioFingerprintRuleCodec.fromJson(json);
         byte[] canonical = AudioFingerprintRuleCodec.toJson(ruleSet).getBytes(StandardCharsets.UTF_8);
-        return new Snapshot(LOCAL_SOURCE_ID, versionOf(canonical), ruleSet, List.of(), "");
+        return new AdAudioRuleSnapshot(
+                LOCAL_SOURCE_ID, versionOf(canonical), ruleSet, List.of(), "");
     }
 
     private static String readUtf8(InputStream input) throws IOException {
@@ -183,26 +186,9 @@ public final class AdAudioRuleStore {
         }
     }
 
-    private static Snapshot emptySnapshot(String error) {
-        return new Snapshot(LOCAL_SOURCE_ID, "", AudioFingerprintRuleSet.empty(), List.of(), error);
-    }
-
-    public record Snapshot(String sourceId, String version, AudioFingerprintRuleSet ruleSet,
-                           List<String> warnings, String lastError) {
-        public Snapshot {
-            if (sourceId == null || version == null || ruleSet == null || warnings == null || lastError == null) {
-                throw new IllegalArgumentException("snapshot fields are required");
-            }
-            warnings = List.copyOf(warnings);
-        }
-
-        public boolean hasRules() {
-            return !ruleSet.rules().isEmpty();
-        }
-
-        public boolean hasError() {
-            return !lastError.isEmpty();
-        }
+    private static AdAudioRuleSnapshot emptySnapshot(String error) {
+        return new AdAudioRuleSnapshot(
+                LOCAL_SOURCE_ID, "", AudioFingerprintRuleSet.empty(), List.of(), error);
     }
 
     private static final class Holder {

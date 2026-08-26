@@ -67,7 +67,7 @@ public class PreCacheWorkerRecoveryWiringTest {
     @Test
     public void workerContextRejectsResourcesBoundAfterFailureBegins() throws Exception {
         String source = readPreCache();
-        String createHelper = methodBody(source, "private PreCacheHelper createHelper", "private boolean canPreCache");
+        String createHelper = methodBody(source, "private PreCacheHelper createHelper", "private String errorDetails");
         String onFailure = methodBody(source, "private void onWorkerRuntimeFailure", "private PreCacheWorkerRecovery.Result releaseFailedWorkerResources");
         String resources = source.substring(source.indexOf("private static final class WorkerResources"), source.indexOf("private enum BufferGate"));
 

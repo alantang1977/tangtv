@@ -27,6 +27,16 @@ public class MpvAutoOutputPolicyTest {
     }
 
     @Test
+    public void usesDirectOutputOnlyWhenDolbyVisionProfileIsSupported() {
+        assertTrue(MpvAutoOutputPolicy.evaluate(3840, 2160, true, true, false, false,
+                MpvAutoOutputPolicy.DolbyVisionSupport.SUPPORTED, 5).eligible());
+        assertFalse(MpvAutoOutputPolicy.evaluate(3840, 2160, true, true, false, false,
+                MpvAutoOutputPolicy.DolbyVisionSupport.UNSUPPORTED, 5).eligible());
+        assertFalse(MpvAutoOutputPolicy.evaluate(3840, 2160, true, true, false, false,
+                MpvAutoOutputPolicy.DolbyVisionSupport.UNKNOWN, 5).eligible());
+    }
+
+    @Test
     public void evaluatesFourKBeforeTracksAreComplete() {
         assertTrue(MpvAutoOutputPolicy.canEvaluateWithoutTracks(3840, 1606));
     }

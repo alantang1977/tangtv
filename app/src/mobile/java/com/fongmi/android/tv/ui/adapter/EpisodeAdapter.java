@@ -42,6 +42,7 @@ public class EpisodeAdapter extends RecyclerView.Adapter<BaseEpisodeHolder> {
     private int titleRequestId;
     private int viewType;
     private boolean useTmdbCard;
+    private boolean nativeGridExpanded;
     private String fallbackStillUrl = "";
 
     public EpisodeAdapter(OnClickListener listener, int viewType) {
@@ -200,6 +201,12 @@ public class EpisodeAdapter extends RecyclerView.Adapter<BaseEpisodeHolder> {
 
     public boolean isUsingTmdbCard() {
         return useTmdbCard;
+    }
+
+    public void setNativeGridExpanded(boolean nativeGridExpanded) {
+        if (this.nativeGridExpanded == nativeGridExpanded) return;
+        this.nativeGridExpanded = nativeGridExpanded;
+        notifyDataSetChanged();
     }
 
     public void setFallbackStillUrl(String fallbackStillUrl) {
@@ -389,6 +396,7 @@ public class EpisodeAdapter extends RecyclerView.Adapter<BaseEpisodeHolder> {
     public void onBindViewHolder(@NonNull BaseEpisodeHolder holder, int position) {
         holder.setUseTmdbCard(useTmdbCard);
         holder.setFallbackStillUrl(fallbackStillUrl);
+        holder.setNativeGridExpanded(nativeGridExpanded);
         holder.initView(mItems.get(position));
     }
 
@@ -398,7 +406,7 @@ public class EpisodeAdapter extends RecyclerView.Adapter<BaseEpisodeHolder> {
         if (viewType == ViewType.HORI) {
             return new EpisodeHoriHolder(AdapterEpisodeHoriBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false), listener);
         } else {
-            return new EpisodeGridHolder(AdapterEpisodeGridBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false), listener);
+            return new EpisodeGridHolder(AdapterEpisodeGridBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false), listener, parent);
         }
     }
 }

@@ -63,6 +63,7 @@ import com.fongmi.android.tv.ui.custom.CustomSelector;
 import com.fongmi.android.tv.ui.custom.CustomTitleView;
 import com.fongmi.android.tv.ui.dialog.HistoryDialog;
 import com.fongmi.android.tv.ui.dialog.ExitConfirmDialog;
+import com.fongmi.android.tv.ui.dialog.HomeMenuDialog;
 import com.fongmi.android.tv.ui.dialog.SiteDialog;
 import com.fongmi.android.tv.ui.fragment.FolderFragment;
 import com.fongmi.android.tv.ui.presenter.FuncPresenter;
@@ -98,7 +99,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-public class HomeActivity extends BaseActivity implements ExitConfirmDialog.Listener, CustomTitleView.Listener, VodPresenter.OnClickListener, FuncPresenter.OnClickListener, HistoryPresenter.OnClickListener, TypeAdapter.OnClickListener, HomeWebController.Listener, ConfigListener, FolderFragment.FilterHost, FolderFragment.ScrollHeaderHost, FolderFragment.CategoryEdgeHost {
+public class HomeActivity extends BaseActivity implements ExitConfirmDialog.Listener, CustomTitleView.Listener, VodPresenter.OnClickListener, FuncPresenter.OnClickListener, HistoryPresenter.OnClickListener, TypeAdapter.OnClickListener, HomeWebController.Listener, ConfigListener, HomeMenuDialog.Listener, FolderFragment.FilterHost, FolderFragment.ScrollHeaderHost, FolderFragment.CategoryEdgeHost {
 
     private static final String TV_NORMAL = "tv-normal";
     private static final String TV_TOOLBAR_HIDDEN = "tv-toolbar-hidden";
@@ -1011,7 +1012,17 @@ public class HomeActivity extends BaseActivity implements ExitConfirmDialog.List
     }
 
     private void onHomeMenuKey() {
-        switch (Setting.getHomeMenuKey()) {
+        int index = Setting.getHomeMenuKey();
+        if (index == 0) HomeMenuDialog.create().show(this);
+        else onHomeMenuItem(index);
+    }
+
+    /**
+     * 执行 select_home_menu_key 中某一项对应的动作，下标 1..9（0 是「选项弹窗」自身，不会走到这里）。
+     */
+    @Override
+    public void onHomeMenuItem(int index) {
+        switch (index) {
             case 1 -> SiteDialog.create().action().show(this);
             case 2 -> HistoryDialog.create().vod().show(this);
             case 3 -> LiveActivity.start(this);
@@ -1021,7 +1032,6 @@ public class HomeActivity extends BaseActivity implements ExitConfirmDialog.List
             case 7 -> PushActivity.start(this, 3);
             case 8 -> KeepActivity.start(this);
             case 9 -> SettingActivity.start(this);
-            default -> showDialog();
         }
     }
 

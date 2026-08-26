@@ -210,6 +210,7 @@ public final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObs
     private PlaybackException playerError;
     private Tracks currentTracks;
     private VideoTrackDiagnostics selectedVideoTrackDiagnostics;
+    private VideoTrackDiagnostics availableVideoTrackDiagnostics;
     private List<MediaEdition> currentChapters;
     private VideoSize videoSize;
     private String lastVideoSizeCandidateLog;
@@ -386,6 +387,7 @@ public final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObs
         playbackParameters = PlaybackParameters.DEFAULT;
         currentTracks = Tracks.EMPTY;
         selectedVideoTrackDiagnostics = VideoTrackDiagnostics.empty();
+        availableVideoTrackDiagnostics = VideoTrackDiagnostics.empty();
         currentChapters = List.of();
         videoSize = VideoSize.UNKNOWN;
         playbackState = Player.STATE_IDLE;
@@ -470,6 +472,7 @@ public final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObs
         propertyCache.clear();
         currentTracks = Tracks.EMPTY;
         selectedVideoTrackDiagnostics = VideoTrackDiagnostics.empty();
+        availableVideoTrackDiagnostics = VideoTrackDiagnostics.empty();
         setOsdSurfaceRequested(false);
         currentChapters = List.of();
         playbackState = mediaItem == null ? Player.STATE_IDLE : Player.STATE_IDLE;
@@ -1826,6 +1829,11 @@ public final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObs
         return selectedVideoTrackDiagnostics;
     }
 
+    /** Metadata for the first video track, including when mpv temporarily reports vid=no. */
+    public VideoTrackDiagnostics getAvailableVideoTrackDiagnostics() {
+        return availableVideoTrackDiagnostics;
+    }
+
     public VideoSize getVideoSizeSnapshot() {
         return videoSize;
     }
@@ -2814,6 +2822,7 @@ public final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObs
         propertyCache.clear();
         currentTracks = Tracks.EMPTY;
         selectedVideoTrackDiagnostics = VideoTrackDiagnostics.empty();
+        availableVideoTrackDiagnostics = VideoTrackDiagnostics.empty();
         cachedSelectedHlsBitrate = 0;
         currentChapters = List.of();
         videoSize = VideoSize.UNKNOWN;
@@ -3847,6 +3856,7 @@ public final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObs
         if (!initialized) {
             currentTracks = Tracks.EMPTY;
             selectedVideoTrackDiagnostics = VideoTrackDiagnostics.empty();
+            availableVideoTrackDiagnostics = VideoTrackDiagnostics.empty();
             cachedSelectedHlsBitrate = 0;
             return;
         }
@@ -3855,6 +3865,7 @@ public final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObs
         if (count <= 0) {
             currentTracks = Tracks.EMPTY;
             selectedVideoTrackDiagnostics = VideoTrackDiagnostics.empty();
+            availableVideoTrackDiagnostics = VideoTrackDiagnostics.empty();
             cachedSelectedHlsBitrate = 0;
             return;
         }
@@ -3875,6 +3886,7 @@ public final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObs
         if (infos.isEmpty()) {
             currentTracks = Tracks.EMPTY;
             selectedVideoTrackDiagnostics = VideoTrackDiagnostics.empty();
+            availableVideoTrackDiagnostics = VideoTrackDiagnostics.empty();
             cachedSelectedHlsBitrate = 0;
             return;
         }
@@ -3888,6 +3900,10 @@ public final class MpvPlayer extends SimpleBasePlayer implements MPVLib.EventObs
         }
         TrackInfo selectedAudioInfo = findTrack(
                 infos, C.TRACK_TYPE_AUDIO, selectedAudio);
+        TrackInfo firstVideoInfo = firstTrack(infos, C.TRACK_TYPE_VIDEO);
+        availableVideoTrackDiagnostics = firstVideoInfo == null
+                ? VideoTrackDiagnostics.empty()
+                : firstVideoInfo.toVideoTrackDiagnostics();
         selectedVideoTrackDiagnostics = selectedVideoInfo == null
                 ? VideoTrackDiagnostics.empty()
                 : selectedVideoInfo.toVideoTrackDiagnostics();

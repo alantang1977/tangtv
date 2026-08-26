@@ -3,6 +3,7 @@ package com.fongmi.android.tv.ui.adapter;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,7 +23,6 @@ import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.ui.helper.TmdbEpisodeMatcher;
 import com.fongmi.android.tv.utils.EpisodeTitleCompact;
 import com.fongmi.android.tv.utils.EpisodeTitleFormatter;
-import com.fongmi.android.tv.utils.ImgUtil;
 import com.fongmi.android.tv.utils.ResUtil;
 
 import java.util.ArrayList;
@@ -251,9 +251,10 @@ public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.ViewHold
 
     @Override
     public int getItemViewType(int position) {
-        Episode item = mItems.get(position);
-        // 如果启用了TMDB卡片模式，且该集数有TMDB数据，则使用卡片布局
-        return (useTmdbCard && item.getTmdbEpisode() != null) ? VIEW_TYPE_CARD : VIEW_TYPE_TEXT;
+        // 卡片模式下整列统一用卡片布局：容器（EpisodeListDialog 的固定行高、episodeGrid 的 gridMode）
+        // 按整体模式计算尺寸，逐集切换布局会让未刮削到的集退化成矮文本按钮，与卡片行混排。
+        // 缺 TMDB 数据的集由 bindCardView 降级绑定（剧集主图兜底 + 原生标题 + 隐藏徽标）。
+        return useTmdbCard ? VIEW_TYPE_CARD : VIEW_TYPE_TEXT;
     }
 
     @NonNull
@@ -338,10 +339,15 @@ public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.ViewHold
         // 使用集号匹配 TMDB 数据，而不是直接使用 item.getTmdbEpisode()
         int episodeNumber = item.getNumber() > 0 ? item.getNumber() : position + 1;
         TmdbEpisode tmdbEpisode = item.getTmdbEpisode();
-        if (!TmdbEpisodeMatcher.shouldApply(item, tmdbEpisode, episodeNumber)) {
+        // 跨季映射的集走两参版：源集号是扁平号（如 62），TMDB 是本季集号（如 S2E1），
+        // 三参版会因 tmdbEpisode.getNumber() != episodeNumber 而否决。两参版对已带
+        // mapped 标记的集只校验身份，不要求两个集号相等。
+        boolean valid = item.isTmdbEpisodeMapped()
+                ? TmdbEpisodeMatcher.shouldApply(item, tmdbEpisode)
+                : TmdbEpisodeMatcher.shouldApply(item, tmdbEpisode, episodeNumber);
+        if (!valid) {
             tmdbEpisode = null;
         }
-        if (tmdbEpisode == null) return;
 
         applyCardSize(binding);
 
@@ -354,21 +360,30 @@ public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.ViewHold
         binding.cardContainer.setOnFocusChangeListener((view, hasFocus) -> setCardMarquee(binding, item.isSelected() || hasFocus));
 
         // 加载剧照
-        String cardTitle = getCardTitle(item, tmdbEpisode);
-        String stillUrl = tmdbEpisode.getStillUrl();
+        // 匹配器否决 TMDB 数据时必须走原生标题：getCardTitle 的 null 分支会回落到 getTitle，
+        // 而 getTitle 仍读 item.getTmdbEpisode()，会把刚否决的错位剧集名重新显示出来。
+        String cardTitle = tmdbEpisode == null ? getNativeDisplayTitle(item) : getCardTitle(item, tmdbEpisode);
+        String stillUrl = tmdbEpisode == null ? "" : tmdbEpisode.getStillUrl();
         String imageUrl = TextUtils.isEmpty(stillUrl) ? fallbackStillUrl : stillUrl;
         String errorImageUrl = TextUtils.isEmpty(stillUrl) ? "" : fallbackStillUrl;
-        if (!TextUtils.isEmpty(imageUrl)) {
+        // 对齐详情页 TmdbEpisodeAdapter 的 showVisual：无图时隐藏图层并清掉复用的剧照，
+        // 否则 still 铺满整卡会留下上一条的图，scrim 渐变也会压在纯色底上形成暗角。
+        boolean showVisual = !TextUtils.isEmpty(imageUrl);
+        binding.still.setVisibility(showVisual ? View.VISIBLE : View.GONE);
+        binding.scrim.setVisibility(showVisual ? View.VISIBLE : View.GONE);
+        if (showVisual) {
             loadStill(binding, imageUrl, errorImageUrl);
         } else {
-            ImgUtil.load(cardTitle, "", binding.still);
+            Glide.with(binding.still.getContext()).clear(binding.still);
+            binding.still.setImageDrawable(null);
         }
+        binding.textPanel.setGravity(showVisual ? Gravity.NO_GRAVITY : Gravity.CENTER_VERTICAL);
 
         // 设置标题
         binding.cardTitle.setText(cardTitle);
 
         // 网格模式展示手机版原生增强同款的日期 / 时长徽标，列表模式保持干净的横向剧照条
-        String meta = getMeta(tmdbEpisode);
+        String meta = tmdbEpisode == null ? "" : getMeta(tmdbEpisode);
         boolean showMeta = gridMode && !TextUtils.isEmpty(meta);
         if (showMeta) {
             binding.dateBadge.setText(meta);

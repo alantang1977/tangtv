@@ -11,7 +11,7 @@
                 android:top="8dp" />
             <stroke
                 android:width="2dp"
-                android:color="@color/white" />
+                android:color="#FFD166" />
         </shape>
     </item>
     <item android:state_activated="true">
@@ -28,6 +28,13 @@
                 android:color="#2CC56F" />
         </shape>
     </item>
+    <!--
+        不要给 state_selected 加描边。这套 selector 的消费方（adapter_episode / adapter_flag /
+        adapter_quality）都用了 android:ellipsize="marquee"，而 Android 的跑马灯只在 View 处于
+        selected 或 focused 时滚动，所以 EpisodeAdapter 那边是 setSelected(isSelected() || hasFocus())
+        ——selected 在这里是"跑马灯开关"，不是语义上的"当前生效"。加了描边会让"标题过长正在滚动"
+        的项被误显示成当前播放。当前生效态统一走 state_activated（ArrayAdapter.setActivated）。
+    -->
     <item android:state_selected="true">
         <shape android:shape="rectangle">
             <solid android:color="@color/black_50" />

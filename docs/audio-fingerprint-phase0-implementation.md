@@ -1,7 +1,7 @@
 # 音频频谱指纹 Phase 0-1 实施说明
 
-> 状态：Phase 0 算法与 Phase 1 本地运行时已实现
-> 日期：2026-08-17
+> 状态：Phase 0 算法、Phase 1 本地运行时与签名规则包基础设施已实现
+> 日期：2026-08-18
 > 算法：`spectral-sequence-v2`
 
 ## 1. 本阶段目标
@@ -24,6 +24,9 @@
 | `PlaybackMediaAudioPipeline` | Exo 单一 PCM 生产管线；独占 PipelineLease 隔离旧引擎和新引擎 |
 | `RealtimeSubtitleMediaConsumer` | 将实时字幕迁移为 Hub consumer，保留原 Sherpa-ONNX 行为 |
 | `AdAudioRuleStore` / `AdAudioRuntimeController` | 2 MiB 本地原子规则导入、运行时启停、matcher 热重载与 Exo VOD 资格校验 |
+| `SignedRulePackageCodec` / `SignedRulePackageVerifier` | 严格签名信封、SDK v2 payload 规范化、Tink RAW Ed25519、有效期和可信密钥生命周期校验 |
+| `SignedRulePackageStore` | revision 高水位、current/previous 双槽、`fsync` 原子替换、逐次重新验签和损坏恢复 |
+| `SignedRulePackageSource` / `PrioritizedAdAudioRuleSource` | 已验证缓存到运行时快照的映射，以及本地有效规则优先、整包回退且不合并规则集 |
 | `AdSkipCoordinator` / `AdSkipPromptPresenter` | START/FULL 候选、人工确认、ignore、5 秒撤销及 Activity 生命周期隔离 |
 | `AdAudioDiagnostics` | 固定枚举的本地计数快照，不记录 URL、规则内容或用户标识 |
 
@@ -47,6 +50,11 @@
 - 指纹配置限制 FFT 不超过 32768 点，且 `FFT 点数 × 每秒变换次数` 不超过 131072。
 - matcher 历史使用原始 `int[]` 环形缓冲；FFT 工作区复用，避免播放期间逐 hop 分配大型数组。
 - 空规则集直接返回，不执行 downmix、重采样或 FFT。
+- 签名信封严格限制字节数、JSON 深度/token/对象成员、canonical base64url 和字段长度；
+  签名覆盖 packageId、revision、时间、keyId、algorithm 与 payload SHA-256。
+- 安装只接受当前有效的 ACTIVE 密钥；缓存重载允许创建时有效的 ACTIVE/RETIRED 密钥，
+  REVOKED、过期、未来包和同 revision 不同摘要全部拒绝。
+- 下载规则缓存保留 revision 高水位；清除 current/previous 不会降低回滚屏障。
 
 ## 5. 兼容性与验证
 
@@ -69,8 +77,9 @@
 
 以下内容保持暂缓，必须单独设计和验收：
 
-1. 远程规则包下载、Ed25519 签名、revision 防回滚与缓存原子替换；
-2. 自动跳过策略、每规则信任级别和可回滚的用户授权；
-3. H5 采集端、SDK 兼容向量和社区指纹治理；
-4. 大型规则库的候选索引与低端设备性能基准；
-5. IJK/MPV PCM 生产适配和跨内核一致性验证。
+1. 生产公钥配置、轮换/撤销发布流程和固定 HTTPS 规则包更新器；
+2. 作者端规则质量流水线、审核发布和真实样本回归；
+3. H5 采集端与 Android/JVM/H5 三端兼容 oracle；
+4. 自动跳过策略、每规则信任级别和可回滚的用户授权；
+5. 大型规则库的候选索引与低端设备性能基准；
+6. IJK/MPV PCM 生产适配和跨内核一致性验证。

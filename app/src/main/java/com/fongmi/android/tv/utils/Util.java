@@ -6,6 +6,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.os.Build;
 import android.os.IBinder;
 import android.provider.Settings;
@@ -102,10 +103,52 @@ public class Util {
         try {
             float value = activity.getWindow().getAttributes().screenBrightness;
             if (WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL >= value && value >= WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF) return value;
-            return Settings.System.getFloat(activity.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS) / 255;
+            // 自动亮度下 SCREEN_BRIGHTNESS 只是手动滑条的残留值，与屏幕实际亮度无关，
+            // 拿它当手势基准会导致「想调暗反而更亮」，此时用中间值起步更稳。
+            if (isAutoBrightness(activity)) return 0.5f;
+            return BrightnessPolicy.normalize(getSystemBrightness(activity), getBrightnessScale());
         } catch (Exception e) {
             return 0.5f;
         }
+    }
+
+    private static boolean isAutoBrightness(Activity activity) {
+        try {
+            return Settings.System.getInt(activity.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS_MODE) == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 少数 ROM 把 SCREEN_BRIGHTNESS 存成 "128.0" 这类浮点字符串，getInt 会直接抛异常，
+     * 所以按字符串读再解析，避免整个亮度读取退化成兜底值。
+     */
+    private static int getSystemBrightness(Activity activity) {
+        String value = Settings.System.getString(activity.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS);
+        if (TextUtils.isEmpty(value)) return -1;
+        try {
+            return Math.round(Float.parseFloat(value.trim()));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    /**
+     * Settings.System.SCREEN_BRIGHTNESS 的量程由厂商决定：Pixel 多为 255，
+     * 小米/OPPO 常见 2047，一加 1023，华为部分机型 4095。写死 255 会让归一化后的
+     * 基准亮度远大于 1，导致手势调节被永久夹到最亮。这里读取系统真实上限。
+     */
+    public static int getBrightnessScale() {
+        try {
+            int id = Resources.getSystem().getIdentifier("config_screenBrightnessSettingMaximum", "integer", "android");
+            if (id != 0) {
+                int max = Resources.getSystem().getInteger(id);
+                if (max > 0) return max;
+            }
+        } catch (Exception ignored) {
+        }
+        return BrightnessPolicy.DEFAULT_SCALE;
     }
 
     public static CharSequence getClipText() {

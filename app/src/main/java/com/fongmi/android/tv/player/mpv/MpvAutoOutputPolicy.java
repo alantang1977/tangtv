@@ -8,10 +8,26 @@ public final class MpvAutoOutputPolicy {
     public static Decision evaluate(int width, int height, boolean hardDecode,
                                     boolean leanback, boolean lutOrFilterActive,
                                     boolean customGpuProcessing) {
+        return evaluate(width, height, hardDecode, leanback, lutOrFilterActive,
+                customGpuProcessing, DolbyVisionSupport.UNKNOWN, -1);
+    }
+
+    public static Decision evaluate(int width, int height, boolean hardDecode,
+                                    boolean leanback, boolean lutOrFilterActive,
+                                    boolean customGpuProcessing,
+                                    DolbyVisionSupport dolbyVisionSupport,
+                                    int dolbyVisionProfile) {
         if (!leanback) return new Decision(false, "not-tv");
         if (!hardDecode) return new Decision(false, "software-decode");
         if (lutOrFilterActive) return new Decision(false, "lut-or-filter-active");
         if (customGpuProcessing) return new Decision(false, "custom-gpu-processing");
+        if (dolbyVisionProfile > 0) {
+            if (dolbyVisionSupport == DolbyVisionSupport.SUPPORTED) {
+                return new Decision(true, "dolby-vision-hw-supported");
+            }
+            return new Decision(false, dolbyVisionSupport == DolbyVisionSupport.UNKNOWN
+                    ? "dolby-vision-hw-unknown" : "dolby-vision-hw-unsupported");
+        }
         return new Decision(true, "tv-hardware-decode");
     }
 
@@ -48,5 +64,11 @@ public final class MpvAutoOutputPolicy {
     }
 
     public record Decision(boolean eligible, String reason) {
+    }
+
+    public enum DolbyVisionSupport {
+        UNKNOWN,
+        SUPPORTED,
+        UNSUPPORTED
     }
 }

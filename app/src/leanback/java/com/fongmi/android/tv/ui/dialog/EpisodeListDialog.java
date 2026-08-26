@@ -29,6 +29,7 @@ import com.fongmi.android.tv.ui.adapter.ArrayAdapter;
 import com.fongmi.android.tv.ui.adapter.EpisodeAdapter;
 import com.fongmi.android.tv.ui.adapter.FlagAdapter;
 import com.fongmi.android.tv.ui.helper.EpisodeRangePolicy;
+import com.fongmi.android.tv.ui.helper.EpisodeSeasonSegments;
 import com.fongmi.android.tv.ui.helper.TmdbEpisodeGridPolicy;
 import com.fongmi.android.tv.utils.KeyUtil;
 import com.fongmi.android.tv.utils.ResUtil;
@@ -36,6 +37,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class EpisodeListDialog extends BaseAlertDialog implements FlagAdapter.OnClickListener, ArrayAdapter.OnClickListener, EpisodeAdapter.OnClickListener {
 
@@ -48,11 +50,17 @@ public class EpisodeListDialog extends BaseAlertDialog implements FlagAdapter.On
     private DialogEpisodeListBinding binding;
     private EpisodeAdapter episodeAdapter;
     private ArrayAdapter arrayAdapter;
+    private ArrayAdapter seasonAdapter;
     private FlagAdapter flagAdapter;
     private DialogInterface.OnDismissListener dismissListener;
     private List<Flag> flags;
     private int panelWidth;
     private boolean tmdbCard;
+    private String fallbackStillUrl = "";
+    private List<Integer> tmdbSeasons = List.of();
+    private Map<Integer, Integer> tmdbSeasonCounts = Map.of();
+    private List<EpisodeSeasonSegments.Segment> seasonSegments = List.of();
+    private int selectedSeason = Integer.MIN_VALUE;
     private int selectedSegment;
 
     public EpisodeListDialog() {
@@ -72,6 +80,17 @@ public class EpisodeListDialog extends BaseAlertDialog implements FlagAdapter.On
 
     public EpisodeListDialog tmdbCard(boolean tmdbCard) {
         this.tmdbCard = tmdbCard;
+        return this;
+    }
+
+    public EpisodeListDialog fallbackStill(String fallbackStillUrl) {
+        this.fallbackStillUrl = fallbackStillUrl;
+        return this;
+    }
+
+    public EpisodeListDialog seasons(List<Integer> seasons, Map<Integer, Integer> seasonCounts) {
+        this.tmdbSeasons = seasons == null ? List.of() : seasons;
+        this.tmdbSeasonCounts = seasonCounts == null ? Map.of() : seasonCounts;
         return this;
     }
 
@@ -120,12 +139,38 @@ public class EpisodeListDialog extends BaseAlertDialog implements FlagAdapter.On
         binding.array.setAdapter(arrayAdapter = new ArrayAdapter(this));
         arrayAdapter.setOnKeyListener((view, keyCode, event) -> onArrayKey(event));
         binding.array.setOnKeyListener((view, keyCode, event) -> onArrayKey(event));
+        binding.season.setHorizontalSpacing(spacing);
+        binding.season.setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
+        // 复用分段按钮的 adapter/布局，季度按钮与分段按钮样式自然一致；
+        // 只取 onSegmentClick 当"选季"，其余回调（换序/正反播）与季度无关。
+        binding.season.setAdapter(seasonAdapter = new ArrayAdapter(new ArrayAdapter.OnClickListener() {
+            @Override
+            public void onRevSort() {
+            }
+
+            @Override
+            public void onRevPlay(TextView view) {
+            }
+
+            @Override
+            public void onSegmentClick(int position) {
+                onSeasonClick(position);
+            }
+
+            @Override
+            public void onSegmentFocus(int position) {
+            }
+        }));
+        seasonAdapter.setOnKeyListener((view, keyCode, event) -> onSeasonKey(event));
+        binding.season.setOnKeyListener((view, keyCode, event) -> onSeasonKey(event));
         binding.episode.setHorizontalSpacing(spacing);
         binding.episode.setVerticalSpacing(spacing);
         binding.episode.setNestedScrollingEnabled(false);
         if (tmdbCard) binding.episode.setFocusScrollStrategy(BaseGridView.FOCUS_SCROLL_ITEM);
         binding.episode.setAdapter(episodeAdapter = new EpisodeAdapter(this, getEpisodeContentWidth()));
         episodeAdapter.setUseTmdbCard(tmdbCard);
+        // 弹层自建 adapter，不共享播放页那个实例；不设兜底图的话无 TMDB 数据的集永远是无图卡片
+        episodeAdapter.setFallbackStillUrl(fallbackStillUrl);
         episodeAdapter.setOnKeyListener((view, keyCode, event) -> onEpisodeKey(event));
         binding.episode.setOnKeyListener((view, keyCode, event) -> onEpisodeKey(event));
         binding.flag.setOnKeyListener((view, keyCode, event) -> onFlagKey(event));
@@ -159,7 +204,60 @@ public class EpisodeListDialog extends BaseAlertDialog implements FlagAdapter.On
 
     private void setEpisodes(Flag flag) {
         if (flag == null) return;
-        List<Episode> episodes = flag.getEpisodes();
+        List<Episode> sourceEpisodes = flag.getEpisodes();
+        seasonSegments = EpisodeSeasonSegments.build(sourceEpisodes.size(), tmdbSeasons, tmdbSeasonCounts);
+        selectedSeason = defaultSeason(sourceEpisodes);
+        renderSeasons();
+        bindEpisodesForSeason(sourceEpisodes);
+    }
+
+    /** 默认落在当前播放集所属的季，让弹层一打开就停在用户正在看的地方。 */
+    private int defaultSeason(List<Episode> sourceEpisodes) {
+        if (seasonSegments.isEmpty()) return Integer.MIN_VALUE;
+        int index = EpisodeSeasonSegments.indexOf(seasonSegments, getSelectedEpisodePosition(sourceEpisodes));
+        return seasonSegments.get(index < 0 ? 0 : index).season();
+    }
+
+    private void renderSeasons() {
+        boolean hasSeasons = !seasonSegments.isEmpty();
+        binding.seasonLabel.setVisibility(hasSeasons ? View.VISIBLE : View.GONE);
+        binding.season.setVisibility(hasSeasons ? View.VISIBLE : View.GONE);
+        if (!hasSeasons) {
+            seasonAdapter.clear();
+            return;
+        }
+        List<String> labels = new ArrayList<>();
+        int selectedIndex = 0;
+        for (int i = 0; i < seasonSegments.size(); i++) {
+            int season = seasonSegments.get(i).season();
+            labels.add(seasonLabel(season));
+            if (season == selectedSeason) selectedIndex = i;
+        }
+        seasonAdapter.addAll(labels);
+        seasonAdapter.setSelectedPosition(selectedIndex);
+        // 向下的焦点目标要看分段行是否显示，这里还不知道；统一由随后的 setSegments 设置。
+        binding.season.setSelectedPosition(selectedIndex);
+    }
+
+    private String seasonLabel(int season) {
+        return EpisodeSeasonSegments.isOther(season)
+                ? getString(R.string.detail_season_other)
+                : getString(R.string.detail_season_format, season);
+    }
+
+    private void onSeasonClick(int position) {
+        if (position < 0 || position >= seasonSegments.size()) return;
+        int season = seasonSegments.get(position).season();
+        if (season == selectedSeason) return;
+        selectedSeason = season;
+        seasonAdapter.setSelectedPosition(position);
+        Flag flag = getSelectedFlag();
+        if (flag != null) bindEpisodesForSeason(flag.getEpisodes());
+    }
+
+    /** 按当前季切出子列表，再据此重建分段按钮与选集网格。 */
+    private void bindEpisodesForSeason(List<Episode> sourceEpisodes) {
+        List<Episode> episodes = visibleEpisodes(sourceEpisodes);
         allEpisodes.clear();
         allEpisodes.addAll(episodes);
         int column = tmdbCard ? getTmdbCardColumn() : getTextColumn(episodes);
@@ -174,35 +272,59 @@ public class EpisodeListDialog extends BaseAlertDialog implements FlagAdapter.On
         scrollToSelectedEpisode();
     }
 
+    private List<Episode> visibleEpisodes(List<Episode> sourceEpisodes) {
+        if (seasonSegments.isEmpty()) return sourceEpisodes;
+        List<Episode> sliced = EpisodeSeasonSegments.slice(sourceEpisodes, seasonSegments, selectedSeason);
+        if (!sliced.isEmpty()) return sliced;
+        // 源列表在 segments 快照之后被改短时切不出内容，回退成完整列表。必须同步清掉选中季，
+        // 否则 seasonOffset() 仍返回该季起点，会在已是全局编号的列表上再叠一次偏移。
+        selectedSeason = Integer.MIN_VALUE;
+        return sourceEpisodes;
+    }
+
+    /** 当前季在源列表里的起始下标；用于把分段标签还原成全局集号。 */
+    private int seasonOffset() {
+        if (seasonSegments.isEmpty()) return 0;
+        for (EpisodeSeasonSegments.Segment segment : seasonSegments) {
+            if (segment.season() == selectedSeason) return segment.start();
+        }
+        return 0;
+    }
+
     private void setSegments(int size) {
         int segment = tmdbCard ? getTmdbEpisodeSegmentSize(size) : getEpisodeSegmentSize(size);
         List<String> items = new ArrayList<>();
         int selectedEpisode = getSelectedEpisodePosition(allEpisodes);
         segmentStarts.clear();
         segmentEnds.clear();
+        // 分段标签加上季偏移，显示全局集号（第 7 季 = 196-215），与详情页编号一致
+        int offset = seasonOffset();
         // 修复：对于 tmdbCard 模式，始终创建分段（即使 size <= segment），避免一次性加载所有剧集
         if (tmdbCard) {
             for (int i = 0; i < size; i += segment) {
                 segmentStarts.add(i);
                 int end = Math.min(i + segment, size);
                 segmentEnds.add(end);
-                items.add((i + 1) + "-" + end);
+                items.add((offset + i + 1) + "-" + (offset + end));
             }
         } else if (size > segment) {
             for (int i = 0; i < size; i += segment) {
                 segmentStarts.add(i);
                 int end = Math.min(i + segment, size);
                 segmentEnds.add(end);
-                items.add((i + 1) + "-" + end);
+                items.add((offset + i + 1) + "-" + (offset + end));
             }
         }
         selectedSegment = resolveSelectedSegment(selectedEpisode);
         arrayAdapter.setSegmentSize(segment);
         arrayAdapter.addAll(items);
         binding.array.setVisibility(items.isEmpty() ? View.GONE : View.VISIBLE);
-        flagAdapter.setNextFocusDown(items.isEmpty() ? R.id.episode : R.id.array);
-        arrayAdapter.setNextFocus(R.id.flag, R.id.episode);
-        episodeAdapter.setNextFocusUp(items.isEmpty() ? R.id.flag : R.id.array);
+        // 焦点链：线路 -> 季度(有则) -> 分段(有则) -> 选集，声明式 ID 与按键处理必须一致
+        boolean hasSeason = !seasonSegments.isEmpty();
+        flagAdapter.setNextFocusDown(hasSeason ? R.id.season : items.isEmpty() ? R.id.episode : R.id.array);
+        if (hasSeason) seasonAdapter.setNextFocus(R.id.flag, items.isEmpty() ? R.id.episode : R.id.array);
+        arrayAdapter.setNextFocus(hasSeason ? R.id.season : R.id.flag, R.id.episode);
+        episodeAdapter.setNextFocusUp(items.isEmpty() ? hasSeason ? R.id.season : R.id.flag : R.id.array);
         episodeAdapter.setNextFocusDown(0);
     }
 
@@ -297,10 +419,24 @@ public class EpisodeListDialog extends BaseAlertDialog implements FlagAdapter.On
         return true;
     }
 
-    private boolean onArrayKey(KeyEvent event) {
+    private boolean onSeasonKey(KeyEvent event) {
         if (!KeyUtil.isActionDown(event)) return false;
         if (KeyUtil.isUpKey(event)) {
             focusFlag();
+            return true;
+        }
+        if (KeyUtil.isDownKey(event)) {
+            if (isVisible(binding.array) && arrayAdapter.getItemCount() > 0) focusArray();
+            else focusPosition(binding.episode, episodeAdapter.getPosition());
+            return true;
+        }
+        return false;
+    }
+
+    private boolean onArrayKey(KeyEvent event) {
+        if (!KeyUtil.isActionDown(event)) return false;
+        if (KeyUtil.isUpKey(event)) {
+            focusUpperFromArray();
             return true;
         }
         if (KeyUtil.isDownKey(event)) {
@@ -311,7 +447,9 @@ public class EpisodeListDialog extends BaseAlertDialog implements FlagAdapter.On
     }
 
     private boolean onEpisodeKey(KeyEvent event) {
-        if (!KeyUtil.isActionDown(event) || !KeyUtil.isUpKey(event)) return false;
+        if (!KeyUtil.isActionDown(event)) return false;
+        if (KeyUtil.isDownKey(event)) return focusLowerFromEpisode();
+        if (!KeyUtil.isUpKey(event)) return false;
         int position = getFocusedPosition(binding.episode);
         int column = Math.max(1, episodeAdapter.getColumn());
         if (position == RecyclerView.NO_POSITION || position >= column) return false;
@@ -319,13 +457,32 @@ public class EpisodeListDialog extends BaseAlertDialog implements FlagAdapter.On
         return true;
     }
 
+    private boolean focusLowerFromEpisode() {
+        int position = getFocusedPosition(binding.episode);
+        int column = Math.max(1, episodeAdapter.getColumn());
+        int count = episodeAdapter.getItemCount();
+        // 正下方有卡片时交给 Leanback 原生逐行移动，只兜底末行不满导致同列为空、下键卡住的情况
+        if (position == RecyclerView.NO_POSITION || position + column < count) return false;
+        int target = TmdbEpisodeGridPolicy.verticalFocusTarget(position, column, count, true);
+        if (target == TmdbEpisodeGridPolicy.NO_FOCUS_TARGET) return false;
+        focusPosition(binding.episode, target);
+        return true;
+    }
+
     private void focusUpperFromEpisode() {
         if (isVisible(binding.array) && arrayAdapter.getItemCount() > 0) focusArray();
+        else focusUpperFromArray();
+    }
+
+    /** 分段行往上：有季度行就落季度，否则落线路。 */
+    private void focusUpperFromArray() {
+        if (isVisible(binding.season) && seasonAdapter.getItemCount() > 0) focusSeason();
         else focusFlag();
     }
 
     private void focusLowerFromFlag() {
-        if (isVisible(binding.array) && arrayAdapter.getItemCount() > 0) focusArray();
+        if (isVisible(binding.season) && seasonAdapter.getItemCount() > 0) focusSeason();
+        else if (isVisible(binding.array) && arrayAdapter.getItemCount() > 0) focusArray();
         else focusPosition(binding.episode, episodeAdapter.getPosition());
     }
 
@@ -350,6 +507,11 @@ public class EpisodeListDialog extends BaseAlertDialog implements FlagAdapter.On
     private void focusArray() {
         int position = Math.max(0, binding.array.getSelectedPosition());
         focusPosition(binding.array, position);
+    }
+
+    private void focusSeason() {
+        int position = Math.max(0, binding.season.getSelectedPosition());
+        focusPosition(binding.season, position);
     }
 
     private int getFocusedPosition(RecyclerView recycler) {

@@ -31,7 +31,7 @@
             android:contentDescription="@string/detail_episode_file_name_scraped_action"
             android:padding="8dp"
             android:scaleType="center"
-            android:src="@drawable/ic_action_rename"
+            android:src="@drawable/ic_action_name_short"
             android:visibility="gone"
             app:tint="?attr/colorOnSurface" />
 

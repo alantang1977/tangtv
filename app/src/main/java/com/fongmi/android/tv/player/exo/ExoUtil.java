@@ -358,7 +358,13 @@ public class ExoUtil {
         builder.setExceedVideoConstraintsIfNecessary(true);
         builder.setAllowVideoNonSeamlessAdaptiveness(true);
         builder.setAllowVideoMixedMimeTypeAdaptiveness(true);
-        builder.setForceHighestSupportedBitrate(false);
+        // 起播就选约束内画质最高的轨道，而不是把选择交给 media3 原生 ABR。原生 ABR 起播只有
+        // DefaultBandwidthMeter 的初始猜测（Wi-Fi 4.3Mbps 起、未知网络 1Mbps）可用，再乘
+        // bandwidthFraction，HLS 多码率直链必然落到最低几档；直播缓冲为 0 时还不允许向上切。
+        // 代价是同组只会选中一条轨道（eligibility 变成 FIXED），原生 ABR 不再兜底吞吐，
+        // 因此降级完全依赖 AutomaticVideoConstraintController / LegacyAdaptiveVideoProfileController
+        // 收紧上面这些 max 约束：温度、解码、网络计费之外，两者都必须自己按带宽和重缓冲降档。
+        builder.setForceHighestSupportedBitrate(true);
     }
 
     public static EnhancedVideoProfile getEnhancedVideoProfile() {
@@ -1174,6 +1180,7 @@ public class ExoUtil {
         private Format selectedFormat;
         private int playbackState;
         private boolean playing;
+        private boolean everReady;
         private boolean adaptiveVideo;
         private int selectedVideoCandidates;
         private int availableVideoFormats;
@@ -1201,7 +1208,24 @@ public class ExoUtil {
 
         @Override
         public void onPlaybackStateChanged(EventTime eventTime, @Player.State int state) {
+            // 先对齐会话再判断：everReady 由 bindSession 重置，而 bindSession 原本只在
+            // buildInput 里才发生。换片时若先读 everReady，会把上一片的起播状态带过来，
+            // 让新片的首次缓冲被误判成重缓冲而白降一档。
+            bindEventSession();
+            boolean rebuffered = state == Player.STATE_BUFFERING && everReady;
+            if (state == Player.STATE_READY) everReady = true;
             playbackState = state;
+            // 已经起播过又退回缓冲，说明当前轨道的码率超出实际可用带宽。带宽估算可能仍然偏乐观，
+            // 因此把重缓冲本身也当作吞吐不足的证据，避免弱网锁在最高档反复重缓冲。
+            if (rebuffered) {
+                applyFault(
+                        ExoAutomaticVideoConstraintPolicy.Fault.THROUGHPUT,
+                        eventTime.currentPlaybackPositionMs,
+                        0,
+                        0,
+                        "rebuffer");
+                return;
+            }
             refresh("playback-state", eventTime.currentPlaybackPositionMs);
         }
 
@@ -1256,6 +1280,25 @@ public class ExoUtil {
                     0,
                     0,
                     videoCodecError == null ? "unknown" : videoCodecError.getClass().getSimpleName());
+        }
+
+        // 起播固定选约束内最高画质后原生 ABR 不再兜底吞吐，带宽撑不住当前轨道时解码器并无压力，
+        // 只会表现为持续重缓冲，掉帧与编解码错误都不会触发。这里按实测带宽独立降档，
+        // 否则弱网锁在最高档会一直重缓冲且无法恢复。
+        @Override
+        public void onBandwidthEstimate(EventTime eventTime, int totalLoadTimeMs, long totalBytesLoaded, long bitrateEstimate) {
+            // 只比对当前轨道自己申报的码率。轨道码率未知时不能退回 appliedLimit 的上限，
+            // 那是设备能力上限（4K 档可达 20Mbps），拿它比会让码率不高的正常片源也持续误降档；
+            // 这种情况交给重缓冲证据兜底。
+            int selectedBitrate = ExoPlaybackDiagnostics.trackConstraintBitrate(selectedFormat);
+            if (selectedBitrate <= 0) return;
+            if (!ExoAdaptiveVideoBitratePolicy.shouldDowngrade(selectedBitrate, bitrateEstimate)) return;
+            applyFault(
+                    ExoAutomaticVideoConstraintPolicy.Fault.THROUGHPUT,
+                    eventTime.currentPlaybackPositionMs,
+                    0,
+                    0,
+                    "bandwidth=" + bitrateEstimate);
         }
 
         @Override
@@ -1329,6 +1372,7 @@ public class ExoUtil {
             lastDecision = null;
             lastLoggedAction = null;
             selectedFormat = null;
+            everReady = false;
             adaptiveVideo = false;
             selectedVideoCandidates = 0;
             availableVideoFormats = 0;

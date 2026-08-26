@@ -6,6 +6,8 @@ import android.provider.Settings;
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.player.VideoAspectMode;
+import com.fongmi.android.tv.utils.BrightnessPolicy;
+import com.fongmi.android.tv.utils.Util;
 import com.github.catvod.utils.Prefers;
 
 public class PlayerSetting {
@@ -57,6 +59,7 @@ public class PlayerSetting {
     private static final String KEY_FFMPEG_MODE = "ffmpeg_mode";
     private static final String KEY_CUSTOM_ASPECT_WIDTH = "custom_aspect_width";
     private static final String KEY_CUSTOM_ASPECT_HEIGHT = "custom_aspect_height";
+    private static final String KEY_BRIGHTNESS_MIGRATED = "player_brightness_migrated";
     private static final String KEY_DISPLAY_TIME = "display_time";
     private static final String KEY_DISPLAY_TRAFFIC = "display_traffic";
     private static final String KEY_DISPLAY_SIZE = "display_size";
@@ -70,6 +73,7 @@ public class PlayerSetting {
     private static final String KEY_OSD_TRAFFIC = "player_osd_traffic";
     private static final String KEY_OSD_MINI = "player_osd_mini";
     private static boolean legacyOsdMigrated;
+    private static boolean legacyBrightnessMigrated;
 
     public static int getPlayer() {
         int player = Prefers.getInt("player", EXO);
@@ -498,11 +502,30 @@ public class PlayerSetting {
     }
 
     public static float getBrightness() {
+        migrateLegacyBrightness();
         return Math.min(Math.max(Prefers.getFloat("player_brightness", -1), -1), 1);
     }
 
     public static void putBrightness(float brightness) {
+        legacyBrightnessMigrated = true;
+        Prefers.put(KEY_BRIGHTNESS_MIGRATED, true);
         Prefers.put("player_brightness", Math.min(Math.max(brightness, 0), 1));
+    }
+
+    /**
+     * 旧版 Util.getBrightness() 把 Settings.System.SCREEN_BRIGHTNESS 写死除以 255，
+     * 在 1023/2047/4095 量程机型上算出的基准值远大于 1，手势结果被永久夹到 1.0 并持久化，
+     * 表现为「一进播放页屏幕自动变到最亮且调不下来」。这里一次性丢弃这个污染值，
+     * 让亮度回到跟随系统，用户重新调节即可。
+     */
+    private static void migrateLegacyBrightness() {
+        if (legacyBrightnessMigrated) return;
+        legacyBrightnessMigrated = true;
+        if (Prefers.getBoolean(KEY_BRIGHTNESS_MIGRATED)) return;
+        Prefers.put(KEY_BRIGHTNESS_MIGRATED, true);
+        float saved = Prefers.getFloat("player_brightness", -1);
+        // 只丢弃大量程机型上的 1.0：255 量程机型不会产生这个 bug，那里的 1.0 是用户主动设的最亮
+        if (BrightnessPolicy.isLegacyPollutedValue(saved, Util.getBrightnessScale())) Prefers.remove("player_brightness");
     }
 
     public static boolean isCaption() {

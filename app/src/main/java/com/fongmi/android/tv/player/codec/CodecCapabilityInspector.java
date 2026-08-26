@@ -18,6 +18,7 @@ import androidx.media3.exoplayer.mediacodec.MediaCodecUtil;
 
 import com.fongmi.android.tv.player.PlayerManager;
 import com.fongmi.android.tv.player.engine.PlayerEngine;
+import com.fongmi.android.tv.player.mpv.MpvAutoOutputPolicy;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -99,6 +100,55 @@ public final class CodecCapabilityInspector {
             return "当前媒体轨道没有匹配关键词";
         }
         return "当前媒体轨道 " + matched + "/" + total + "\n\n" + builder;
+    }
+
+    /**
+     * Checks the actual hardware Dolby Vision decoder for the source profile and level.
+     *
+     * <p>Do not use an HEVC decoder returned by a soft MIME match here. A plain Main10
+     * decoder is not evidence that the device can accept and output the requested DV
+     * profile on a direct surface.</p>
+     */
+    public static MpvAutoOutputPolicy.DolbyVisionSupport dolbyVisionSupport(
+            Context context,
+            PlayerEngine.VideoPlaybackDetails details,
+            Format current,
+            int width,
+            int height) {
+        if (context == null || details == null || details.dolbyVisionProfile() <= 0) {
+            return MpvAutoOutputPolicy.DolbyVisionSupport.UNKNOWN;
+        }
+        String codecs = details.sourceCodecs();
+        if (TextUtils.isEmpty(codecs)) {
+            codecs = details.dolbyVisionLevel() > 0
+                    ? String.format(Locale.US, "dvhe.%02d.%02d",
+                    details.dolbyVisionProfile(), details.dolbyVisionLevel())
+                    : String.format(Locale.US, "dvhe.%02d", details.dolbyVisionProfile());
+        }
+        Format.Builder builder = new Format.Builder()
+                .setSampleMimeType(MimeTypes.VIDEO_DOLBY_VISION)
+                .setCodecs(codecs);
+        if (current != null) {
+            if (current.frameRate > 0) builder.setFrameRate(current.frameRate);
+            if (current.averageBitrate > 0) builder.setAverageBitrate(current.averageBitrate);
+            if (current.peakBitrate > 0) builder.setPeakBitrate(current.peakBitrate);
+        }
+        if (width > 0) builder.setWidth(width);
+        if (height > 0) builder.setHeight(height);
+        Format format = builder.build();
+        try {
+            for (androidx.media3.exoplayer.mediacodec.MediaCodecInfo info
+                    : MediaCodecSelector.DEFAULT.getDecoderInfos(
+                    MimeTypes.VIDEO_DOLBY_VISION, false, false)) {
+                if (!info.hardwareAccelerated) continue;
+                if (info.isFormatSupported(context, format)) {
+                    return MpvAutoOutputPolicy.DolbyVisionSupport.SUPPORTED;
+                }
+            }
+            return MpvAutoOutputPolicy.DolbyVisionSupport.UNSUPPORTED;
+        } catch (Throwable ignored) {
+            return MpvAutoOutputPolicy.DolbyVisionSupport.UNKNOWN;
+        }
     }
 
     public static List<CodecEntry> getHardwareDecoders() {

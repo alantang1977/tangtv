@@ -228,7 +228,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class VideoActivity extends PlaybackActivity implements Clock.Callback, CustomKeyDown.Listener, TrackDialog.Listener, ControlDialog.Listener, DanmakuDialog.Host, FlagAdapter.OnClickListener, EpisodeAdapter.OnClickListener, EpisodeGroupAdapter.OnClickListener, QualityAdapter.OnClickListener, QuickAdapter.OnClickListener, ParseAdapter.OnClickListener, CastDialog.Listener, InfoDialog.Listener, SubtitlePlaybackSession.Host {
+public class VideoActivity extends PlaybackActivity implements Clock.Callback, CustomKeyDown.Listener, TrackDialog.Listener, ControlDialog.Listener, DanmakuDialog.Host, FlagAdapter.OnClickListener, EpisodeAdapter.OnClickListener, EpisodeGroupAdapter.OnClickListener, QualityAdapter.OnClickListener, QuickAdapter.OnClickListener, ParseAdapter.OnClickListener, CastDialog.Listener, InfoDialog.Listener, SubtitlePlaybackSession.Host, com.fongmi.android.tv.ui.novel.NovelReaderHost {
     private static final long LYRICS_OFFSET_MIN_MS = -5000L;
     private static final long LYRICS_OFFSET_MAX_MS = 5000L;
     private static final long LYRICS_OFFSET_STEP_MS = 500L;
@@ -499,6 +499,12 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
     }
 
     @Override
+    protected Vod getReaderVod() {
+        // 把当前正在播放的 Vod（含章节列表）交给阅读器路由，支持小说/漫画章节导航
+        return mVod;
+    }
+
+    @Override
     protected boolean customWall() {
         return true;
     }
@@ -607,6 +613,11 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
         ImgUtil.preload(activity, pic);
         if (Setting.isPlaybackArtworkWall() && !TextUtils.isEmpty(wallPic) && !TextUtils.equals(wallPic, pic)) ImgUtil.preload(activity, wallPic);
         if (dispatchToContentHandler(activity, key, id, name, pic, mark)) return;
+        startSkippingDispatch(activity, key, id, name, pic, mark, collect, tmdbItem, wallPic, content);
+    }
+
+    /** 跳过 ContentDispatcher 的启动路径（供阅读器等 handler 判定内容不归自己管时回退）。 */
+    public static void startSkippingDispatch(Activity activity, String key, String id, String name, String pic, String mark, boolean collect, com.fongmi.android.tv.bean.TmdbItem tmdbItem, String wallPic, String content) {
         if (tmdbItem == null && shouldOpenLegacyTmdbDetail(key, id)) {
             TmdbDetailActivity.start(activity, key, id, name, pic, mark, null, Setting.getDetailOpenMode());
             return;
@@ -1782,9 +1793,8 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
         }
         // 双重策略:View 覆盖层(压 TextureView) + 窗口亮度上限(压 SurfaceView)
         mNightModeOverlay.setBackgroundColor((alpha << 24) | 0x000000);
-        WindowManager.LayoutParams lp = getWindow().getAttributes();
-        lp.screenBrightness = maxBrightness;
-        getWindow().setAttributes(lp);
+        // 上限交给手势控制器与用户亮度合并，避免直接覆写窗口亮度吞掉手势设定
+        if (mKeyDown != null) mKeyDown.setBrightLimit(maxBrightness);
         // 更新按钮图标
         mBinding.control.nightMode.setImageResource(iconRes);
     }
@@ -2345,6 +2355,23 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
         onRefresh();
     }
 
+    /**
+     * 小说/漫画阅读器切换章节时，由播放器执行解析任务（复用完整 playerContent 链路，
+     * 含 parse=1 二次解析）。解析结果经 NovelRouter.routeReaderEngine 回传给前台阅读页。
+     */
+    @Override
+    public void labPlayEpisode(String chapterUrl) {
+        if (chapterUrl == null || chapterUrl.isEmpty()) return;
+        Flag flag = getFlag();
+        if (flag == null || flag.getEpisodes() == null) return;
+        for (Episode ep : flag.getEpisodes()) {
+            if (chapterUrl.equals(ep.getUrl())) {
+                getPlayer(flag, ep);
+                return;
+            }
+        }
+    }
+
     @Override
     public void onItemClick(EpisodeGroupAdapter.Group item) {
         mEpisodeGroupAdapter.setSelected(item);
@@ -2508,6 +2535,7 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
         if (items.size() < 2) mEpisodeGridMode = true;
         updateEpisodeFallbackStillUrl();
         mEpisodeAdapter.setUseTmdbCard(useTmdbCard);
+        mEpisodeAdapter.setNativeGridExpanded(mEpisodeGridMode && !useTmdbCard && isOriginalEnhancedEpisodeFallback());
         mEpisodeAdapter.setViewType(!mEpisodeGridMode ? ViewType.HORI : ViewType.GRID);
         mEpisodeAdapter.addAll(displayItems);
         updateEpisodeLayout(displayItems, useTmdbCard);
@@ -2552,7 +2580,10 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
         if (useTmdbCard) return getEpisodeGridSpanCount();
         if (items.size() == 1) return 1;
         int maxLen = 0;
-        for (Episode item : items) maxLen = Math.max(maxLen, item.getDisplayName().length());
+        for (Episode item : items) maxLen = Math.max(maxLen, EpisodeAdapter.getNativeDisplayTitle(item).length());
+        if (isOriginalEnhancedEpisodeFallback()) {
+            return EpisodeGridLayoutPolicy.getOriginalEnhancedFallbackSpan(items.size(), maxLen, PlayerSetting.getEpisodeColumn());
+        }
         if (maxLen >= 12) return PlayerSetting.getEpisodeColumn();
         int ideal = maxLen >= 10 ? 130 : maxLen >= 7 ? 104 : 80;
         int width = EpisodeGridLayoutPolicy.getAvailableWidth(
@@ -2564,6 +2595,10 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
                 ResUtil.isLand(this));
         int span = width / ResUtil.dp2px(ideal);
         return Math.max(2, Math.min(getEpisodeSpanCount(), span));
+    }
+
+    private boolean isOriginalEnhancedEpisodeFallback() {
+        return Setting.isOriginalEnhancedDetailPage() && isTmdbSourceEnabled();
     }
 
     private List<Episode> getEpisodeDisplayItems(List<Episode> items) {
@@ -2686,6 +2721,8 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
 
     private void setShortDisplay() {
         mBinding.shortDisplay.setSelected(Setting.isCompactEpisodeTitle());
+        // 原生模式下铅笔按钮就是短显开关，图标要跟着一起翻。
+        updateEpisodeFileNameButton();
     }
 
     private void onMore() {
@@ -2750,20 +2787,30 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
 
     private void updateEpisodeReverseButton() {
         if (mHistory == null) return;
-        mBinding.reverse.setImageResource(R.drawable.ic_action_reverse);
-        mBinding.reverse.setContentDescription(getString(mHistory.isRevSort() ? R.string.detail_episode_forward : R.string.detail_episode_reverse));
+        // 图标表达当前排序状态，描述表达点击后的动作。
+        boolean reversed = mHistory.isRevSort();
+        mBinding.reverse.setImageResource(reversed ? R.drawable.ic_action_sort_desc : R.drawable.ic_action_sort_asc);
+        mBinding.reverse.setContentDescription(getString(reversed ? R.string.detail_episode_forward : R.string.detail_episode_reverse));
+        applyTmdbPlaybackControlColors();
     }
+
 
     private void updateEpisodeViewModeButton() {
         if (mBinding.episodeViewMode == null) return;
-        boolean switchToList = mEpisodeGridMode;
-        mBinding.episodeViewMode.setImageResource(switchToList ? R.drawable.ic_site_list : R.drawable.ic_site_grid);
-        mBinding.episodeViewMode.setContentDescription(getString(switchToList ? R.string.detail_episode_view_list_action : R.string.detail_episode_view_grid_action));
+        // 图标表达当前视图状态，描述表达点击后的动作。
+        boolean grid = mEpisodeGridMode;
+        mBinding.episodeViewMode.setImageResource(grid ? R.drawable.ic_site_grid : R.drawable.ic_site_list);
+        mBinding.episodeViewMode.setContentDescription(getString(grid ? R.string.detail_episode_view_list_action : R.string.detail_episode_view_grid_action));
         applyTmdbPlaybackControlColors();
     }
 
     private void toggleEpisodeFileName() {
         if (mBinding.episodeFileName == null || mBinding.episodeFileName.getVisibility() != View.VISIBLE) {
+            return;
+        }
+        // 影视原生模式没有 TMDB 刮削标题，切换刮削/原文件名不会有任何变化，改为等同「短显」
+        if (shouldUseUpstreamNativeEpisodeModule()) {
+            onShortDisplay();
             return;
         }
         boolean showScraped = !Setting.getTmdbEpisodeShowScrapedName();
@@ -2781,6 +2828,7 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
             mEpisodeAdapter = new EpisodeAdapter(this, viewType, items);
             mEpisodeAdapter.setOnTitleReadyListener(this::onEpisodeTitlesReady);
             mEpisodeAdapter.setUseTmdbCard(useTmdbCard);
+            mEpisodeAdapter.setNativeGridExpanded(mEpisodeGridMode && !useTmdbCard && isOriginalEnhancedEpisodeFallback());
             updateEpisodeFallbackStillUrl();
             mBinding.episode.setAdapter(mEpisodeAdapter);
             scrollToPosition(mBinding.episode, position);
@@ -2793,7 +2841,18 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
 
     private void updateEpisodeFileNameButton() {
         if (mBinding.episodeFileName == null) return;
+        // 图标表达当前标题状态，描述表达点击后的动作。
+        if (shouldUseUpstreamNativeEpisodeModule()) {
+            // 原生模式没有刮削标题，这个按钮等同「短显」。
+            boolean compact = Setting.isCompactEpisodeTitle();
+            mBinding.episodeFileName.setImageResource(compact ? R.drawable.ic_action_name_short : R.drawable.ic_action_name_full);
+            mBinding.episodeFileName.setContentDescription(getString(R.string.play_short_display));
+            applyTmdbPlaybackControlColors();
+            return;
+        }
         boolean showScraped = Setting.getTmdbEpisodeShowScrapedName();
+        // 刮削名是「序号 + 剧集标题」的规整短标题，原文件名则是完整长文件名。
+        mBinding.episodeFileName.setImageResource(showScraped ? R.drawable.ic_action_name_short : R.drawable.ic_action_name_full);
         mBinding.episodeFileName.setContentDescription(getString(showScraped ? R.string.detail_episode_file_name_original_action : R.string.detail_episode_file_name_scraped_action));
         applyTmdbPlaybackControlColors();
     }
@@ -4224,14 +4283,24 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
         if (mFlagAdapter == null || mFlagAdapter.isEmpty() || mHistory == null) return;
         Flag flag = getFlag();
         syncSelectedEpisode(flag);
-        EpisodeListDialog.create().flags(mFlagAdapter.getItems()).reverse(mHistory.isRevSort()).tmdbCard(shouldUseTmdbEpisodeCards(flag.getEpisodes())).show(this);
+        EpisodeListDialog.create().flags(mFlagAdapter.getItems()).reverse(mHistory.isRevSort()).tmdbCard(shouldUseTmdbEpisodeCards(flag.getEpisodes())).fallbackStill(getEpisodeFallbackStillUrl()).seasons(getEpisodeDialogSeasons(), getEpisodeDialogSeasonCounts()).show(this);
+    }
+
+    private List<Integer> getEpisodeDialogSeasons() {
+        if (mTmdbUIAdapter == null || !mTmdbUIAdapter.isLoaded()) return List.of();
+        return new ArrayList<>(getEpisodeDialogSeasonCounts().keySet());
+    }
+
+    private Map<Integer, Integer> getEpisodeDialogSeasonCounts() {
+        if (mTmdbUIAdapter == null || !mTmdbUIAdapter.isLoaded()) return Map.of();
+        return mTmdbUIAdapter.getSeasonEpisodeCounts();
     }
 
     private void onChoose() {
         String[] kernel = ResUtil.getStringArray(R.array.select_player_kernel);
         String[] items = new String[kernel.length + 1];
         System.arraycopy(kernel, 0, items, 0, kernel.length);
-        items[kernel.length] = "外调";
+        items[kernel.length] = getString(R.string.player_kernel_external);
         new com.google.android.material.dialog.MaterialAlertDialogBuilder(this).setItems(items, (dialog, which) -> {
             if (which < kernel.length) {
                 if (!refreshAndSwitchPlayerKernel(which)) {
@@ -4460,7 +4529,7 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
         if (mSeekProgressFallback != null) App.removeCallbacks(mSeekProgressFallback);
         mBinding.progress.getRoot().setVisibility(View.GONE);
         App.removeCallbacks(mR2);
-        Traffic.reset();
+        Traffic.reset(mBinding.progress.traffic);
     }
 
     private void showDetailContent() {
@@ -4484,6 +4553,9 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
         mTmdbContentLoaded = true;
         mBinding.name.setVisibility(View.GONE);
         if (mVod != null) setText(mVod);
+        // 选集列表在 TMDB 就绪前就已构建，那时 mTmdbUIAdapter.isLoaded() 为 false，
+        // 兜底图取不到海报；此处重算，否则无 TMDB 数据的集会一直是无图卡片。
+        updateEpisodeFallbackStillUrl();
         showDetailContent();
     }
 
@@ -4862,6 +4934,15 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
     }
 
     private String getEpisodeFallbackStillUrl() {
+        // 分集无 TMDB 剧照时的兜底图，顺序对齐详情页 episodeFallbackStillUrl()：海报优先，再退 backdrop。
+        // getPosterUrl() 内部已带 tmdbItem.getPosterUrl() 兜底，比 getPhotos()（backdrops 列表，
+        // tmdbDetail 未就绪时为空）可靠。下面几项是进场 intent 的值，从 TMDB 详情页进来时可能全为空。
+        if (mTmdbUIAdapter != null && mTmdbUIAdapter.isLoaded()) {
+            String poster = mTmdbUIAdapter.getPosterUrl();
+            if (!TextUtils.isEmpty(poster)) return poster;
+            java.util.List<String> photos = mTmdbUIAdapter.getPhotos();
+            if (photos != null && !photos.isEmpty() && !TextUtils.isEmpty(photos.get(0))) return photos.get(0);
+        }
         if (!TextUtils.isEmpty(getPic())) return getPic();
         if (!TextUtils.isEmpty(getTmdbVodPic())) return getTmdbVodPic();
         if (mVod != null && !TextUtils.isEmpty(mVod.getPic())) return mVod.getPic();
@@ -5212,6 +5293,7 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
         List<Episode> displayItems = getEpisodeDisplayItems(items);
         updateEpisodeFallbackStillUrl();
         mEpisodeAdapter.setUseTmdbCard(useTmdbCard);
+        mEpisodeAdapter.setNativeGridExpanded(mEpisodeGridMode && !useTmdbCard && isOriginalEnhancedEpisodeFallback());
         mEpisodeAdapter.setViewType(!mEpisodeGridMode ? ViewType.HORI : ViewType.GRID);
         mEpisodeAdapter.refreshMetadata(displayItems);
         updateEpisodeLayout(displayItems, useTmdbCard);
@@ -5359,6 +5441,8 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
         refreshLyrics();
         setTrackVisible();
         mClock.setCallback(this);
+        // 轨道要等新引擎 prepare 完才回来，重建那一刻按钮还是隐藏态，弹窗必须在这里再抄一次。
+        refreshControlDialog();
     }
 
     private void updateAudioOnlyState() {
@@ -6492,6 +6576,7 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
     @Override
     protected void onTitlesChanged() {
         setTitleVisible();
+        refreshControlDialog();
     }
 
     @Override
@@ -8112,6 +8197,8 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
 
     @Override
     public void onCompactEpisodeTitleChanged() {
+        // 设置面板改短显时也要同步「短显」高亮与铅笔图标，与 onShortDisplay() 对齐。
+        setShortDisplay();
         refreshEpisodeTitles();
     }
 

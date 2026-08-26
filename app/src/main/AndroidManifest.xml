@@ -101,6 +101,11 @@
             android:process=":error_activity"
             android:theme="@style/Theme.Crash" />
 
+        <activity
+            android:name=".ui.web.WebReaderActivity"
+            android:exported="false"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode" />
+
         <receiver
             android:name=".receiver.ActionReceiver"
             android:exported="false">

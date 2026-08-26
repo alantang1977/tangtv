@@ -37,6 +37,30 @@
             tools:listitem="@layout/adapter_flag" />
 
         <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/seasonLabel"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:text="@string/detail_season"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <androidx.leanback.widget.HorizontalGridView
+            android:id="@+id/season"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:visibility="gone"
+            tools:itemCount="6"
+            tools:listitem="@layout/adapter_array"
+            tools:visibility="visible" />
+
+        <com.google.android.material.textview.MaterialTextView
             android:layout_width="match_parent"
             android:layout_height="44dp"
             android:layout_marginTop="8dp"

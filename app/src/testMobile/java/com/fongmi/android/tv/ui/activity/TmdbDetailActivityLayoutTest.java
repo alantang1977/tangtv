@@ -1621,7 +1621,7 @@ public class TmdbDetailActivityLayoutTest {
                         && activity.contains("button.setMinWidth(ResUtil.dp2px(64));")
                         && activity.contains("ThemeColors colors = currentThemeColors();")
                         && activity.contains("background.setColor(focused ? colors.control : selected ? colors.chipActive : colors.chip);")
-                        && activity.contains("background.setStroke(ResUtil.dp2px(focused ? 2 : CHIP_STROKE_DP), focused ? colors.accent : selected ? colors.accent : colors.line);")
+                        && activity.contains("background.setStroke(ResUtil.dp2px(focused ? FOCUS_STROKE_DP : selected ? 2 : CHIP_STROKE_DP), focused ? FOCUS_STROKE : selected ? colors.accent : colors.line);")
                         && activity.contains("button.setTextColor(colors.primary);")
                         && activity.contains("button.setBackground(background);")
                         && activity.contains("button.setActivated(selected);")
@@ -2390,9 +2390,9 @@ public class TmdbDetailActivityLayoutTest {
                         && !activity.contains("binding.episodeViewMode.setText(switchToList ? R.string.detail_episode_view_list : R.string.detail_episode_view_grid);")
                         && !activity.contains("binding.episodeFileName.setText(showScraped ? R.string.detail_episode_file_name_original : R.string.detail_episode_file_name_scraped);"));
 
-        assertIconOnlyEpisodeTool(layout, "episodeReverse", "ic_action_reverse", "detail_episode_reverse");
-        assertIconOnlyEpisodeTool(layout, "episodeFileName", "ic_action_rename", "detail_episode_file_name_scraped_action");
-        assertIconOnlyEpisodeTool(layout, "episodeViewMode", "ic_site_grid", "detail_episode_view_grid_action");
+        assertIconOnlyEpisodeTool(layout, "episodeReverse", "ic_action_sort_asc", "detail_episode_reverse");
+        assertIconOnlyEpisodeTool(layout, "episodeFileName", "ic_action_name_full", "detail_episode_file_name_scraped_action");
+        assertIconOnlyEpisodeTool(layout, "episodeViewMode", "ic_site_list", "detail_episode_view_grid_action");
     }
 
 
@@ -3068,6 +3068,32 @@ public class TmdbDetailActivityLayoutTest {
         assertTrue("persisted duplicate flag keys must win over legacy same-name route binding lookup",
                 seasonSources.indexOf("TmdbUIAdapter.isFlagKey(saved.getSourceBindingKey())")
                         < seasonSources.indexOf("TextUtils.equals(saved.getVodFlag(), binding.getSourceFlag())"));
+    }
+
+    @Test
+    public void seasonSourceRouteChipsAreDistinguishableFromRealFlags() throws Exception {
+        String source = readJava("com", "fongmi", "android", "tv", "ui", "activity", "TmdbDetailActivity.java");
+        String bindRoutes = javaBlockAt(source, "private void bindSeasonSourceRoutes(");
+        String label = javaBlockAt(source, "private String seasonSourceRouteLabel(");
+
+        assertTrue("route chips must be labelled as source switches, not as playback lines",
+                label.contains("R.string.detail_source_route_chip"));
+        assertTrue("a same-site route must be named by its entry so it cannot read as the header source label",
+                label.contains("R.string.detail_source_route_chip_entry"));
+        assertTrue("route chip labels must honour the user's custom site name like the header does",
+                label.contains("getDisplayName()"));
+        assertFalse("route chip labels must not fall back to the raw site name",
+                label.contains("site().getName()"));
+        assertTrue("an entry with no usable name must still get a non-empty label",
+                label.contains("TextUtils.isEmpty(entryName)"));
+        assertFalse("a same-site route stays reachable in one click, so it must not be filtered out",
+                bindRoutes.contains("currentKey)) continue"));
+        assertTrue("duplicate entry names must not produce two identical chips",
+                bindRoutes.contains("distinctChipLabel("));
+        int capture = bindRoutes.indexOf("String currentKey = getKeyText();");
+        int submit = bindRoutes.indexOf("detailTasks.submit(");
+        assertTrue("the intent site key must be bound to this submission, not read back later",
+                capture >= 0 && submit > capture);
     }
 
     @Test

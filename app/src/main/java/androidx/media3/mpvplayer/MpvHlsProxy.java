@@ -2249,7 +2249,10 @@ public final class MpvHlsProxy extends NanoHTTPD {
                 ? List.of() : directSegments;
         long selected = Math.max(0, selectedBitsPerSecond);
         if (!variants.isEmpty()) {
-            if (selected <= 0) return List.of();
+            if (selected <= 0) {
+                if (variants.size() != 1) return List.of();
+                return List.copyOf(variants.values().iterator().next());
+            }
             List<HlsPlaylistRewriter.Segment> exact = variants.get(selected);
             if (exact != null) return List.copyOf(exact);
             return List.of();
