@@ -848,6 +848,10 @@
     <string name="setting_incognito">无痕模式</string>
     <string name="setting_drive_check">网盘检测</string>
     <string name="setting_audio_source">音频源配置</string>
+    <string name="setting_novel_source">小说源配置</string>
+    <string name="setting_comic_source">漫画源配置</string>
+    <string name="setting_local_reader">本地小说漫画阅读</string>
+    <string name="setting_local_reader_summary">支持多种格式</string>
     <string name="setting_site_name">站源名称与分组</string>
     <string name="setting_site_name_summary">已自定义 %1$d 个</string>
     <string name="site_name_custom">自定义名称</string>
@@ -1130,6 +1134,7 @@
     <string name="pan_diagnostic_entry">链路诊断</string>
     <string name="pan_diagnostic_title">播放链路诊断</string>
     <string name="player_kernel">播放器内核</string>
+    <string name="player_kernel_external">外调</string>
     <string name="player_scale">缩放比例</string>
     <string name="player_lut">LUT 调色</string>
     <string name="player_mpv_config">MPV 配置管理</string>
@@ -1927,6 +1932,8 @@
     <string name="detail_score">评分 %1$s</string>
     <string name="detail_runtime_format">%1$d 分钟</string>
     <string name="detail_season_format">第 %1$d 季</string>
+    <string name="detail_season">季度</string>
+    <string name="detail_season_other">未匹配</string>
     <string name="detail_media_movie">电影</string>
     <string name="detail_media_tv">剧集</string>
     <string name="detail_media_unknown">详情</string>
@@ -1952,6 +1959,8 @@
     <string name="tmdb_episode_compact_season_progress">TMDB S%1$d %2$d/%3$d 集</string>
     <string name="tmdb_episode_compact_planned">TMDB 待播</string>
     <string name="detail_source_current">站源：%1$s</string>
+    <string name="detail_source_route_chip">换源·%1$s</string>
+    <string name="detail_source_route_chip_entry">同站·%1$s</string>
     <string name="detail_source_empty">暂无可用站源</string>
     <string name="detail_source_episode_empty">暂无可用选集或站源</string>
     <string name="detail_source_searching">正在搜索站源...</string>
@@ -2364,6 +2373,19 @@
     <string name="dialog_audio_enabled_label">启用规则</string>
     <string name="dialog_audio_add_hint">添加关键词或站点…</string>
     <string name="dialog_audio_add">添加</string>
+    <string name="dialog_novel_enabled_label">启用规则</string>
+    <string name="dialog_novel_add_hint">添加关键词或站点…</string>
+    <string name="dialog_novel_add">添加</string>
+    <string name="dialog_novel_site_manage">选择小说源</string>
+    <string name="dialog_novel_site_default">默认 [书]/[小说]</string>
+    <string name="dialog_comic_enabled_label">启用规则</string>
+    <string name="dialog_comic_add_hint">添加关键词或站点…</string>
+    <string name="dialog_comic_add">添加</string>
+    <string name="dialog_comic_site_manage">选择漫画源</string>
+    <string name="dialog_comic_site_default">默认 [画]/[漫画]</string>
+    <string name="reader_chapter_failed">章节加载失败</string>
+    <string name="reader_opening">正在打开 %1$s</string>
+    <string name="reader_opening_default">正在打开阅读器</string>
     <string name="dialog_short_drama_site_disabled">已排除：%1$s</string>
     <string name="dialog_short_drama_enabled_label">启用规则</string>
     <string name="dialog_short_drama_disabled_label">已排除</string>
@@ -2477,4 +2499,15 @@
     <string name="setting_ad_audio_imported">已导入 %1$d 条规则 · %2$s</string>
     <string name="setting_ad_audio_import_failed">规则导入失败，已保留原规则。</string>
     <string name="setting_ad_audio_clear_done">已清除音频指纹规则</string>
-</resources>
+    <string name="speech_ad_enabled">语音广告识别</string>
+    <string name="speech_ad_keywords">广告关键词</string>
+    <string name="speech_ad_keyword_count">%1$d 个关键词</string>
+    <string name="speech_ad_skip_seconds">跳过时长</string>
+    <string name="speech_ad_skip_seconds_value">%1$d 秒</string>
+    <string name="speech_ad_skip_mode">跳过模式</string>
+    <string name="speech_ad_skip_mode_prompt">弹窗确认后跳过</string>
+    <string name="speech_ad_skip_mode_auto">自动跳过</string>
+    <string name="speech_ad_skip_seconds_invalid">请输入 1 到 120 之间的整数。</string>
+    <string name="speech_ad_model_not_ready">模型未就绪</string>
+    <string name="ad_audio_speech_candidate_title">检测到语音广告</string>
+    <string name="ad_audio_speech_candidate_message">命中广告关键词，跳过约 %1$d 秒？</string></resources>

@@ -1,7 +1,7 @@
 <resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
 
     <!-- App -->
-    <string name="app_name">湯影視</string>
+    <string name="app_name">湯影视</string>
     <string name="app_exit_confirm">再按一次退出應用</string>
 
     <!-- Live -->
@@ -807,6 +807,10 @@
     <string name="setting_incognito">無痕模式</string>
     <string name="setting_drive_check">網盤檢測</string>
     <string name="setting_audio_source">音訊源配置</string>
+    <string name="setting_novel_source">小說源配置</string>
+    <string name="setting_comic_source">漫畫源配置</string>
+    <string name="setting_local_reader">本地小說漫畫閱讀</string>
+    <string name="setting_local_reader_summary">支援多種格式</string>
     <string name="setting_site_name">站源名稱與分組</string>
     <string name="setting_site_name_summary">已自訂 %1$d 個</string>
     <string name="site_name_custom">自訂名稱</string>
@@ -1089,6 +1093,7 @@
     <string name="pan_diagnostic_entry">鏈路診斷</string>
     <string name="pan_diagnostic_title">播放鏈路診斷</string>
     <string name="player_kernel">播放器內核</string>
+    <string name="player_kernel_external">外調</string>
     <string name="player_scale">縮放比例</string>
     <string name="player_lut">LUT 調色</string>
     <string name="player_mpv_config">MPV 設定管理</string>
@@ -1813,6 +1818,8 @@
     <string name="tmdb_episode_compact_season_progress">TMDB S%1$d %2$d/%3$d 集</string>
     <string name="tmdb_episode_compact_planned">TMDB 待播</string>
     <string name="detail_source_current">目前站源：%1$s</string>
+    <string name="detail_source_route_chip">換源·%1$s</string>
+    <string name="detail_source_route_chip_entry">同站·%1$s</string>
     <string name="detail_source_empty">暫無可用站源</string>
     <string name="detail_source_episode_empty">暫無可用選集或站源</string>
     <string name="detail_source_searching">正在搜尋站源...</string>
@@ -2303,6 +2310,19 @@
     <string name="dialog_audio_enabled_label">啓用規則</string>
     <string name="dialog_audio_add_hint">添加關鍵詞或站點…</string>
     <string name="dialog_audio_add">添加</string>
+    <string name="dialog_novel_enabled_label">啓用規則</string>
+    <string name="dialog_novel_add_hint">添加關鍵詞或站點…</string>
+    <string name="dialog_novel_add">添加</string>
+    <string name="dialog_novel_site_manage">選擇小說源</string>
+    <string name="dialog_novel_site_default">預設 [书]/[小说]</string>
+    <string name="dialog_comic_enabled_label">啓用規則</string>
+    <string name="dialog_comic_add_hint">添加關鍵詞或站點…</string>
+    <string name="dialog_comic_add">添加</string>
+    <string name="dialog_comic_site_manage">選擇漫畫源</string>
+    <string name="dialog_comic_site_default">預設 [画]/[漫画]</string>
+    <string name="reader_chapter_failed">章節載入失敗</string>
+    <string name="reader_opening">正在開啟 %1$s</string>
+    <string name="reader_opening_default">正在開啟閱讀器</string>
     <string name="dialog_short_drama_site_disabled">已排除：%1$s</string>
     <string name="dialog_short_drama_enabled_label">啓用規則</string>
     <string name="dialog_short_drama_disabled_label">已排除</string>
@@ -2448,4 +2468,15 @@
     <string name="setting_ad_audio_imported">已匯入 %1$d 條規則 · %2$s</string>
     <string name="setting_ad_audio_import_failed">規則匯入失敗，已保留原規則。</string>
     <string name="setting_ad_audio_clear_done">已清除音訊指紋規則</string>
-</resources>
+    <string name="speech_ad_enabled">語音廣告識別</string>
+    <string name="speech_ad_keywords">廣告關鍵詞</string>
+    <string name="speech_ad_keyword_count">%1$d 個關鍵詞</string>
+    <string name="speech_ad_skip_seconds">跳過時長</string>
+    <string name="speech_ad_skip_seconds_value">%1$d 秒</string>
+    <string name="speech_ad_skip_mode">跳過模式</string>
+    <string name="speech_ad_skip_mode_prompt">彈窗確認後跳過</string>
+    <string name="speech_ad_skip_mode_auto">自動跳過</string>
+    <string name="speech_ad_skip_seconds_invalid">請輸入 1 到 120 之間的整數。</string>
+    <string name="speech_ad_model_not_ready">模型未就緒</string>
+    <string name="ad_audio_speech_candidate_title">偵測到語音廣告</string>
+    <string name="ad_audio_speech_candidate_message">命中廣告關鍵詞，跳過約 %1$d 秒？</string></resources>
