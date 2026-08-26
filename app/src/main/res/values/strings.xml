@@ -851,6 +851,10 @@
     <string name="setting_incognito">Incognito mode</string>
     <string name="setting_drive_check">Drive link check</string>
     <string name="setting_audio_source">Audio source config</string>
+    <string name="setting_novel_source">Novel source config</string>
+    <string name="setting_comic_source">Comic source config</string>
+    <string name="setting_local_reader">Local novel and comic reader</string>
+    <string name="setting_local_reader_summary">Multiple formats supported</string>
     <string name="setting_site_name">Site names and groups</string>
     <string name="setting_site_name_summary">%1$d customized</string>
     <string name="site_name_custom">Custom name</string>
@@ -1133,6 +1137,7 @@
     <string name="pan_diagnostic_entry">Link test</string>
     <string name="pan_diagnostic_title">Playback link diagnostics</string>
     <string name="player_kernel">Player engine</string>
+    <string name="player_kernel_external">External</string>
     <string name="player_scale">Scale</string>
     <string name="player_lut">LUT color</string>
     <string name="player_mpv_config">MPV config manager</string>
@@ -1388,6 +1393,19 @@
     <string name="dialog_audio_enabled_label">启用规则</string>
     <string name="dialog_audio_add_hint">添加关键词或站点…</string>
     <string name="dialog_audio_add">添加</string>
+    <string name="dialog_novel_enabled_label">Enabled rules</string>
+    <string name="dialog_novel_add_hint">Add a keyword or site…</string>
+    <string name="dialog_novel_add">Add</string>
+    <string name="dialog_novel_site_manage">Select novel sources</string>
+    <string name="dialog_novel_site_default">Default [书]/[小说]</string>
+    <string name="dialog_comic_enabled_label">Enabled rules</string>
+    <string name="dialog_comic_add_hint">Add a keyword or site…</string>
+    <string name="dialog_comic_add">Add</string>
+    <string name="dialog_comic_site_manage">Select comic sources</string>
+    <string name="dialog_comic_site_default">Default [画]/[漫画]</string>
+    <string name="reader_chapter_failed">Failed to load chapter</string>
+    <string name="reader_opening">Opening %1$s</string>
+    <string name="reader_opening_default">Opening reader</string>
     <string name="dialog_short_drama_site_rules">Short drama source rules: enabled sources or keywords, separated by ;. Default: [短];短剧</string>
     <string name="dialog_short_drama_site_manage">Select short drama sources</string>
     <string name="dialog_short_drama_site_default">Default [短]/短剧</string>
@@ -1945,6 +1963,8 @@
     <string name="detail_score">Score %1$s</string>
     <string name="detail_runtime_format">%1$d min</string>
     <string name="detail_season_format">Season %1$d</string>
+    <string name="detail_season">Season</string>
+    <string name="detail_season_other">Unmatched</string>
     <string name="detail_media_movie">Movie</string>
     <string name="detail_media_tv">Series</string>
     <string name="detail_media_unknown">Detail</string>
@@ -1970,6 +1990,8 @@
     <string name="tmdb_episode_compact_season_progress">TMDB S%1$d %2$d/%3$d eps</string>
     <string name="tmdb_episode_compact_planned">TMDB upcoming</string>
     <string name="detail_source_current">Current source: %1$s</string>
+    <string name="detail_source_route_chip">Switch · %1$s</string>
+    <string name="detail_source_route_chip_entry">Same site · %1$s</string>
     <string name="detail_source_empty">No available source</string>
     <string name="detail_source_episode_empty">No available episodes or source</string>
     <string name="detail_source_searching">Searching sources...</string>
@@ -2481,4 +2503,15 @@
     <string name="setting_ad_audio_imported">Imported %1$d rules · %2$s</string>
     <string name="setting_ad_audio_import_failed">Rule import failed; the previous rules were kept.</string>
     <string name="setting_ad_audio_clear_done">Audio fingerprint rules cleared</string>
-</resources>
+    <string name="speech_ad_enabled">Speech ad recognition</string>
+    <string name="speech_ad_keywords">Ad keywords</string>
+    <string name="speech_ad_keyword_count">%1$d keywords</string>
+    <string name="speech_ad_skip_seconds">Skip duration</string>
+    <string name="speech_ad_skip_seconds_value">%1$d seconds</string>
+    <string name="speech_ad_skip_mode">Skip mode</string>
+    <string name="speech_ad_skip_mode_prompt">Confirm before skipping</string>
+    <string name="speech_ad_skip_mode_auto">Auto skip</string>
+    <string name="speech_ad_skip_seconds_invalid">Enter a whole number from 1 to 120.</string>
+    <string name="speech_ad_model_not_ready">model not ready</string>
+    <string name="ad_audio_speech_candidate_title">Speech advertisement detected</string>
+    <string name="ad_audio_speech_candidate_message">Speech keywords matched. Skip about %1$d seconds?</string></resources>
