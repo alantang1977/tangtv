@@ -155,7 +155,6 @@ dependencies {
     implementation libs.simple.xml
     implementation libs.textdrawable
     implementation libs.tensorflow.lite
-    implementation libs.tink.android
     implementation libs.zxing.core
     leanbackImplementation libs.leanback
     leanbackImplementation libs.androidautosize
