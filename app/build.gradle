@@ -125,6 +125,7 @@ dependencies {
     implementation fileTree(dir: "libs", include: ["*.aar", "*.jar"])
     implementation project(':catvod')
     implementation project(':chaquo')
+    implementation project(':nodejs')
     implementation project(':quickjs')
     implementation libs.appcompat
     implementation libs.lifecycle.service
@@ -142,9 +143,11 @@ dependencies {
     implementation libs.android.gif.drawable
     implementation libs.bundles.glide
     implementation libs.bundles.jupnp
+    implementation libs.commons.compress
     implementation libs.customactivityoncrash
     implementation libs.eventbus
     implementation libs.flexbox
+    implementation libs.tukaani.xz
     implementation libs.jgit
     implementation libs.lottie
     implementation libs.material
@@ -155,6 +158,7 @@ dependencies {
     implementation libs.simple.xml
     implementation libs.textdrawable
     implementation libs.tensorflow.lite
+    implementation libs.tink.android
     implementation libs.zxing.core
     leanbackImplementation libs.leanback
     leanbackImplementation libs.androidautosize
