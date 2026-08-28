@@ -153,7 +153,10 @@ public class SiteApi {
         }
         Source.get().parse(result.getVod().setFlags());
         result = applyPushTitle(push, result);
-        if (!result.getList().isEmpty()) {
+        // 「什么都没有」的条目不值得缓存，缓存了还有害：猫源的设置项正是这种形态，
+        // 它的副作用（请求宿主开网页）发生在 spider 调用里，命中缓存就跳过了 spider，
+        // 于是网页再也不开，只剩一个空详情页。
+        if (!result.getList().isEmpty() && !CatAction.blank(result.getVod())) {
             String content = result.toString();
             VodDetailCache.putContent(sourceKey, id, content);
             SpiderDebug.log("detail-cache", "store key=%s,id=%s,size=%d", key, id, content.length());

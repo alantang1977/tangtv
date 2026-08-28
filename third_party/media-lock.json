@@ -4,6 +4,32 @@
     "branch": "media/release-1.11.0-alpha01-fongmi",
     "commit": "e3e922d5c01bc0b564849940fe589daf37360d15",
     "version": "1.11.0-alpha01-fongmi",
+    "patches": [
+      {
+        "path": "third_party/patches/media3-danmaku-live.patch",
+        "sha256": "c7d3405851c975a7256e363047405e652ec24ffcba39181b5be410b6907db3a5"
+      },
+      {
+        "path": "third_party/patches/media3-dolby-vision-matroska.patch",
+        "sha256": "dda4ab64ac9982377545d23fbcf864d9e9d9308d5be09f86d94efde43a994cce"
+      },
+      {
+        "path": "third_party/patches/media3-upstream-playback-fixes-2026-08.patch",
+        "sha256": "1e09ef63b481af8b69b78c44fc6beea50fd0ae340d149ccf2028dc7804f684b5"
+      },
+      {
+        "path": "third_party/patches/media3-deferred-cues.patch",
+        "sha256": "8bfcf98dadfd70e56ebec4c5fd49701ddc8ed66b02707a7f733b3aec1ed4b2c7"
+      }
+    ],
+    "artifact_overrides": [
+      {
+        "coordinate": "androidx.media3:media3-extractor:1.11.0-alpha01-fongmi",
+        "aar_sha256": "ec3ac41088e496bdfe63925ca0751234e0178a9d92e8deedf8734dfe36fab8fe",
+        "sources_sha256": "a9a813622f10b4735f71ba3c8e535981adca4941bd0f6d832efe31e80b033295",
+        "reason": "E-SP2 defers tail Cues for known-length remote Matroska while preserving exact seek on demand"
+      }
+    ],
     "upstream_repo": "https://github.com/FongMi/media.git",
     "upstream_cherry_picks": [
       "d1bf079238ae4a36d64f0f3b2129b1944a824317",
@@ -28,14 +54,14 @@
     "repo": "https://github.com/anilbeesetti/nextlib.git",
     "branch": "release/1.10.0-0.12.1",
     "commit": "6ff6cf9d0820382b3c233d018c52e4163b09d345",
-    "version": "1.10.0-0.12.1-fongmi-softload-av3a-r1",
+    "version": "1.10.0-0.12.1-fongmi-softload-av3a-ffmpeg901-r1",
     "upstream_version": "1.10.0-0.12.1",
     "patches": [
       "third_party/patches/nextlib-ffmpeg-soft-load-shedding.patch",
       "third_party/patches/nextlib-av3a.patch"
     ],
     "ffmpeg_repo": "https://github.com/FongMi/FFmpeg.git",
-    "ffmpeg_commit": "04482c8d13ac27b2a9fe93f5d388929eef8af5f4",
+    "ffmpeg_commit": "177f090e0503b7e013922ca903bde14b1c375f18",
     "ndk": "28.2.13676358",
     "cmake": "3.22.1",
     "abis": [

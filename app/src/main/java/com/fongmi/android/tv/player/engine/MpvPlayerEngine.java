@@ -260,6 +260,11 @@ public class MpvPlayerEngine implements PlayerEngine {
         return player.getFrameTimingSnapshot();
     }
 
+    /** True while the current BUFFERING window was opened by a seek rather than a stall. */
+    public boolean isSeekBuffering() {
+        return player.isSeekBuffering();
+    }
+
     @Override
     public boolean supportsNativeLut() {
         return !surfaceDirect;

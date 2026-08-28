@@ -37,6 +37,24 @@ public class MpvAutoOutputPolicyTest {
     }
 
     @Test
+    public void keepsSurfaceDirectForUnsupportedDv7WhenHdr10FallbackIsEnabled() {
+        MpvAutoOutputPolicy.Decision decision = MpvAutoOutputPolicy.evaluate(
+                3840, 2160, true, true, false, false,
+                MpvAutoOutputPolicy.DolbyVisionSupport.UNSUPPORTED, 7, true);
+        assertTrue(decision.eligible());
+        assertEquals("dv7-hdr10-base-layer", decision.reason());
+        assertEquals(MpvAutoOutputPolicy.Transition.KEEP_SURFACE_DIRECT,
+                MpvAutoOutputPolicy.transition(decision.eligible(), true));
+    }
+
+    @Test
+    public void doesNotPinUnsupportedDv7WithoutHdr10Fallback() {
+        assertFalse(MpvAutoOutputPolicy.evaluate(
+                3840, 2160, true, true, false, false,
+                MpvAutoOutputPolicy.DolbyVisionSupport.UNSUPPORTED, 7, false).eligible());
+    }
+
+    @Test
     public void evaluatesFourKBeforeTracksAreComplete() {
         assertTrue(MpvAutoOutputPolicy.canEvaluateWithoutTracks(3840, 1606));
     }

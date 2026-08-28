@@ -231,7 +231,15 @@ apply_media_patches() {
   local patch_dir="$THIRD_PARTY_DIR/patches"
   local patch_file
   [[ -d "$patch_dir" ]] || return 0
-  for patch_file in "$patch_dir"/media3-*.patch; do
+  # Deferred Cues depends on the existing Matroska/DV and playback-fix hunks, so
+  # apply it last instead of relying on filesystem glob order.
+  local patches=(
+    "$patch_dir/media3-danmaku-live.patch"
+    "$patch_dir/media3-dolby-vision-matroska.patch"
+    "$patch_dir/media3-upstream-playback-fixes-2026-08.patch"
+    "$patch_dir/media3-deferred-cues.patch"
+  )
+  for patch_file in "${patches[@]}"; do
     [[ -f "$patch_file" ]] || continue
     echo "Applying Media3 patch $(basename "$patch_file")"
     git -C "$MEDIA_DIR" apply --check "$patch_file"

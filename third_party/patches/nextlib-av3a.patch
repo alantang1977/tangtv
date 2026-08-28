@@ -7,7 +7,7 @@ index 18acf58..0366f56 100644
                  groupId = "io.github.anilbeesetti",
                  artifactId = property("POM_ARTIFACT_ID") as String,
 -                version = "1.10.0-0.12.1-fongmi-softload"
-+                version = "1.10.0-0.12.1-fongmi-softload-av3a-r1"
++                version = "1.10.0-0.12.1-fongmi-softload-av3a-ffmpeg901-r1"
              )
  
              pom {
@@ -20,8 +20,8 @@ index e68e4d0..aad587a 100755
  VPX_VERSION=1.13.0
  MBEDTLS_VERSION=3.4.1
 -FFMPEG_VERSION=6.0
-+FFMPEG_VERSION=9.0-fongmi
-+FFMPEG_COMMIT=04482c8d13ac27b2a9fe93f5d388929eef8af5f4
++FFMPEG_VERSION=9.0.1-fongmi
++FFMPEG_COMMIT=177f090e0503b7e013922ca903bde14b1c375f18
  
  # Directories
  BASE_DIR=$(cd "$(dirname "$0")" && pwd)

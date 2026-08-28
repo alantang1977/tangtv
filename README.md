@@ -76,6 +76,7 @@ WebHome 主页、扩展、模板、示例和 AI skills 统一放在 [webhome-dev
 
 ### 环境要求
 
+- Android Studio 仅是可选 IDE，不是项目依赖。命令行构建不读取 Android Studio 的安装目录或内置 JBR，只需要 `JAVA_HOME`/`PATH` 中可用的 JDK 和独立配置的 Android SDK。
 - JDK 21。不要使用 JDK 17；当前 `sourceCompatibility` / `targetCompatibility` 均为 Java 21。
 - Python 3.10。Chaquo 运行时和构建时 Python 均固定为 3.10，仅安装 Python 3.11/3.12/3.13 会失败。
 - Android SDK Platform 37 和 Build Tools 37.0.0。当前 `compileSdk=37`、`minSdk=24`、`targetSdk=28`。
@@ -100,15 +101,15 @@ export all_proxy=socks5://127.0.0.1:7897
 
 ### 从零 clone 到打包
 
-先安装或确认 Android SDK。Android Studio 打开项目时通常会自动生成 `local.properties`；命令行构建需要进入仓库根目录后手动创建。macOS 默认 SDK 路径示例：
+先安装或确认 Android SDK Command-line Tools，并通过 `ANDROID_HOME`、`ANDROID_SDK_ROOT` 或根目录 `local.properties` 告诉构建系统 SDK 的位置。`local.properties` 是普通文本配置，直接在仓库根目录创建即可，不需要 Android Studio。macOS 常见 SDK 路径示例：
 
 ```bash
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 ```
 
-Linux 常见路径是 `$HOME/Android/Sdk`，Windows 使用 Android Studio 打开项目或创建 `local.properties`，内容类似 `sdk.dir=C\:\\Users\\你的用户名\\AppData\\Local\\Android\\Sdk`。
+Linux 常见路径是 `$HOME/Android/Sdk`；Windows 可手动创建 `local.properties`，内容类似 `sdk.dir=C\:\\Users\\你的用户名\\AppData\\Local\\Android\\Sdk`。
 
-如 SDK 未安装 API 37、Build Tools 或 Platform Tools，可用 Android Studio SDK Manager 安装，或使用命令行工具：
+如 SDK 未安装 API 37、Build Tools 或 Platform Tools，使用 Android SDK 自带的 `sdkmanager` 安装；Android Studio 的 SDK Manager 只是可选的图形界面：
 
 ```bash
 "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
@@ -365,8 +366,8 @@ keyPassword=your_key_password
 - `third_party/patches/nextlib-*.patch`:在 `anilbeesetti/nextlib@6ff6cf9d0820382b3c233d018c52e4163b09d345` 上叠加 FFmpeg 软解负载控制和 AV3A/libarcdav3a 支持。
 - `third_party/mpv-player-jni`:MPV `libplayer.so` JNI 桥接源码，修改后用 `scripts/build_mpv_player_jni.sh` 重建。
 - `app/src/*/assets/mpv-libs/*`:随 APK 打包的 MPV native 库和 JNI 桥接库。
-- `nextlib-media3ext`:`io.github.anilbeesetti:nextlib-media3ext:1.10.0-0.12.1-fongmi-softload-av3a-r1`，提供 FFmpeg renderer；内置 FongMi FFmpeg `04482c8d13ac27b2a9fe93f5d388929eef8af5f4` 和静态链接的 `libarcdav3a`，Exo 可软解 `audio/av3a`，并在输出设备不接受源多声道 PCM 时下混到立体声。
-- `ExoplayerHdrUtils`:`com.suyashbelekar:exoplayerhdrutils:0.4.0`，提供基于 libdovi 的实时 HEVC RPU 转换。Exo 默认只在设备不能硬解原始 DV7、但能硬解 P8.1 时使用 mode 2 转换并移除增强层；原生 DV7 可用时保持原码流。P8.1 模式会锁定整次播放且禁止自动 HDR10 降级，无效转换数据会直接触发播放错误；只有用户选择 HDR10 模式时才整次使用 HDR10 基底层。
+- `nextlib-media3ext`:`io.github.anilbeesetti:nextlib-media3ext:1.10.0-0.12.1-fongmi-softload-av3a-ffmpeg901-r1`，提供 FFmpeg renderer；内置 FongMi FFmpeg `177f090e0503b7e013922ca903bde14b1c375f18`（9.0.1）和静态链接的 `libarcdav3a`，Exo 可软解 `audio/av3a`，并在输出设备不接受源多声道 PCM 时下混到立体声。MPV native 仍按其独立 lock 使用旧 FFmpeg，不能共用该 AAR 内的 `.so`。
+- `ExoplayerHdrUtils`:`com.suyashbelekar:exoplayerhdrutils:0.4.0`，提供基于 libdovi 的实时 HEVC RPU 转换。Exo 按“原生 DV7 硬解 → P8.1 转换硬解 → HDR10/HEVC 硬解”选择整次播放路径：原生 DV7 可用时保持原码流；原生 DV7 不可用但 P8.1 可用时使用 mode 2 转换并移除增强层；两者都不可用而设备支持 HDR10/HEVC 时，起播前直接使用 HDR10 基底层。能力查询误报或 P8.1 实际初始化/解码失败时，同一会话最多回退 HDR10 一次，不自动切软解或循环重试；用户选择 HDR10 模式时仍整次使用 HDR10 基底层。
 
 `settings.gradle` 中的依赖顺序是仓库本地 `third_party/maven`、Maven Central、Google Maven、`app/libs` 和 JitPack。`app/build.gradle` 会强制所有 `androidx.media3` 依赖使用 `1.11.0-alpha01-fongmi`，避免传递依赖拉回官方版本。
 

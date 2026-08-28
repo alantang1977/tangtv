@@ -1,5 +1,7 @@
 package com.fongmi.android.tv.ui.dialog;
 
+import android.content.res.Resources;
+
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 
@@ -27,9 +29,9 @@ public final class PlayerKernelDialog {
 
     public static void show(FragmentActivity activity, int selected, Listener listener, ExternalListener external) {
         int current = PlayerSetting.sanitizePlayer(selected);
-        String[] kernel = activity.getResources().getStringArray(R.array.select_player_kernel);
+        String[] kernel = kernels(activity.getResources());
         String[] items = withExternal(kernel, external, activity.getString(R.string.player_kernel_external));
-        ChoiceDialog.showSingleNoCancel(activity, R.string.player_kernel, items, current, which -> notifySelected(kernel.length, current, which, listener, external));
+        ChoiceDialog.showSingleNoCancel(activity, R.string.player_kernel, items, PlayerSetting.kernelRank(current), which -> notifySelected(kernel.length, current, which, listener, external));
     }
 
     public static void show(Fragment fragment, int selected, Listener listener) {
@@ -38,9 +40,14 @@ public final class PlayerKernelDialog {
 
     public static void show(Fragment fragment, int selected, Listener listener, ExternalListener external) {
         int current = PlayerSetting.sanitizePlayer(selected);
-        String[] kernel = fragment.getResources().getStringArray(R.array.select_player_kernel);
+        String[] kernel = kernels(fragment.getResources());
         String[] items = withExternal(kernel, external, fragment.getString(R.string.player_kernel_external));
-        ChoiceDialog.showSingleNoCancel(fragment, R.string.player_kernel, items, current, which -> notifySelected(kernel.length, current, which, listener, external));
+        ChoiceDialog.showSingleNoCancel(fragment, R.string.player_kernel, items, PlayerSetting.kernelRank(current), which -> notifySelected(kernel.length, current, which, listener, external));
+    }
+
+    /** 内核标签，按 EXO → IJK → MPV → 系统 的优先级顺序排列。 */
+    public static String[] kernels(Resources resources) {
+        return PlayerSetting.orderKernels(resources.getStringArray(R.array.select_player_kernel));
     }
 
     private static String[] withExternal(String[] kernel, ExternalListener external, String label) {
@@ -55,7 +62,7 @@ public final class PlayerKernelDialog {
             external.onExternal();
             return;
         }
-        int target = PlayerSetting.sanitizePlayer(selected);
+        int target = PlayerSetting.kernelAt(selected);
         if (target != current && listener != null) listener.onSelected(target);
     }
 }

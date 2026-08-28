@@ -249,6 +249,16 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     protected void onPlayerRebuilt() {
     }
 
+    /**
+     * The rendered frame is revealed by clearing the shutter in the caller. The
+     * loading spinner deliberately stays up until STATE_READY: a first frame does
+     * not mean playback can proceed, and hiding the spinner here would present a
+     * still-buffering session as a frozen picture. Subclasses own the spinner and
+     * clear it from their own state handling.
+     */
+    protected void onExoFirstFrame() {
+    }
+
     protected void onTracksChanged() {
     }
 
@@ -836,6 +846,15 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
             if (!isOwner()) return;
             nativeOutputPending = false;
             syncShutter();
+        }
+
+        @Override
+        public void onExoFirstFrame() {
+            if (!isOwner() || !player().isExo()) return;
+            View shutter = getExoView().findViewById(androidx.media3.ui.R.id.exo_shutter);
+            if (shutter != null) shutter.setVisibility(View.INVISIBLE);
+            getExoView().setShutterBackgroundColor(Color.TRANSPARENT);
+            PlaybackActivity.this.onExoFirstFrame();
         }
 
         @Override

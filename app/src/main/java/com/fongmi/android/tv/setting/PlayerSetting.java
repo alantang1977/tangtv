@@ -17,6 +17,12 @@ public class PlayerSetting {
     public static final int SYSTEM = 2;
     public static final int MPV = 3;
     public static final int NONE = -1;
+    /**
+     * 内核优先级顺序：EXO → IJK → MPV → 系统。下标是位次，元素是内核常量。
+     * 常量数值本身是持久化值（也是 select_player_kernel 等数组的下标），不能重排，
+     * 所以顺序只在这张表里表达：选择菜单按它排列，播放失败的内核回退也按它推进。
+     */
+    public static final int[] KERNEL_ORDER = {EXO, IJK, MPV, SYSTEM};
     public static final int RENDER_SURFACE = 0;
     public static final int RENDER_TEXTURE = 1;
     public static final int FFMPEG_MODE_NEXTLIB = 0;
@@ -170,13 +176,61 @@ public class PlayerSetting {
         return true;
     }
 
+    public static int kernelCount() {
+        return KERNEL_ORDER.length;
+    }
+
+    /**
+     * 以内核常量为下标的数组该开多大（如回退已试标记表）。
+     * 由顺序表推导而非写死某个常量，新增内核时不会漏掉长度、把下标撑越界。
+     */
+    public static int kernelIndexSize() {
+        int max = 0;
+        for (int kernel : KERNEL_ORDER) if (kernel > max) max = kernel;
+        return max + 1;
+    }
+
+    /** 内核在优先级顺序里的位次，用于对话框选中项与排序展示。 */
+    public static int kernelRank(int player) {
+        int target = sanitizePlayer(player);
+        for (int i = 0; i < KERNEL_ORDER.length; i++) if (KERNEL_ORDER[i] == target) return i;
+        return 0;
+    }
+
+    /** 位次还原成内核常量，越界时退回 EXO。 */
+    public static int kernelAt(int rank) {
+        return rank >= 0 && rank < KERNEL_ORDER.length ? KERNEL_ORDER[rank] : EXO;
+    }
+
+    /** 按优先级顺序把标签数组重排成菜单顺序，入参下标是内核常量。 */
+    public static String[] orderKernels(String[] labels) {
+        if (labels == null) return new String[0];
+        String[] ordered = new String[KERNEL_ORDER.length];
+        for (int i = 0; i < KERNEL_ORDER.length; i++) {
+            int kernel = KERNEL_ORDER[i];
+            ordered[i] = kernel < labels.length ? labels[kernel] : "";
+        }
+        return ordered;
+    }
+
+    /** 手动轮换：沿优先级顺序取下一个，走到末尾回到开头。 */
     public static int nextPlayer(int player) {
-        return switch (sanitizePlayer(player)) {
-            case EXO -> IJK;
-            case IJK -> SYSTEM;
-            case SYSTEM -> MPV;
-            default -> EXO;
-        };
+        return kernelAt((kernelRank(player) + 1) % KERNEL_ORDER.length);
+    }
+
+    /**
+     * 回退用：从优先级顺序开头扫描，跳过已试过的内核（当前内核由调用方先标记）。
+     * 所以无论从哪个内核失败，回退都按 EXO → IJK → MPV → 系统 推进，只是跳过自身。
+     */
+    public static int firstUntriedPlayer(boolean[] tried) {
+        if (tried == null) return kernelAt(0);
+        for (int kernel : KERNEL_ORDER) {
+            // 越界的内核记不进 tried，返回它会让调用方标记不生效而反复拿到同一个，
+            // 因此按「已试过」跳过：宁可少一次回退，也不能让回退循环停不下来。
+            if (kernel >= tried.length || tried[kernel]) continue;
+            return kernel;
+        }
+        return NONE;
     }
 
     public static int getRender() {

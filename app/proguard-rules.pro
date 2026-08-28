@@ -81,6 +81,31 @@
 -keep class org.jupnp.** { *; }
 -keep class javax.xml.** { *; }
 
+# Inline quick search is reflected from the shared TMDB detail activity into each
+# flavor's own dialog. Must be -keepclassmembers, not -keepclassmembernames:
+# the latter implies allowshrinking, so R8 may delete methods only reached by
+# reflection. Losing them makes the in-page search silently fall back to the
+# global search page in release builds only.
+-keepclassmembers class com.fongmi.android.tv.ui.dialog.QuickSearchDialog {
+    public static com.fongmi.android.tv.ui.dialog.QuickSearchDialog create();
+    public void show(androidx.fragment.app.FragmentActivity);
+    public void addAll(java.util.List);
+    public void clear();
+    public *** listener(***);
+    public *** items(java.util.List);
+    public *** title(java.lang.String);
+    public *** keyword(java.lang.String);
+    public *** setProgress(int, int, boolean);
+    public *** searchListener(***);
+    public *** dismissListener(***);
+}
+-keep interface com.fongmi.android.tv.ui.dialog.QuickSearchDialog$* { *; }
+-keep interface com.fongmi.android.tv.ui.adapter.QuickAdapter$OnClickListener { *; }
+# Inherited from DialogFragment, so the rule above cannot match it.
+-keepclassmembers class * extends androidx.fragment.app.DialogFragment {
+    public void dismissAllowingStateLoss();
+}
+
 # Mobile inline cast uses reflection from the shared TMDB detail activity.
 -keepclassmembernames class com.fongmi.android.tv.ui.dialog.CastDialog {
     public static com.fongmi.android.tv.ui.dialog.CastDialog create();

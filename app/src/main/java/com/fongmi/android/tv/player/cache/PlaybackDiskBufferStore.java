@@ -56,6 +56,15 @@ public final class PlaybackDiskBufferStore {
         return result;
     }
 
+    /** Returns the native or disk-backed end, bounded to the known media duration. */
+    public synchronized long effectiveEnd(
+            String mediaKey, long nativeBufferedEndMs, long durationMs, long gapToleranceMs) {
+        long nativeEnd = Math.max(0, nativeBufferedEndMs);
+        long diskEnd = contiguousEnd(mediaKey, nativeEnd, gapToleranceMs);
+        long effective = Math.max(nativeEnd, diskEnd);
+        return durationMs > 0 ? Math.min(effective, durationMs) : effective;
+    }
+
     public synchronized void clear() {
         mediaRanges.clear();
         queryLogs.clear();

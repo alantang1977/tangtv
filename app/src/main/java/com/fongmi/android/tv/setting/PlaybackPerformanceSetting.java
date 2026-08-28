@@ -56,6 +56,7 @@ public class PlaybackPerformanceSetting {
     private static final String KEY_DV7_HDR10_FALLBACK_LEGACY =
             "perf_dv7_hdr10_fallback";
     private static final String KEY_DV7_HANDLING = "perf_dv7_handling";
+    private static final String KEY_DEFERRED_CUES = "perf_deferred_cues";
     private static final String KEY_SOFT_VIDEO_TUNE = "perf_soft_video_tune";
     private static final String KEY_HIGH_BUFFER = "perf_high_buffer";
     private static final String KEY_BANDWIDTH_METER = "perf_bandwidth_meter";
@@ -406,6 +407,16 @@ public class PlaybackPerformanceSetting {
 
     public static boolean isDv7P81Enabled() {
         return getDv7HandlingMode() == DV7_HANDLING_P81;
+    }
+
+    /** Deferred remote-Matroska Cues (E-SP2). Default on; off restores read-at-start. */
+    public static boolean isDeferredCuesEnabled() {
+        ensureInitialized();
+        return Prefers.getBoolean(KEY_DEFERRED_CUES, true);
+    }
+
+    public static void putDeferredCuesEnabled(boolean value) {
+        putCustom(KEY_DEFERRED_CUES, value, PlaybackPerformanceCatalog.DEFERRED_CUES);
     }
 
     /** HDR10 is used only when the user explicitly selects the HDR10 handling mode. */

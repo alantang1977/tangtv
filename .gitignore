@@ -3,6 +3,7 @@
 .vscode/
 .gradle/
 build/
+.cxx/
 dist/
 out/
 !third_party/mpv-native-overrides/aimagereader-stable/video/out/
@@ -40,3 +41,4 @@ plans/
 .tokensave
 .codebase-memory
 graphify-out/
+.codex/task-state/

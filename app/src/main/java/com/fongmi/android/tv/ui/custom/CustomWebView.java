@@ -56,6 +56,8 @@ public class CustomWebView extends WebView implements DialogInterface.OnDismissL
     private static final int MAX_URLS = 5;
 
     private final AtomicReference<ParseCallback> callbackRef = new AtomicReference<>();
+    /** 调用方指定的嗅探正则（猫源 /msg 的 sniff 会带 rule）；为空时用默认判定。 */
+    private Pattern sniff;
     private LinkedHashSet<String> urls;
     private WebResourceResponse empty;
     private WebDialog dialog;
@@ -267,9 +269,16 @@ public class CustomWebView extends WebView implements DialogInterface.OnDismissL
         return false;
     }
 
+    /** 指定自定义嗅探正则，需在 start() 之前调用。 */
+    public CustomWebView sniff(Pattern pattern) {
+        this.sniff = pattern;
+        return this;
+    }
+
     private boolean isVideoFormat(String url) {
         try {
             if (!detect && url.equals(this.url)) return false;
+            if (sniff != null) return sniff.matcher(url).find();
             Spider spider = VodConfig.get().getSite(key).spider();
             if (spider.manualVideoCheck()) return spider.isVideoFormat(url);
             return Sniffer.isVideoFormat(url);

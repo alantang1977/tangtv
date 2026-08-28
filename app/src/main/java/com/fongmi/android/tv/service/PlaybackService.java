@@ -670,6 +670,11 @@ private AudioHistory.Record audioHistoryRecord;
     }
 
     @Override
+    public void onExoFirstFrame() {
+        playerCallbacks.forEach(PlayerCallback::onExoFirstFrame);
+    }
+
+    @Override
     public void onPlayerRebuild(Player newPlayer, boolean resetVideoSurface) {
         exoPlayer.removeListener(listener);
         exoPlayer = newPlayer;
@@ -785,6 +790,9 @@ public void onIsPlayingChanged(boolean isPlaying) {
         }
 
         default void onPlayerOutputReady() {
+        }
+
+        default void onExoFirstFrame() {
         }
 
         default void onPlayerRebuild(Player player, boolean resetVideoSurface) {

@@ -108,6 +108,7 @@ import com.fongmi.android.tv.setting.DanmakuSetting;
 import com.fongmi.android.tv.setting.PlayerButtonSetting;
 import com.fongmi.android.tv.setting.MultiThreadProxySetting;
 import com.fongmi.android.tv.setting.PlayerSetting;
+import com.fongmi.android.tv.ui.dialog.PlayerKernelDialog;
 import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.setting.SiteHealthStore;
 import com.fongmi.android.tv.setting.TmdbSitePolicy;
@@ -1363,6 +1364,7 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
         setAnimator();
         initNightModeOverlay();
         if (isShortDramaSource()) enterShortDramaFullscreen();
+        if (hasPendingImmersiveAudioLaunch()) setAudioStageVisible(true);
         setupIntroSkipConfirmListener();
     }
 
@@ -1472,10 +1474,11 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
 
     private WindowInsetsCompat setStatusBar(WindowInsetsCompat insets) {
         int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-        int bottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
-        ViewGroup.LayoutParams lp = mBinding.statusBar.getLayoutParams();
-        lp.height = top;
-        mBinding.statusBar.setLayoutParams(lp);
+        Insets nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+        int bottom = nav.bottom;
+        mStatusBarInset = top;
+        mNavigationRightInset = nav.right;
+        applyStatusBarSpacer();
         setEpisodeBottomInset(bottom);
         return insets;
     }
@@ -1484,6 +1487,7 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
         mEpisodeBottomInset = bottom;
         int padding = ResUtil.dp2px(12);
         mBinding.episode.setPaddingRelative(mBinding.episode.getPaddingStart(), mBinding.episode.getPaddingTop(), mBinding.episode.getPaddingEnd(), padding);
+        applyAudioStageInsets();
         mBinding.episode.post(this::updateEpisodeViewportHeight);
     }
 
@@ -1933,6 +1937,13 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
         SpiderDebug.log("video-flow", "detail finish cost=%dms empty=%s msg=%s", cost, result.getList().isEmpty(), result.getMsg());
         recordDetailHealth(result, cost);
         mBinding.swipeLayout.setRefreshing(false);
+        // 猫源设置项：点击的本意是开网页，detail 只是副产物。留在这儿会让内嵌页背后压着空白播放页，
+        // 也不能走 setEmpty——它在 intent 带 name 时会拿动作名去别的站搜索。
+        if (com.fongmi.android.tv.api.CatAction.shouldYieldDetail(getKey(), detailStartTime, result)) {
+            SpiderDebug.log("video-flow", "detail yield to cat webview key=%s id=%s", getKey(), getId());
+            finish();
+            return;
+        }
         if (result.getList().isEmpty()) setEmpty(result.hasMsg());
         else setDetail(result.getVod());
         Notify.show(result.getMsg());
@@ -4297,15 +4308,16 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
     }
 
     private void onChoose() {
-        String[] kernel = ResUtil.getStringArray(R.array.select_player_kernel);
+        String[] kernel = PlayerKernelDialog.kernels(getResources());
         String[] items = new String[kernel.length + 1];
         System.arraycopy(kernel, 0, items, 0, kernel.length);
         items[kernel.length] = getString(R.string.player_kernel_external);
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this).setItems(items, (dialog, which) -> {
-            if (which < kernel.length) {
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this).setItems(items, (dialog, index) -> {
+            if (index < kernel.length) {
+                int which = PlayerSetting.kernelAt(index);
                 if (!refreshAndSwitchPlayerKernel(which)) {
                     clearLyrics();
-                player().switchPlayerManually(which);
+                    player().switchPlayerManually(which);
                     setPlayer();
                     setDecode();
                 }
@@ -5471,6 +5483,8 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
         mAudioStageVisible = visible;
         syncPiPForPlaybackMode();
         if (!visible) mAudioLightEffectAnimated = false;
+        applyStatusBarSpacer();
+        applyAudioStageInsets();
         mBinding.audioStage.setVisibility(visible ? View.VISIBLE : View.GONE);
         if (visible) mBinding.audioStage.bringToFront();
         if (visible) applyAudioBackground();
@@ -6821,6 +6835,19 @@ private final Task.Scope mPersonalRecommendationTasks = new Task.Scope(Task.reco
     public void onConfigEvent(ConfigEvent event) {
         if (isRedirect() || !event.isVod() || mParseAdapter == null) return;
         mParseAdapter.reload();
+    }
+
+    /**
+     * 猫源开了内嵌设置页：这次点击的本意就是开网页，本页立刻退场。
+     *
+     * <p>不能等 detail 结果再判定——那份结果可能被主线程堵住好几秒，这段时间里按返回就会
+     * 落回本页（空白播放页）。用请求时刻和本次 detail 起始时间比，确认是自己触发的才退。
+     */
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onCatWebEvent(com.fongmi.android.tv.event.CatWebEvent event) {
+        if (isRedirect() || !event.after(detailStartTime)) return;
+        SpiderDebug.log("video-flow", "detail yield to cat webview (event) key=%s id=%s", getKey(), getId());
+        finish();
     }
 
     private boolean applyPendingResumeSeek() {
@@ -8989,6 +9016,11 @@ private boolean consumePendingPlaybackResult() {
 private AudioPlaybackResolver.Resolved takeImmersiveAudioLaunch() {
         String cacheKey = Objects.toString(getIntent().getStringExtra(EXTRA_IMMERSIVE_AUDIO_CACHE_KEY), "");
         return TextUtils.isEmpty(cacheKey) ? null : IMMERSIVE_AUDIO_LAUNCHES.remove(cacheKey);
+    }
+
+    private boolean hasPendingImmersiveAudioLaunch() {
+        String cacheKey = Objects.toString(getIntent().getStringExtra(EXTRA_IMMERSIVE_AUDIO_CACHE_KEY), "");
+        return !TextUtils.isEmpty(cacheKey) && IMMERSIVE_AUDIO_LAUNCHES.containsKey(cacheKey);
     }
 
 private boolean consumeImmersiveAudioLaunch() {

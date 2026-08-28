@@ -106,6 +106,36 @@
             android:exported="false"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode" />
 
+        <activity
+            android:name=".ui.web.CatWebActivity"
+            android:exported="false"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode" />
+
+        <activity
+            android:name=".lab.LabActivity"
+            android:exported="false"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
+            android:theme="@style/Theme.App.Lab" />
+
+        <activity
+            android:name=".lab.LabDetailActivity"
+            android:exported="false"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
+            android:theme="@style/Theme.App.Lab" />
+
+        <activity
+            android:name=".lab.LabOutputActivity"
+            android:exported="false"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
+            android:theme="@style/Theme.App.Lab" />
+
+        <activity
+            android:name=".lab.LabTerminalActivity"
+            android:exported="false"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
+            android:theme="@style/Theme.App.Lab"
+            android:windowSoftInputMode="adjustResize" />
+
         <receiver
             android:name=".receiver.ActionReceiver"
             android:exported="false">
@@ -139,6 +169,19 @@
             android:name=".remote.RemoteAgentService"
             android:exported="false"
             android:foregroundServiceType="dataSync|connectedDevice"
+            android:stopWithTask="false" />
+
+        <service
+            android:name=".lab.LabRuntimeService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"
+            android:stopWithTask="false" />
+
+        <service
+            android:name=".node.NodeService"
+            android:exported="false"
+            android:process=":node"
+            android:foregroundServiceType="dataSync"
             android:stopWithTask="false" />
 
         <meta-data

@@ -147,6 +147,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
         PlaybackRemoteSyncer.start();
         RemoteAgent.get().start();
         NsdDeviceDiscovery.register();
+        com.fongmi.android.tv.lab.LabAutoStart.start(this);
         SpiderDebug.log("startup", "background services ready cost=%sms", System.currentTimeMillis() - time);
     }
 

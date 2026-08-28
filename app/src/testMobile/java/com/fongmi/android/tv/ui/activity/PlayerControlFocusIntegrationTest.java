@@ -109,8 +109,10 @@ public class PlayerControlFocusIntegrationTest {
         int show = activity.indexOf("private boolean showInlinePlayerChoice()");
         int switchMethod = activity.indexOf("private void switchInlinePlayer", show);
 
-        assertTrue("inline player choice must build from the shared player kernel array",
-                show >= 0 && activity.indexOf("String[] kernels = ResUtil.getStringArray(R.array.select_player_kernel);", show) > show);
+        assertTrue("inline player choice must build from the shared kernel list in priority order",
+                show >= 0 && activity.indexOf("String[] kernels = PlayerKernelDialog.kernels(getResources());", show) > show);
+        assertTrue("the picked row must map back through the kernel order before switching",
+                show >= 0 && activity.indexOf("switchInlinePlayer(PlayerSetting.kernelAt(which))", show) > show);
         assertTrue("inline player choice must append an external dispatch option",
                 show >= 0
                         && activity.indexOf("String[] items = Arrays.copyOf(kernels, kernels.length + 1);", show) > show
@@ -141,9 +143,9 @@ public class PlayerControlFocusIntegrationTest {
         int notify = dialog.indexOf("private static void notifySelected(");
         assertTrue(dialogPath + " is missing notifySelected", notify >= 0);
         int dispatch = dialog.indexOf("if (external != null && selected >= count)", notify);
-        int clamp = dialog.indexOf("PlayerSetting.sanitizePlayer(selected)", notify);
+        int clamp = dialog.indexOf("PlayerSetting.kernelAt(selected)", notify);
         assertTrue("notifySelected must dispatch the appended row externally", dispatch >= 0);
-        assertTrue("notifySelected must still clamp real kernel selections", clamp >= 0);
+        assertTrue("notifySelected must map the picked row back to a kernel through the order table", clamp >= 0);
         assertTrue("the external dispatch must be decided before the kernel clamp can rewrite the index",
                 dispatch < clamp);
         assertTrue("screens that pass no external callback must keep the plain kernel list",

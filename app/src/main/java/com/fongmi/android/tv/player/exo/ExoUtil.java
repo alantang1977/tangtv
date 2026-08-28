@@ -98,9 +98,12 @@ public class ExoUtil {
     private static final long ENHANCED_ADAPT_COOLDOWN_MS = 15_000L;
     private static final int ENHANCED_DROPPED_FRAMES_THRESHOLD = 24;
     private static final int ENHANCED_DROPPED_FRAMES_PER_SECOND_THRESHOLD = 4;
-    private static final int FFMPEG_SKIP_FRAME_NONREF = 8;
+    // FFmpeg AVDiscard values.
+    private static final int FFMPEG_SKIP_FRAME_DEFAULT = 0;
     private static final int FFMPEG_SKIP_LOOP_FILTER_ALL = 48;
     private static final int FFMPEG_LOWRES_HALF = 1;
+    private static final int FFMPEG_MIN_DECODE_BUFFERS = 4;
+    private static final int FFMPEG_MAX_DECODE_BUFFERS = 12;
     private static volatile EnhancedVideoProfile enhancedVideoProfile;
     private static volatile ExoPlaybackCapability.Report playbackCapabilityReport;
 
@@ -279,6 +282,54 @@ public class ExoUtil {
     // FORMAT_EXCEEDS_CAPABILITIES 的高规格轨道（4K HEVC 等），后者软解必然掉帧。
     static boolean isFfmpegVideoFallbackOnly(int videoRenderMode, boolean videoPrefer) {
         return videoRenderMode == DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF && !videoPrefer;
+    }
+
+    /**
+     * Load shedding must also cover the hard-decode fallback, not just an explicit soft
+     * decode selection. In the hard-decode profile the FFmpeg video renderer is still
+     * installed as a fallback for codecs MediaCodec refuses ({@link
+     * #isFfmpegVideoFallbackOnly}); that content is by definition the heaviest, so leaving
+     * it untuned means single-threaded full-filter software decode, observed as continuous
+     * stutter with a zero dropped-frame count because frames arrive late rather than being
+     * dropped.
+     *
+     * <p>The decode profile is deliberately not a gate here. Kept separate from the flag
+     * handed to the FFmpeg audio renderer so audio behavior is unchanged.
+     */
+    static boolean shouldTuneFfmpegVideo(boolean tuneEnabled, boolean ffmpegVideoReachable) {
+        return tuneEnabled && ffmpegVideoReachable;
+    }
+
+    /** Whether the FFmpeg video renderer can decode at all for this profile. */
+    static boolean isFfmpegVideoReachable(int videoRenderMode) {
+        return getFfmpegVideoRenderMode(videoRenderMode)
+                != DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF;
+    }
+
+    /**
+     * Frame-threaded FFmpeg decode keeps roughly {@code threads + 1} frames in flight, and
+     * {@code numOutputBuffers} sizes that pool directly ({@code FfmpegVideoDecoder} passes it
+     * to {@code new VideoDecoderOutputBuffer[numOutputBuffers]}). A fixed pool smaller than the
+     * thread count throttles the decoder into periodic stalls even while CPU headroom remains,
+     * so the pool scales with the thread count instead.
+     */
+    static int ffmpegDecodeBuffers(int threads) {
+        // Clamp before adding: availableProcessors() is trusted here, but an overflowing
+        // addition would wrap negative and silently collapse back to the minimum.
+        int safeThreads = Math.max(1, Math.min(FFMPEG_MAX_DECODE_BUFFERS, threads));
+        return Math.max(FFMPEG_MIN_DECODE_BUFFERS,
+                Math.min(FFMPEG_MAX_DECODE_BUFFERS, safeThreads + 2));
+    }
+
+    /**
+     * Load shedding deliberately skips the loop filter but keeps every frame. Discarding
+     * non-reference frames ({@code AVDISCARD_NONREF}) removes frames the renderer never sees,
+     * which breaks motion continuity while reporting a zero dropped-frame count, and it is not
+     * warranted when the decode is buffer-throttled rather than CPU-bound. Loop-filter skipping
+     * costs image quality only.
+     */
+    static int ffmpegSkipFrame() {
+        return FFMPEG_SKIP_FRAME_DEFAULT;
     }
 
     private static int getVideoRenderMode(int decode) {
@@ -677,13 +728,17 @@ public class ExoUtil {
             @Nullable ExoDolbyVisionPlaybackState dolbyVisionPlaybackState,
             @Nullable PlaybackMediaSignalHub mediaSignals,
             @Nullable PlaybackMediaClock mediaClock) {
+        int videoRenderMode = getVideoRenderMode(decode);
         return buildRenderersFactory(
                 getAudioRenderMode(),
-                getVideoRenderMode(decode),
+                videoRenderMode,
                 isAudioPrefer(decode),
                 PlayerSetting.isVideoPrefer(PlayerSetting.EXO),
                 decode == PlayerEngine.SOFT
                         && PlaybackPerformanceSetting.isSoftVideoTuneEnabled(),
+                shouldTuneFfmpegVideo(
+                        PlaybackPerformanceSetting.isSoftVideoTuneEnabled(),
+                        isFfmpegVideoReachable(videoRenderMode)),
                 true,
                 decoderRuntimeSession,
                 decoderOutput,
@@ -702,6 +757,7 @@ public class ExoUtil {
                 DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER,
                 PlayerSetting.isAudioPrefer(PlayerSetting.EXO),
                 PlayerSetting.isVideoPrefer(PlayerSetting.EXO),
+                false,
                 false,
                 false,
                 null,
@@ -727,6 +783,7 @@ public class ExoUtil {
             boolean audioPrefer,
             boolean videoPrefer,
             boolean softVideoTune,
+            boolean ffmpegVideoTune,
             boolean realtimePipeline,
             @Nullable ExoDecoderRuntimeSession decoderRuntimeSession,
             ExoDecoderRuntimeSession.OutputConfig decoderOutput,
@@ -746,6 +803,7 @@ public class ExoUtil {
                     audioPrefer,
                     videoPrefer,
                     softVideoTune,
+                    ffmpegVideoTune,
                     decoderRuntimeSession,
                     decoderOutput,
                     frameSchedulingDecision,
@@ -916,6 +974,7 @@ public class ExoUtil {
         private final boolean audioPrefer;
         private final boolean videoPrefer;
         private final boolean softVideoTune;
+        private final boolean ffmpegVideoTune;
         @Nullable private final ExoDecoderRuntimeSession decoderRuntimeSession;
         private final ExoDecoderRuntimeSession.OutputConfig decoderOutput;
         private final ExoFrameSchedulingExperimentPolicy.Decision
@@ -930,6 +989,7 @@ public class ExoUtil {
                 boolean audioPrefer,
                 boolean videoPrefer,
                 boolean softVideoTune,
+                boolean ffmpegVideoTune,
                 @Nullable ExoDecoderRuntimeSession decoderRuntimeSession,
                 ExoDecoderRuntimeSession.OutputConfig decoderOutput,
                 ExoFrameSchedulingExperimentPolicy.Decision
@@ -942,6 +1002,7 @@ public class ExoUtil {
             this.audioPrefer = audioPrefer;
             this.videoPrefer = videoPrefer;
             this.softVideoTune = softVideoTune;
+            this.ffmpegVideoTune = ffmpegVideoTune;
             this.decoderRuntimeSession = decoderRuntimeSession;
             this.decoderOutput = decoderOutput;
             this.frameSchedulingDecision = frameSchedulingDecision;
@@ -1006,8 +1067,10 @@ public class ExoUtil {
 
         private CompatFfmpegVideoRenderer buildFfmpegVideoRenderer(long allowedVideoJoiningTimeMs, Handler eventHandler, VideoRendererEventListener eventListener, MediaCodecSelector platformDecoderSelector) {
             boolean fallbackOnly = isFfmpegVideoFallbackOnly(videoRenderMode, videoPrefer);
-            if (!softVideoTune) return new CompatFfmpegVideoRenderer(allowedVideoJoiningTimeMs, eventHandler, eventListener, MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY, fallbackOnly, platformDecoderSelector);
-            return new CompatFfmpegVideoRenderer(allowedVideoJoiningTimeMs, eventHandler, eventListener, MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY, Runtime.getRuntime().availableProcessors(), 4, 4, FFMPEG_SKIP_FRAME_NONREF, FFMPEG_SKIP_LOOP_FILTER_ALL, FFMPEG_LOWRES_HALF, fallbackOnly, platformDecoderSelector);
+            if (!ffmpegVideoTune) return new CompatFfmpegVideoRenderer(allowedVideoJoiningTimeMs, eventHandler, eventListener, MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY, fallbackOnly, platformDecoderSelector);
+            int threads = Runtime.getRuntime().availableProcessors();
+            int buffers = ffmpegDecodeBuffers(threads);
+            return new CompatFfmpegVideoRenderer(allowedVideoJoiningTimeMs, eventHandler, eventListener, MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY, threads, buffers, buffers, ffmpegSkipFrame(), FFMPEG_SKIP_LOOP_FILTER_ALL, FFMPEG_LOWRES_HALF, fallbackOnly, platformDecoderSelector);
         }
 
         private MediaCodecSelector getVideoCodecSelector(MediaCodecSelector mediaCodecSelector) {
@@ -1139,11 +1202,16 @@ public class ExoUtil {
             } finally {
                 pendingSourceFormat = null;
                 pendingOutputFormat = null;
-                if (playbackState != null) playbackState.reset();
+                if (playbackState != null) playbackState.resetAttempt();
             }
         }
 
-        private static Format asHdr10(Format format) {
+        private Format asHdr10(Format format) {
+            if (playbackState != null
+                    && playbackState.isHdr10FallbackRequested()
+                    && DolbyVisionP81ExtractorsFactory.isProfile7(format)) {
+                return DolbyVisionP81ExtractorsFactory.asHdr10Fallback(format);
+            }
             ColorInfo color = format.colorInfo == null
                     ? new ColorInfo.Builder().setColorSpace(C.COLOR_SPACE_BT2020).setColorRange(C.COLOR_RANGE_LIMITED).setColorTransfer(C.COLOR_TRANSFER_ST2084).build()
                     : format.colorInfo.buildUpon().setColorSpace(C.COLOR_SPACE_BT2020).setColorRange(C.COLOR_RANGE_LIMITED).setColorTransfer(C.COLOR_TRANSFER_ST2084).build();

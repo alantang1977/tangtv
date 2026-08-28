@@ -78,6 +78,19 @@ public class AudioPlaybackStyleRoutingTest {
                 launch.contains("dispatchCancelPendingInputEvents"));
     }
 
+    @Test
+    public void immersiveAudioStageOpensBeforeTheServiceBindsSoTheVideoPageNeverFlashes() throws Exception {
+        String mobile = read(findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java")));
+
+        assertTrue("mobile must be able to detect a pending immersive audio launch without consuming it",
+                mobile.contains("private boolean hasPendingImmersiveAudioLaunch()")
+                        && mobile.contains("IMMERSIVE_AUDIO_LAUNCHES.containsKey(cacheKey)"));
+        assertTrue("mobile must raise the audio stage during initView so the video detail page never renders first",
+                mobile.contains("if (hasPendingImmersiveAudioLaunch()) setAudioStageVisible(true);")
+                        && mobile.indexOf("if (hasPendingImmersiveAudioLaunch()) setAudioStageVisible(true);")
+                                < mobile.indexOf("protected void initEvent()"));
+    }
+
     private static void assertImmersiveAudioDirectLaunch(String variant, String source) {
         assertTrue(variant + " must expose a direct immersive audio site launcher",
                 source.contains("static boolean startImmersiveAudioSite(Activity activity, String key, String id, String name, String pic, String mark)"));

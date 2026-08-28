@@ -1,5 +1,34 @@
 {
   "audited_at": "2026-08-10T09:24:20+08:00",
+  "audit_in_progress": {
+    "observed_at": "2026-08-21T00:32:00+08:00",
+    "status": "in_progress",
+    "report": "docs/upstream-player-dependency-merge-assessment-2026-08-20.md",
+    "note": "Observed heads are audit candidates only. selected_branch/selected_commit remain the versions currently adopted by the project until a merge decision is made.",
+    "repositories": {
+      "ffmpeg": {
+        "observed_branch": "release-9.0-fongmi",
+        "observed_commit": "177f090e0503b7e013922ca903bde14b1c375f18"
+      },
+      "mpv_android": {
+        "observed_branch": "fongmi",
+        "observed_commit": "7523b5c5199c84da4092787b7bf5d72452d61780"
+      },
+      "media": {
+        "observed_branch": "release-1.11.0-fongmi",
+        "observed_commit": "3c2cbe8ac742c2fe15eff52f03eeb3b1b648848d"
+      },
+      "mpv": {
+        "observed_branch": "fongmi",
+        "observed_commit": "44755d7eaa0f186e4052ffc99c4f0b500a05a2ba",
+        "history_note": "Remote force-pushed the final Vulkan/Dolby Vision series; old observed head 17a39163dc879cc71e43f29d121477e56114be is retained in the report for patch-id/tree comparison."
+      },
+      "libplacebo": {
+        "observed_branch": "fongmi",
+        "observed_commit": "2301953d9faf0f5e112ff337f79cec64eab2f4f1"
+      }
+    }
+  },
   "repositories": {
     "tv": {
       "repo": "https://github.com/FongMi/TV.git",

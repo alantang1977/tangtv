@@ -27,6 +27,7 @@ import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.player.DolbyVisionFormatLabel;
 import com.fongmi.android.tv.player.GpuLoadMonitor;
+import com.fongmi.android.tv.player.ijk.IjkDecodePressurePolicy;
 import com.fongmi.android.tv.player.PlayerManager;
 import com.fongmi.android.tv.player.PlaybackPanelResourceMonitor;
 import com.fongmi.android.tv.player.PlaybackDiagnosticsSourcePolicy;
@@ -444,13 +445,14 @@ public class PlayerOsdController {
         String softTune = getSoftDecodeTuneText(player);
         String playerText = join(" / ", player.getPlayerText(), player.getDecodeText(), render, "隧道" + tunnel, "性能" + performance, frameRateMatch, preload, "直通" + passThrough, softTune, player.isExo() ? "兜底开" : "");
         String playback = join(" / ", state, buffer, "重缓冲 " + rebuffer, "掉帧 " + player.getDroppedFrames());
+        String startup = getStartupText(player);
         String error = getErrorText(player, snapshot);
         String main = join("\n",
                 TextUtils.isEmpty(error) ? "" : row("错误", error),
                 row("视频", videoText),
                 row("音频", audioText),
                 row("网络", network),
-                player.isExo() && !localSource ? row("保流畅", strategy) : "",
+                player.isExo() && !localSource ? row("动态网络保护", strategy) : "",
                 TextUtils.isEmpty(renderDiagnostics) ? "" : row("MPV渲染", renderDiagnostics),
                 TextUtils.isEmpty(runtimeDiagnostics) ? "" : row("MPV运行", runtimeDiagnostics),
                 TextUtils.isEmpty(gpu) ? "" : row("GPU", gpu),
@@ -459,6 +461,7 @@ public class PlayerOsdController {
                 TextUtils.isEmpty(frameTiming) ? "" : row("帧调度", frameTiming),
                 row("播放", playback),
                 row("配置", playerText),
+                TextUtils.isEmpty(startup) ? "" : row("起播", startup),
                 row("结论", getDiagnosis(player, snapshot, video, audioTrack, localSource)));
         String extra = join("\n",
                 row("设备", getDeviceText()),
@@ -468,6 +471,17 @@ public class PlayerOsdController {
                 row("WebView", getWebViewText()),
                 row("网络环境", getNetworkEnvironmentText()));
         return new DiagnosticsText(main, extra);
+    }
+
+    /**
+     * Startup timeline plus the stage that consumed the most time, so a slow start can
+     * be attributed on-device instead of requiring a debug log export.
+     */
+    private String getStartupText(PlayerManager player) {
+        String summary = player.getStartupSummary();
+        if (TextUtils.isEmpty(summary)) return "";
+        String slowest = player.getSlowestStartupStage();
+        return TextUtils.isEmpty(slowest) ? summary : summary + "  最慢 " + slowest;
     }
 
     private String getDiagnosis(PlayerManager player, PlaybackAnalyticsListener.Snapshot snapshot, Format video, AudioTrackState audioTrack, boolean localSource) {
@@ -480,7 +494,9 @@ public class PlayerOsdController {
             long mediaBitrate = getMediaBitrate(video, snapshot.audioFormat() != null ? snapshot.audioFormat() : audioTrack.format());
             long availableBitrate = snapshot.bandwidthEstimate() > 0 ? snapshot.bandwidthEstimate() : lastSpeedKBps * 1024 * 8;
             if (availableBitrate > 0 && mediaBitrate > 0 && availableBitrate < mediaBitrate * 13 / 10) return "网速可能低于资源码率";
-            if (player.isLoading() && player.getBufferedDuration() < 3000) return "缓冲偏少，可能是网络或源响应慢";
+            // Must use the raw buffered duration: getBufferedDuration() folds in completed
+            // disk ranges, which reads high enough that this hint could never fire.
+            if (player.isLoading() && player.getNativeBufferedDuration() < 3000) return "缓冲偏少，可能是网络或源响应慢";
         }
         if (player.getDroppedFrames() >= 60) return "掉帧较多，可能是解码或渲染压力";
         if (!localSource && formatBitrateValue(video) >= 30_000_000) return "资源码率较高，对网络和解码要求高";
@@ -579,10 +595,21 @@ public class PlayerOsdController {
     }
 
     private String getSoftDecodeTuneText(PlayerManager player) {
-        if (player.isHardDecode()) return "";
-        if (player.isIjk()) return "软解降负载 IJK跳帧/滤波";
+        // The hard-decode profile still falls back to the FFmpeg renderer for codecs
+        // MediaCodec refuses, and that fallback now gets load shedding too. Hiding the status
+        // whenever the profile says hardware would conceal it in exactly the case where the
+        // user needs to confirm it is active.
+        if (player.isHardDecode() && !player.isHardProfileRunningSoftware()) return "";
+        if (player.isIjk()) {
+            // Report what IJK actually applied. It forces TuneMode.OFF in the hard-decode
+            // profile even with a mode configured, so claiming shedding is active whenever
+            // this row is reachable would be false exactly in the fallback case.
+            IjkDecodePressurePolicy.TuneMode mode = player.getAppliedIjkTuneMode();
+            if (mode == null || mode == IjkDecodePressurePolicy.TuneMode.OFF) return "软解降负载 关";
+            return "软解降负载 IJK跳帧/滤波 " + mode.label();
+        }
         if (player.isMpv()) return "软解降负载 MPV hwdec=no";
-        return PlaybackPerformanceSetting.isSoftVideoTuneEnabled() ? "软解降负载 EXO跳帧/滤波/低分辨" : "软解降负载 关";
+        return PlaybackPerformanceSetting.isSoftVideoTuneEnabled() ? "软解降负载 EXO滤波/低分辨" : "软解降负载 关";
     }
 
     private boolean isDecodeError(PlaybackAnalyticsListener.Snapshot snapshot) {

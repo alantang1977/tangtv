@@ -5,6 +5,11 @@ import androidx.media3.common.MimeTypes;
 
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -29,6 +34,124 @@ public class DolbyVisionP81ExtractorsFactoryTest {
         assertFalse(DolbyVisionP81ExtractorsFactory.isProfile7(
                 new Format.Builder().setSampleMimeType(MimeTypes.VIDEO_H265)
                         .setCodecs("dvhe.07.06").build()));
+    }
+
+    @Test
+    public void choosesNativeBeforeConversionOrFallback() {
+        assertEquals(DolbyVisionP81ExtractorsFactory.PlaybackPath.NATIVE,
+                DolbyVisionP81ExtractorsFactory.resolvePlaybackPath(true, true, true));
+    }
+
+    @Test
+    public void choosesP81BeforeHdr10Fallback() {
+        assertEquals(DolbyVisionP81ExtractorsFactory.PlaybackPath.P81,
+                DolbyVisionP81ExtractorsFactory.resolvePlaybackPath(false, true, true));
+    }
+
+    @Test
+    public void choosesHdr10WhenDv7AndP81AreUnavailable() {
+        assertEquals(DolbyVisionP81ExtractorsFactory.PlaybackPath.HDR10,
+                DolbyVisionP81ExtractorsFactory.resolvePlaybackPath(false, false, true));
+        assertEquals(DolbyVisionP81ExtractorsFactory.PlaybackPath.UNSUPPORTED,
+                DolbyVisionP81ExtractorsFactory.resolvePlaybackPath(false, false, false));
+    }
+
+    @Test
+    public void transformsAccessUnitsOnlyForP81() {
+        assertTrue(DolbyVisionP81ExtractorsFactory.requiresAccessUnitTransformation(
+                DolbyVisionP81ExtractorsFactory.PlaybackPath.P81));
+        assertFalse(DolbyVisionP81ExtractorsFactory.requiresAccessUnitTransformation(
+                DolbyVisionP81ExtractorsFactory.PlaybackPath.HDR10));
+    }
+
+    @Test
+    public void rewritesProfile81CodecAndCsdTogether() {
+        Format output = DolbyVisionP81ExtractorsFactory.asProfile81(
+                formatWithInitializationData("dvhe.07.06", List.of(new byte[]{1})));
+
+        assertEquals("dvhe.08.06", output.codecs);
+        assertEquals(1, output.initializationData.size());
+        assertArrayEquals(new byte[]{1}, output.initializationData.get(0));
+    }
+
+    @Test
+    public void preservesNonDolbyVisionCsdAtIndexTwo() {
+        byte[] otherCsd = {9, 8, 7};
+        List<byte[]> rewritten = DolbyVisionP81ExtractorsFactory.rewriteDolbyVisionCsd(
+                Arrays.asList(new byte[]{1}, new byte[]{2}, otherCsd),
+                new byte[]{1, 0, 16, 52, 16});
+
+        assertEquals(3, rewritten.size());
+        assertArrayEquals(otherCsd, rewritten.get(2));
+    }
+
+    @Test
+    public void replacesExistingDolbyVisionCsdWithoutSynthesizingMissingEntries() {
+        byte[] oldCsd = {1, 0, 14, 52, 0};
+        byte[] newCsd = {1, 0, 16, 52, 16};
+        List<byte[]> replaced = DolbyVisionP81ExtractorsFactory.rewriteDolbyVisionCsd(
+                List.of(new byte[]{1}, new byte[]{2}, oldCsd), newCsd);
+        List<byte[]> unchanged = DolbyVisionP81ExtractorsFactory.rewriteDolbyVisionCsd(
+                null, newCsd);
+
+        assertEquals(3, replaced.size());
+        assertArrayEquals(newCsd, replaced.get(2));
+        assertTrue(unchanged.isEmpty());
+    }
+
+    @Test
+    public void hdr10FallbackUsesHevcAndRemovesDolbyVisionCsd() {
+        Format source = formatWithInitializationData("dvhe.07.06", List.of(
+                new byte[]{0, 0, 0, 1, 1},
+                new byte[]{0, 0, 0, 1, 2},
+                new byte[]{1, 0, 14, 52, 0}));
+
+        Format output = DolbyVisionP81ExtractorsFactory.asHdr10Fallback(source);
+
+        assertEquals(MimeTypes.VIDEO_H265, output.sampleMimeType);
+        assertEquals(null, output.codecs);
+        assertEquals(2, output.initializationData.size());
+        assertArrayEquals(source.initializationData.get(0), output.initializationData.get(0));
+        assertArrayEquals(source.initializationData.get(1), output.initializationData.get(1));
+    }
+
+    @Test
+    public void runtimeFallbackRequestSurvivesAttemptResetButNotFullReset() {
+        ExoDolbyVisionPlaybackState state = new ExoDolbyVisionPlaybackState();
+        state.requestHdr10Fallback();
+
+        state.resetAttempt();
+        assertTrue(state.isHdr10FallbackRequested());
+
+        state.reset();
+        assertFalse(state.isHdr10FallbackRequested());
+    }
+
+    @Test
+    public void p81ConversionEvidenceSurvivesAttemptResetButNotFullReset() {
+        ExoDolbyVisionPlaybackState state = new ExoDolbyVisionPlaybackState();
+        state.activate(format("dvhe.07.06"),
+                DolbyVisionP81ExtractorsFactory.asHdr10Fallback(
+                        format("dvhe.07.06")));
+        assertFalse(state.isP81ConversionAttempted());
+
+        state.activateP81(format("dvhe.07.06"), format("dvhe.08.06"));
+
+        state.resetAttempt();
+        assertTrue(state.isP81ConversionAttempted());
+
+        state.reset();
+        assertFalse(state.isP81ConversionAttempted());
+    }
+
+    @Test
+    public void doesNotModifyNonProfile7Format() {
+        byte[] csd = {1, 2, 3};
+        Format source = formatWithInitializationData("dvhe.08.06", List.of(csd));
+        Format output = DolbyVisionP81ExtractorsFactory.asProfile81(source);
+
+        assertEquals(source, output);
+        assertArrayEquals(csd, output.initializationData.get(0));
     }
 
     @Test
@@ -117,6 +240,15 @@ public class DolbyVisionP81ExtractorsFactoryTest {
         return new Format.Builder()
                 .setSampleMimeType(MimeTypes.VIDEO_DOLBY_VISION)
                 .setCodecs(codecs)
+                .build();
+    }
+
+    private static Format formatWithInitializationData(
+            String codecs, List<byte[]> initializationData) {
+        return new Format.Builder()
+                .setSampleMimeType(MimeTypes.VIDEO_DOLBY_VISION)
+                .setCodecs(codecs)
+                .setInitializationData(new ArrayList<>(initializationData))
                 .build();
     }
 }

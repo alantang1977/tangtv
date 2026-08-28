@@ -6,6 +6,8 @@ TV 端“沉浸融合”和“详情直放”均由 `TmdbDetailActivity` 承载�
 
 “影视原生”模式由 leanback `VideoActivity` 承载。其控制栏隐藏时，确认键由 `CustomKeyDownVod` 处理，在按键松开时调用 `onKeyCenter()`，直接切换播放状态并保持控制栏隐藏。
 
+> 后续变更：背景里提到的控制栏播放按钮（`playerPlaybackAction`）已移除，它排在首位会把“下一集”挤到第二格、拖慢遥控器连播，且从未登记进 `PlayerButtonSetting` 因而设置项管不到。播放/暂停由本文设计的确认键路径独立承担，控制栏首个按钮改为“下一集”，与影视原生一致。
+
 ## 方案比较
 
 1. **局部对齐隐藏控制栏的确认键分支（采用）**：在 `TmdbDetailActivity.handleInlineKey()` 中，仅将 TV/leanback 在全屏且控制栏隐藏时的确认键松开动作从 `showInlineControls(true)` 改为复用 `toggleInlinePlayback()`；mobile 仍保留显示控制栏的行为。改动最小，直接复用现有播放状态、加载状态、暂停提示及控制栏收起逻辑。

@@ -84,8 +84,10 @@ public class FileUtil {
         Task.execute(() -> {
             Path.clear(Path.cache());
             AppCache.clearLegacyPreferences();
-            // 清理集数位置缓存
+            // 这两个缓存都是进程内单例：只删文件的话内存 map 还在，
+            // 下一次写入会把整张旧 map 重新落盘，等于没清。
             com.fongmi.android.tv.bean.EpisodePositionCache.get().clear();
+            com.fongmi.android.tv.bean.FlagPreferenceCache.get().clear();
             App.post(callback::success);
         });
     }

@@ -27,12 +27,14 @@ public class BaseLoader {
     private final JarLoader jarLoader;
     private final PyLoader pyLoader;
     private final JsLoader jsLoader;
+    private final java.util.concurrent.ConcurrentHashMap<String, Spider> catSpiders;
     private final LoaderClearQueue clearQueue;
 
     private BaseLoader() {
         jarLoader = new JarLoader();
         pyLoader = new PyLoader();
         jsLoader = new JsLoader();
+        catSpiders = new java.util.concurrent.ConcurrentHashMap<>();
         clearQueue = new LoaderClearQueue(Task.loaderExecutor());
     }
 
@@ -68,6 +70,7 @@ public class BaseLoader {
         clear("jar", jarLoader::clear);
         clear("py", pyLoader::clear);
         clear("js", jsLoader::clear);
+        clear("cat", catSpiders::clear);
         SpiderDebug.log("base-loader", "clear done id=%d reason=%s", id, reason);
     }
 
@@ -102,6 +105,8 @@ public class BaseLoader {
     }
 
     public Spider getSpider(String key, String api, String ext, String jar) {
+        // 猫源站点 type 也是 3，但 api 指向本机 bundle 的 HTTP 路由，得走协议适配而非本地引擎
+        if (CatSpider.matches(api)) return catSpiders.computeIfAbsent(key, k -> new CatSpider(api));
         if (isPy(api)) return pyLoader.getSpider(key, api, ext);
         else if (isJs(api)) return jsLoader.getSpider(key, api, ext, jar);
         else if (isCsp(api)) return jarLoader.getSpider(key, api, ext, jar);
