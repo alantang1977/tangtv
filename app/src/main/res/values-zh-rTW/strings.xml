@@ -1,7 +1,7 @@
 <resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
 
     <!-- App -->
-    <string name="app_name">湯影视</string>
+    <string name="app_name">湯影視</string>
     <string name="app_exit_confirm">再按一次退出應用</string>
 
     <!-- Live -->
@@ -2323,6 +2323,9 @@
     <string name="reader_chapter_failed">章節載入失敗</string>
     <string name="reader_opening">正在開啟 %1$s</string>
     <string name="reader_opening_default">正在開啟閱讀器</string>
+    <string name="cat_web_opening">正在開啟設定中心</string>
+    <string name="cat_web_failed">頁面載入失敗：%1$s</string>
+    <string name="cat_web_external">已用瀏覽器開啟</string>
     <string name="dialog_short_drama_site_disabled">已排除：%1$s</string>
     <string name="dialog_short_drama_enabled_label">啓用規則</string>
     <string name="dialog_short_drama_disabled_label">已排除</string>
@@ -2479,4 +2482,18 @@
     <string name="speech_ad_skip_seconds_invalid">請輸入 1 到 120 之間的整數。</string>
     <string name="speech_ad_model_not_ready">模型未就緒</string>
     <string name="ad_audio_speech_candidate_title">偵測到語音廣告</string>
-    <string name="ad_audio_speech_candidate_message">命中廣告關鍵詞，跳過約 %1$d 秒？</string></resources>
+    <string name="ad_audio_speech_candidate_message">命中廣告關鍵詞，跳過約 %1$d 秒？</string>
+    <string name="node_title">正在準備貓源</string>
+    <string name="node_prepare">準備中…</string>
+    <string name="node_hint">僅首次需要：Node 執行環境下載一次後即可重複使用。</string>
+    <string name="node_downloading">下載 Node 執行環境</string>
+    <string name="node_extracting">解壓中…</string>
+    <string name="node_bundle">檢查貓源 bundle…</string>
+    <string name="node_starting">啟動服務…</string>
+    <string name="node_waiting">等待服務就緒…</string>
+    <string name="node_ready">貓源已就緒</string>
+    <string name="node_stopping">正在關閉舊貓源服務…</string>
+    <string name="node_switch_restart">正在切換貓源…</string>
+    <string name="node_background">背景繼續</string>
+    <string name="node_speed">%1$s/s</string>
+    <string name="node_size_pair">%1$s / %2$s</string></resources>
