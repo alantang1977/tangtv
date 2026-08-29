@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""生成 MO TV 应用图标全套资源（位图 + VectorDrawable）。
+"""生成 TJ TV 应用图标全套资源（位图 + VectorDrawable）。
 
 设计目标：融合 iPhone 17 主题（液态玻璃高光）与高级立体感（浮雕 3D）。
   - 流光背景：紫罗兰 -> 亮青 -> 洋红 -> 粉红平滑渐变。
   - 高级立体字标：T、J以及播放键全部包含环境阴影、微厚度挤出、内侧高光、微渐变。
   - 已彻底移除纯扁平风格选项。
   - “j”顶部圆圈内的紫色三角形已整合高级液态玻璃美化，且质心完美居中。
+  - 核心优化：T、J及整体元素已按物理包围盒计算，完美居中于画布。
 
 用法:
   py scripts/gen_app_icon.py --preview      只输出预览图到 build/icon-preview/
@@ -112,6 +113,18 @@ def draw_wordmark(size, fill, style="3d"):
     hook_h = j_stem_w * 0.55    
     hook_x = j_x - hook_w       
     hook_y = y0 + h - hook_h    
+
+    # === 精确物理包围盒居中修正 ===
+    real_left = min(x0, hook_x)
+    real_right = max(x0 + t_bar_w, j_x + j_stem_w)
+    real_w = real_right - real_left
+    shift_x = (size - real_w) / 2 - real_left
+
+    x0 += shift_x
+    t_stem_x += shift_x
+    j_x += shift_x
+    hook_x += shift_x
+    j_dot_cx += shift_x
 
     # 定义所有区块（修改 J 竖干的区块坐标）
     blocks = [
@@ -261,6 +274,21 @@ def draw_badge(size):
     j_dot_cx = x + s / 2
     j_dot_cy = y + j_dot_r
     
+    # 钩子（向左延伸，底部对齐）
+    hook_w = s * 0.9
+    hook_h = s * 0.55
+    hook_x = x - hook_w          
+    hook_y = y + h - hook_h
+    
+    # === 精确物理包围盒居中修正 ===
+    real_left = min(x, hook_x)
+    real_right = x + s
+    real_w = real_right - real_left
+    shift_x = (size - real_w) / 2 - real_left
+    x += shift_x
+    hook_x += shift_x
+    j_dot_cx += shift_x
+
     # 微厚度挤出
     d.rectangle([x + 2, y + 2, x + s + 2, y + h + 2], fill=(120, 50, 140, 120))
     d.ellipse([j_dot_cx - j_dot_r + 2, j_dot_cy - j_dot_r + 2,
@@ -271,10 +299,6 @@ def draw_badge(size):
                j_dot_cx + j_dot_r, j_dot_cy + j_dot_r], fill=WHITE)
     
     # 钩子
-    hook_w = s * 0.9
-    hook_h = s * 0.55
-    hook_x = x - hook_w          
-    hook_y = y + h - hook_h
     d.rectangle([hook_x, hook_y, hook_x + hook_w, hook_y + hook_h], fill=WHITE)
     return layer
 
@@ -427,6 +451,18 @@ def wordmark_paths(fill):
     hook_h = j_stem_w * 0.55
     hook_x = j_x - hook_w
     hook_y = y0 + h - hook_h
+
+    # === 精确物理包围盒居中修正 ===
+    real_left = min(x0, hook_x)
+    real_right = max(x0 + t_bar_w, j_x + j_stem_w)
+    real_w = real_right - real_left
+    shift_x = (VIEWPORT - real_w) / 2 - real_left
+
+    x0 += shift_x
+    t_stem_x += shift_x
+    j_x += shift_x
+    hook_x += shift_x
+    j_dot_cx += shift_x
 
     blocks = [
         (x0, y0, t_bar_w, t_bar_h),
