@@ -6,7 +6,7 @@
   - 高级立体字标：T、J以及播放键全部包含环境阴影、微厚度挤出、内侧高光、微渐变。
   - 已彻底移除纯扁平风格选项。
   - “j”顶部圆圈内的紫色三角形已整合高级液态玻璃美化，且质心完美居中。
-  - 核心优化：T、J及整体元素已按物理包围盒计算，完美居中于画布。
+  - 核心优化：T、J及整体元素采用视觉重心补偿算法，实现绝对中心位置。
 
 用法:
   py scripts/gen_app_icon.py --preview      只输出预览图到 build/icon-preview/
@@ -114,11 +114,22 @@ def draw_wordmark(size, fill, style="3d"):
     hook_x = j_x - hook_w       
     hook_y = y0 + h - hook_h    
 
-    # === 精确物理包围盒居中修正 ===
+    # === 精确视觉重心绝对居中修正（在原有物理居中基础上叠加） ===
     real_left = min(x0, hook_x)
     real_right = max(x0 + t_bar_w, j_x + j_stem_w)
     real_w = real_right - real_left
-    shift_x = (size - real_w) / 2 - real_left
+
+    # 计算 T 和 J 的视觉中心
+    t_center = x0 + (t_bar_w / 2)
+    j_center = (hook_x + (j_x + j_stem_w)) / 2
+    visual_center = (t_center + j_center) / 2
+
+    # 计算物理中心与视觉中心的偏移量
+    physical_center = real_left + real_w / 2
+    visual_offset = visual_center - physical_center
+
+    # 在原计算基础上减去偏移量，达到视觉绝对居中
+    shift_x = (size - real_w) / 2 - real_left - visual_offset
 
     x0 += shift_x
     t_stem_x += shift_x
@@ -280,11 +291,19 @@ def draw_badge(size):
     hook_x = x - hook_w          
     hook_y = y + h - hook_h
     
-    # === 精确物理包围盒居中修正 ===
+    # === 视觉重心绝对居中修正 ===
     real_left = min(x, hook_x)
     real_right = x + s
     real_w = real_right - real_left
-    shift_x = (size - real_w) / 2 - real_left
+
+    # J的视觉中心（只有J，直接取J的中心）
+    j_center = (hook_x + x + s) / 2
+    visual_center = j_center
+    physical_center = real_left + real_w / 2
+    visual_offset = visual_center - physical_center
+
+    shift_x = (size - real_w) / 2 - real_left - visual_offset
+
     x += shift_x
     hook_x += shift_x
     j_dot_cx += shift_x
@@ -452,11 +471,19 @@ def wordmark_paths(fill):
     hook_x = j_x - hook_w
     hook_y = y0 + h - hook_h
 
-    # === 精确物理包围盒居中修正 ===
+    # === 视觉重心绝对居中修正 ===
     real_left = min(x0, hook_x)
     real_right = max(x0 + t_bar_w, j_x + j_stem_w)
     real_w = real_right - real_left
-    shift_x = (VIEWPORT - real_w) / 2 - real_left
+
+    t_center = x0 + (t_bar_w / 2)
+    j_center = (hook_x + (j_x + j_stem_w)) / 2
+    visual_center = (t_center + j_center) / 2
+
+    physical_center = real_left + real_w / 2
+    visual_offset = visual_center - physical_center
+
+    shift_x = (VIEWPORT - real_w) / 2 - real_left - visual_offset
 
     x0 += shift_x
     t_stem_x += shift_x
