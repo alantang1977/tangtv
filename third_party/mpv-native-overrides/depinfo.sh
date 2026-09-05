@@ -57,5 +57,5 @@ dep_rubberband=()
 dep_mpv=(ffmpeg libass lua libplacebo curl libbluray libiconv uchardet libarchive libdvdnav rubberband)
 dep_mpv_android=(mpv)
 
-v_ci_ffmpeg=04482c8d13ac27b2a9fe93f5d388929eef8af5f4
+v_ci_ffmpeg=177f090e0503b7e013922ca903bde14b1c375f18
 ci_tarball="prefix-ndk-${v_ndk}-webhtv-fongmi-ffmpeg9.tgz"

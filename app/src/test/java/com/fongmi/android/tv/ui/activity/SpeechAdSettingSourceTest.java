@@ -11,8 +11,8 @@ import java.nio.file.Path;
 public class SpeechAdSettingSourceTest {
     @Test
     public void leanbackExposesAllSpeechAdControls() throws Exception {
-        String java = read("app/src/leanback/java/com/fongmi/android/tv/ui/activity/SettingEnhanceActivity.java");
-        String xml = read("app/src/leanback/res/layout/activity_setting_enhance.xml");
+        String java = read("app/src/leanback/java/com/fongmi/android/tv/ui/activity/SettingAdActivity.java");
+        String xml = read("app/src/leanback/res/layout/activity_setting_ad.xml");
         String presenter = read("app/src/main/java/com/fongmi/android/tv/ui/dialog/AdSkipPromptPresenter.java");
         assertTrue(xml.contains("@+id/speechAdEnabled"));
         assertTrue(xml.contains("@+id/speechAdKeywords"));
@@ -30,8 +30,8 @@ public class SpeechAdSettingSourceTest {
 
     @Test
     public void mobileExposesAllSpeechAdControls() throws Exception {
-        String java = read("app/src/mobile/java/com/fongmi/android/tv/ui/fragment/SettingEnhanceFragment.java");
-        String xml = read("app/src/mobile/res/layout/fragment_setting_enhance.xml");
+        String java = read("app/src/mobile/java/com/fongmi/android/tv/ui/fragment/SettingAdFragment.java");
+        String xml = read("app/src/mobile/res/layout/fragment_setting_ad.xml");
         assertTrue(xml.contains("@+id/speechAdEnabled"));
         assertTrue(xml.contains("@+id/speechAdKeywords"));
         assertTrue(xml.contains("@+id/speechAdSkipSeconds"));

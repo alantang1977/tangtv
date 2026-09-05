@@ -41,6 +41,7 @@ import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.ui.base.BaseActivity;
 import com.fongmi.android.tv.ui.custom.FragmentStateManager;
 import com.fongmi.android.tv.ui.fragment.SettingEnhanceFragment;
+import com.fongmi.android.tv.ui.fragment.SettingAdFragment;
 import com.fongmi.android.tv.ui.fragment.SettingAiFragment;
 import com.fongmi.android.tv.ui.fragment.SettingTmdbFragment;
 import com.fongmi.android.tv.ui.fragment.SettingDanmakuFragment;
@@ -161,6 +162,7 @@ public class HomeActivity extends BaseActivity implements NavigationBarView.OnIt
             case 6 -> SettingSubtitleFragment.newInstance();
             case 7 -> SettingTmdbFragment.newInstance();
             case 8 -> SettingAiFragment.newInstance();
+            case 9 -> SettingAdFragment.newInstance();
             default -> null;
         });
         if (savedInstanceState == null) change(0);
@@ -307,7 +309,7 @@ public class HomeActivity extends BaseActivity implements NavigationBarView.OnIt
     }
 
     private boolean isSettingSubPageVisible() {
-        return mManager.isVisible(2) || mManager.isVisible(3) || mManager.isVisible(4) || mManager.isVisible(5) || mManager.isVisible(6) || mManager.isVisible(7) || mManager.isVisible(8);
+        return mManager.isVisible(2) || mManager.isVisible(3) || mManager.isVisible(4) || mManager.isVisible(5) || mManager.isVisible(6) || mManager.isVisible(7) || mManager.isVisible(8) || mManager.isVisible(9);
     }
 
     private void refreshWebHomeChromeLayout() {

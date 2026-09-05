@@ -72,6 +72,7 @@ public final class AiTitleExtractionService {
         AiConfig safe = config == null ? new AiConfig().sanitize() : config.sanitize();
         JsonObject input = new JsonObject();
         input.addProperty("rawTitle", request.getRawTitle());
+        input.addProperty("searchKeyword", request.getSearchKeyword());
         input.addProperty("ruleTitle", rule.getRuleTitle());
         input.addProperty("rawRemarks", request.getRawRemarks());
         input.addProperty("episodeName", request.getEpisodeName());

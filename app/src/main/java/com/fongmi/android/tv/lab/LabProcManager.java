@@ -18,6 +18,8 @@ public final class LabProcManager {
 
     private static final Gson GSON = new Gson();
     private static final Map<String, Integer> RECOVERED = new ConcurrentHashMap<>();
+    private static final Map<String, Long> STARTS = new ConcurrentHashMap<>();
+    private static final Map<String, Map<Integer, Long>> MEMBERS = new ConcurrentHashMap<>();
     private static final Map<String, Integer> GROUPS = new ConcurrentHashMap<>();
     private static final Map<String, File> LOGS = new ConcurrentHashMap<>();
     private static volatile boolean recovered;
@@ -60,8 +62,12 @@ public final class LabProcManager {
                     int pid = entry.getValue().get("pid").getAsInt();
                     int pgid = entry.getValue().has("pgid") ? entry.getValue().get("pgid").getAsInt() : pid;
                     boolean isolated = !entry.getValue().has("isolated") || entry.getValue().get("isolated").getAsBoolean();
-                    if ((pid > 0 && new File("/proc/" + pid).exists()) || (isolated && groupAlive(pgid))) {
+                    long start = entry.getValue().has("start") ? entry.getValue().get("start").getAsLong() : 0;
+                    Map<Integer, Long> members = parseMembers(entry.getValue());
+                    if (isTrackedAlive(pid, start, members)) {
                         RECOVERED.put(entry.getKey(), pid);
+                        STARTS.put(entry.getKey(), start);
+                        MEMBERS.put(entry.getKey(), members);
                         if (isolated) GROUPS.put(entry.getKey(), pgid);
                         JsonObject entryState = entry.getValue();
                         if (entryState.has("log")) {
@@ -87,6 +93,7 @@ public final class LabProcManager {
         // wrapper 可能很快退出，不能依赖读取时的瞬时 pgrp 值。
         int pgid = pid;
         boolean isolated = true;
+        long start = LabProcessIdentity.startTime(new File("/proc"), pid);
         try {
             File log = logFile(pid, pkg);
             File pf = pidFile(key);
@@ -96,6 +103,7 @@ public final class LabProcManager {
             }
             JsonObject entry = new JsonObject();
             entry.addProperty("pid", pid);
+            entry.addProperty("start", start);
             entry.addProperty("pgid", pgid > 0 ? pgid : pid);
             entry.addProperty("isolated", isolated);
             entry.addProperty("pkg", pkg);
@@ -105,6 +113,10 @@ public final class LabProcManager {
             state.put(key, entry);
             saveState(state);
             RECOVERED.remove(key);
+            STARTS.put(key, start);
+            Map<Integer, Long> members = new LinkedHashMap<>();
+            members.put(pid, start);
+            MEMBERS.put(key, members);
             if (isolated) GROUPS.put(key, pgid > 0 ? pgid : pid);
             else GROUPS.remove(key);
             LOGS.put(key, log);
@@ -121,6 +133,8 @@ public final class LabProcManager {
         state.remove(key);
         saveState(state);
         RECOVERED.remove(key);
+        STARTS.remove(key);
+        MEMBERS.remove(key);
         GROUPS.remove(key);
         LOGS.remove(key);
     }
@@ -129,37 +143,55 @@ public final class LabProcManager {
         return LOGS.get(key);
     }
 
-    public static boolean recoveredAlive(String key) {
-        Integer pid = RECOVERED.get(key);
-        if (pid != null && pid > 0 && new File("/proc/" + pid).exists()) return true;
-        Integer pgid = GROUPS.get(key);
-        return pgid != null && pgid > 0 && groupAlive(pgid);
+    public static synchronized boolean trackGroup(String key, int pgid) {
+        int uid = android.os.Process.myUid();
+        int[] pids = LabProcessIdentity.groupPids(new File("/proc"), pgid, uid);
+        if (key == null || pids.length == 0) return false;
+
+        Map<String, JsonObject> state = loadState();
+        JsonObject entry = state.get(key);
+        if (entry == null) return false;
+
+        Map<Integer, Long> members = new LinkedHashMap<>();
+        for (int pid : pids) members.put(pid, LabProcessIdentity.startTime(new File("/proc"), pid));
+        entry.add("members", GSON.toJsonTree(members, new TypeToken<Map<Integer, Long>>() {
+        }.getType()));
+        saveState(state);
+        MEMBERS.put(key, members);
+        return true;
     }
 
-    public static boolean groupAlive(int pgid) {
-        if (pgid <= 0) return false;
-        try {
-            Process process = Runtime.getRuntime().exec(new String[]{"kill", "-0", "-" + String.valueOf(pgid)});
-            int code = process.waitFor();
-            if (code == 0) return true;
-        } catch (Exception ignored) {
+    private static boolean isTrackedAlive(int pid, long start, Map<Integer, Long> members) {
+        int uid = android.os.Process.myUid();
+        File proc = new File("/proc");
+        if (LabProcessIdentity.pidMatches(proc, pid, start, uid)) return true;
+        for (Map.Entry<Integer, Long> member : members.entrySet()) {
+            if (LabProcessIdentity.pidMatches(proc, member.getKey(), member.getValue(), uid)) return true;
         }
-        File[] dirs = new File("/proc").listFiles();
-        if (dirs == null) return false;
-        for (File dir : dirs) {
-            if (!dir.isDirectory()) continue;
-            String name = dir.getName();
-            boolean numeric = true;
-            for (int i = 0; i < name.length(); i++) {
-                if (!Character.isDigit(name.charAt(i))) {
-                    numeric = false;
-                    break;
+        return false;
+    }
+
+    private static Map<Integer, Long> parseMembers(JsonObject entry) {
+        if (!entry.has("members")) return new LinkedHashMap<>();
+        Map<Integer, Long> members = GSON.fromJson(
+                entry.get("members"), new TypeToken<Map<Integer, Long>>() {
+                }.getType());
+        return members == null ? new LinkedHashMap<>() : members;
+    }
+
+    public static boolean recoveredAlive(String key) {
+        Integer pid = RECOVERED.get(key);
+        Long start = STARTS.get(key);
+        int uid = android.os.Process.myUid();
+        if (pid != null && LabProcessIdentity.pidMatches(new File("/proc"), pid, start == null ? 0 : start, uid)) {
+            return true;
+        }
+        Map<Integer, Long> members = MEMBERS.get(key);
+        if (members != null) {
+            for (Map.Entry<Integer, Long> member : members.entrySet()) {
+                if (LabProcessIdentity.pidMatches(new File("/proc"), member.getKey(), member.getValue(), uid)) {
+                    return true;
                 }
-            }
-            if (!numeric) continue;
-            try {
-                if (pgrpOf(Integer.parseInt(name)) == pgid) return true;
-            } catch (Exception ignored) {
             }
         }
         return false;
@@ -184,6 +216,8 @@ public final class LabProcManager {
     private static List<String> trackedKeys() {
         java.util.Set<String> keys = new java.util.LinkedHashSet<>();
         keys.addAll(RECOVERED.keySet());
+        keys.addAll(STARTS.keySet());
+        keys.addAll(MEMBERS.keySet());
         keys.addAll(GROUPS.keySet());
         return new ArrayList<>(keys);
     }

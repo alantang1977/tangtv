@@ -409,13 +409,10 @@ public class ExoUtil {
         builder.setExceedVideoConstraintsIfNecessary(true);
         builder.setAllowVideoNonSeamlessAdaptiveness(true);
         builder.setAllowVideoMixedMimeTypeAdaptiveness(true);
-        // 起播就选约束内画质最高的轨道，而不是把选择交给 media3 原生 ABR。原生 ABR 起播只有
-        // DefaultBandwidthMeter 的初始猜测（Wi-Fi 4.3Mbps 起、未知网络 1Mbps）可用，再乘
-        // bandwidthFraction，HLS 多码率直链必然落到最低几档；直播缓冲为 0 时还不允许向上切。
-        // 代价是同组只会选中一条轨道（eligibility 变成 FIXED），原生 ABR 不再兜底吞吐，
-        // 因此降级完全依赖 AutomaticVideoConstraintController / LegacyAdaptiveVideoProfileController
-        // 收紧上面这些 max 约束：温度、解码、网络计费之外，两者都必须自己按带宽和重缓冲降档。
-        builder.setForceHighestSupportedBitrate(true);
+        // Keep the track adaptive inside these constraints. Forcing the highest track here can
+        // select a high-resolution H.264 rendition whose declared bitrate is low enough to pass
+        // the cap but whose decoder/rendering cost still causes dropped frames.
+        builder.setForceHighestSupportedBitrate(false);
     }
 
     public static EnhancedVideoProfile getEnhancedVideoProfile() {
@@ -1023,6 +1020,21 @@ public class ExoUtil {
         protected void buildVideoRenderers(Context context, int extensionRendererMode, MediaCodecSelector mediaCodecSelector, boolean enableDecoderFallback, Handler eventHandler, VideoRendererEventListener eventListener, long allowedVideoJoiningTimeMs, ArrayList<Renderer> out) {
             MediaCodecSelector videoCodecSelector = getVideoCodecSelector(mediaCodecSelector);
             int ffmpegVideoRenderMode = getFfmpegVideoRenderMode(videoRenderMode);
+            try {
+                ExoDv5GpuRenderer dv5Renderer = ExoDv5GpuRendererFactory.create(
+                        PlaybackExperimentSetting.isDomainEnabled(
+                                PlaybackExperimentPolicy.Domain.EXO),
+                        context,
+                        getCodecAdapterFactory(),
+                        videoCodecSelector,
+                        allowedVideoJoiningTimeMs,
+                        enableDecoderFallback,
+                        eventHandler,
+                        eventListener,
+                        frameSchedulingDecision);
+                if (dv5Renderer != null) out.add(dv5Renderer);
+            } catch (Throwable ignored) {
+            }
             if (decoderRuntimeSession != null
                     && videoRenderMode == EXTENSION_RENDERER_MODE_OFF) {
                 out.add(new ExoRuntimeAwareVideoRenderer(
@@ -1224,9 +1236,27 @@ public class ExoUtil {
         if (format == null
                 || !MimeTypes.VIDEO_DOLBY_VISION.equals(format.sampleMimeType)
                 || format.codecs == null) return false;
+        if (ExoDv5GpuMappingPolicy.isProfile5(
+                format.sampleMimeType, format.codecs)) {
+            ExoDv5GpuMappingPolicy.Decision decision =
+                    ExoDv5GpuMappingPolicy.decide(
+                            new ExoDv5GpuMappingPolicy.Input(
+                                    true,
+                                    format.cryptoType != C.CRYPTO_TYPE_NONE,
+                                    false,
+                                    false,
+                                    Build.VERSION.SDK_INT,
+                                    false,
+                                    false,
+                                    false,
+                                    false,
+                                    false,
+                                    false,
+                                    true));
+            return decision.route()
+                    == ExoDv5GpuMappingPolicy.Route.LEGACY_HDR10_FALLBACK;
+        }
         String codecs = format.codecs.toLowerCase(java.util.Locale.US);
-        if (codecs.startsWith("dvhe.05.")
-                || codecs.startsWith("dvh1.05.")) return true;
         return dv7FallbackEnabled && (codecs.startsWith("dvhe.07.")
                 || codecs.startsWith("dvh1.07."));
     }

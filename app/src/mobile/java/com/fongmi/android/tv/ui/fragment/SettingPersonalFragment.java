@@ -11,10 +11,12 @@ import androidx.viewbinding.ViewBinding;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.databinding.FragmentSettingPersonalBinding;
 import com.fongmi.android.tv.event.RefreshEvent;
+import com.fongmi.android.tv.setting.AppBranding;
 import com.fongmi.android.tv.setting.AutoBackupPolicy;
 import com.fongmi.android.tv.setting.GroupRuleConfig;
 import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.setting.Setting;
+import com.fongmi.android.tv.ui.activity.AppBrandingActivity;
 import com.fongmi.android.tv.ui.base.BaseFragment;
 import com.fongmi.android.tv.ui.dialog.GroupRuleDialog;
 import com.fongmi.android.tv.ui.dialog.SpeedSettingDialog;
@@ -67,6 +69,7 @@ public class SettingPersonalFragment extends BaseFragment {
         mBinding.siteColumn.setOnClickListener(this::setSiteColumn);
         mBinding.searchResultSort.setOnClickListener(this::setSearchResultSort);
         mBinding.resetApp.setOnClickListener(this::showResetAppDialog);
+        mBinding.appBranding.setOnClickListener(this::startAppBranding);
     }
 
     private void setText() {
@@ -81,6 +84,7 @@ public class SettingPersonalFragment extends BaseFragment {
         mBinding.searchColumnText.setText(getSearchColumnText());
         mBinding.siteColumnText.setText((siteColumn = getResources().getStringArray(R.array.select_site_column))[Setting.getSiteColumn() - 1]);
         mBinding.searchResultSortText.setText((searchResultSort = getResources().getStringArray(R.array.select_search_result_sort))[Setting.getSearchResultSort()]);
+        mBinding.appBrandingText.setText(AppBranding.getSummary(requireContext()));
     }
 
     private String getSearchColumnText() {
@@ -179,6 +183,10 @@ public class SettingPersonalFragment extends BaseFragment {
                 .setNegativeButton(R.string.dialog_negative, null)
                 .setPositiveButton(R.string.dialog_positive, (dialog, which) -> resetApp())
                 .show();
+    }
+
+    private void startAppBranding(View view) {
+        AppBrandingActivity.start(requireActivity());
     }
 
     private void resetApp() {

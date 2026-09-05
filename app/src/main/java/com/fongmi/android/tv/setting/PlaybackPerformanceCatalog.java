@@ -140,7 +140,7 @@ public final class PlaybackPerformanceCatalog {
         options.add(option(MPV_INTERPOLATION, DECODE, "平滑运动", "怎么选：默认关闭。只有GPU余量充足、使用GPU渲染＋显示重采样且想改善低帧率运动时才开启；电视4K、HDR、LUT或已经卡顿时必须关闭。代价：会明显增加GPU负载，电视直出时不生效。"));
         options.add(option(MPV_SOFT_TUNE, DECODE, "软解降负载", "作用：仅软件解码时减少滤波和解码工作。默认“温和”；软解仍掉帧可选“积极”；硬解视频无需靠它提速。代价：模式越积极，细节和画面连续性损失越大。"));
         options.add(option(MPV_VERBOSE_LOG, DECODE, "详细日志", "怎么选：正常播放保持“正常”（默认）；只在排查崩溃、解码或缓冲问题时临时打开详细日志。代价：增加JNI、字符串处理和日志I/O，可能干扰低性能设备的流畅度。"));
-        options.add(option(DV7_HDR10_FALLBACK, DECODE, "DV7回退HDR10", "作用：MPV 自动输出使用 GPU 路径时，允许 Dolby Vision Profile 7 使用 HDR10 基底层播放，默认开启。关闭后会优先尝试原生 DV7 电视直出，适配能力声明不完整但实际可解码的设备；若设备确实不支持，可能黑屏或播放失败，MPV 字幕、LUT 和 GPU 滤镜也可能不可用。"));
+        options.add(option(DV7_HDR10_FALLBACK, DECODE, "DV7处理", "作用：设备能原生播放 Dolby Vision Profile 7 时始终保留原始 DV7；否则默认尝试“升级P8.1”保留动态元数据，也可选择直接“降级HDR10”。设备不支持P8.1或转换/解码失败时会自动回退HDR10。P8.1逐帧重写RPU，会比HDR10过滤增加少量CPU处理。"));
         options.add(option(AUDIO_PASSTHROUGH, AUDIO, "音频直通", "怎么选：电视/功放明确支持Dolby、DTS且需要多声道时开启；出现无声、杂音或同步异常立即关闭。代价：压缩音频交给外部设备后，MPV无法完成所有混音和重采样处理。"));
         options.add(option(PREFER_AAC, AUDIO, "AAC 优先", "怎么选：高级音轨无声或设备兼容性差时开启；功放支持原始多声道、希望保留最佳音轨时关闭。代价：可能从Dolby/DTS切到质量或声道较低的AAC。"));
     }

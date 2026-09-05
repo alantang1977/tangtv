@@ -484,8 +484,11 @@ public class TmdbUIAdapter {
      */
     public void load(TmdbItem item, Vod vod) {
         if (item == null) return;
+        // resetLoadState 会清掉 sourceCacheTitle，而手动换条目时 vod.getName() 已被
+        // enrichVod 改写成上一个 TMDB 标题。先留住站源标题，季度绑定的键才能跨会话一致。
+        String sourceTitle = sourceCacheTitle;
         int generation = resetLoadState();
-        captureSourceSeason(vod, null);
+        captureSourceSeason(vod, sourceTitle);
         cancelActivePrefetch();
         this.tmdbItem = item;
         saveMatch(vod, item);
@@ -549,8 +552,9 @@ public class TmdbUIAdapter {
             load(item, vod);
             return;
         }
+        String sourceTitle = sourceCacheTitle;
         int generation = resetLoadState();
-        captureSourceSeason(vod, null);
+        captureSourceSeason(vod, sourceTitle);
         cancelActivePrefetch();
         detailPrefetch.cancel();
         this.tmdbItem = item;
@@ -560,6 +564,7 @@ public class TmdbUIAdapter {
 
     public void rememberManualMatch(Vod vod, TmdbItem item) {
         saveTitleLearning(vod, item);
+        saveManualMatch(vod, item);
     }
 
     /**
@@ -569,6 +574,10 @@ public class TmdbUIAdapter {
      * @param vod       待增强的 Vod；增强后通过事件推回 UI
      */
     public void autoMatch(String videoName, Vod vod) {
+        autoMatch(videoName, vod, "");
+    }
+
+    public void autoMatch(String videoName, Vod vod, String searchKeyword) {
         int generation = resetLoadState();
         captureSourceSeason(vod, videoName);
         cancelActivePrefetch();
@@ -594,14 +603,15 @@ public class TmdbUIAdapter {
                 TmdbItem matched = getCachedMatch(vod);
                 if (matched != null) {
                     SpiderDebug.log("tmdb", "auto match cache hit title=%s cost=%dms", matched.getTitle(), System.currentTimeMillis() - start);
-                    if (isCachedSplitSeasonMismatch(videoName, vod, matched)) {
+                    // 手动选择由用户拍板，分季变体过滤只针对自动匹配的误命中。
+                    if (!isManualMatch(vod) && isCachedSplitSeasonMismatch(videoName, vod, matched)) {
                         SpiderDebug.log("tmdb", "auto match cache skipped split-season variant title=%s id=%d name=%s", matched.getTitle(), matched.getTmdbId(), videoName);
                         matched = null;
                     }
                 }
                 if (matched == null) {
                     long searchStart = System.currentTimeMillis();
-                    matched = searchResolvedMatch(videoName, vod);
+                    matched = searchResolvedMatch(videoName, vod, searchKeyword);
                     SpiderDebug.log("tmdb", "auto match search cost=%dms hit=%s name=%s", System.currentTimeMillis() - searchStart, matched != null, videoName);
                 }
                 if (!isCurrentGeneration(generation)) return;
@@ -624,16 +634,8 @@ public class TmdbUIAdapter {
         });
     }
 
-    private TmdbItem searchResolvedMatch(String videoName, Vod vod) {
-        MediaTitleRequest request = MediaTitleRequest.builder()
-                .siteKey(cacheSiteKey(vod))
-                .vodId(cacheVodId(vod))
-                .rawTitle(videoName)
-                .rawRemarks(vod == null ? "" : vod.getRemarks())
-                .vodYear(vod == null ? "" : vod.getYear())
-                .source(MediaTitleLearningExample.SOURCE_TMDB_AUTO)
-                .allowAi(true)
-                .build();
+    private TmdbItem searchResolvedMatch(String videoName, Vod vod, String searchKeyword) {
+        MediaTitleRequest request = buildTitleRequest(videoName, vod, searchKeyword, false);
         MediaTitleResolver resolver = new MediaTitleResolver();
         MediaTitleResolution resolution = resolver.resolve(request);
         List<String> attempted = new ArrayList<>();
@@ -644,6 +646,9 @@ public class TmdbUIAdapter {
             if (item != null) return item;
             if (++attempts >= 4) break;
         }
+        TmdbItem keywordMatch = searchKeywordMatch(searchKeyword, vod, attempted);
+        if (keywordMatch != null) return keywordMatch;
+
         List<String> cleanedTitles = resolver.queryCleanedTitles(request, 4);
         SpiderDebug.log("tmdb", "auto match cleaned fallback raw=%s titles=%s", videoName, cleanedTitles);
         for (String title : cleanedTitles) {
@@ -651,7 +656,8 @@ public class TmdbUIAdapter {
             TmdbItem item = tmdbMatcher.searchAndMatch(title, vod);
             if (item != null) return item;
         }
-        MediaTitleResolution fallback = resolver.resolveWithAiFallback(request);
+        MediaTitleRequest aiRequest = buildTitleRequest(videoName, vod, searchKeyword, true);
+        MediaTitleResolution fallback = resolver.resolveWithAiFallback(aiRequest);
         SpiderDebug.log("tmdb", "auto match ai fallback source=%s raw=%s titles=%s", fallback.getSource(), videoName, fallback.queryTitles());
         for (String title : fallback.queryTitles()) {
             if (!addAttemptedTmdbQuery(attempted, title)) continue;
@@ -659,6 +665,26 @@ public class TmdbUIAdapter {
             if (item != null) return item;
         }
         return null;
+    }
+
+    private MediaTitleRequest buildTitleRequest(String videoName, Vod vod, String searchKeyword, boolean allowAi) {
+        return MediaTitleRequest.builder()
+                .siteKey(cacheSiteKey(vod))
+                .vodId(cacheVodId(vod))
+                .rawTitle(videoName)
+                .rawRemarks(vod == null ? "" : vod.getRemarks())
+                .searchKeyword(searchKeyword)
+                .vodYear(vod == null ? "" : vod.getYear())
+                .source(MediaTitleLearningExample.SOURCE_TMDB_AUTO)
+                .allowAi(allowAi)
+                .build();
+    }
+
+    private TmdbItem searchKeywordMatch(String searchKeyword, Vod vod, List<String> attempted) {
+        if (TextUtils.isEmpty(searchKeyword) || !addAttemptedTmdbQuery(attempted, searchKeyword)) return null;
+        TmdbItem item = tmdbMatcher.searchAndMatch(searchKeyword, vod);
+        SpiderDebug.log("tmdb", "auto match search keyword=%s hit=%s", searchKeyword, item != null);
+        return item;
     }
 
     private boolean addAttemptedTmdbQuery(List<String> attempted, String title) {
@@ -1075,7 +1101,7 @@ public class TmdbUIAdapter {
     public static String manualBindingFingerprint(String sourceTitle, Flag flag, String flagKey) {
         return (sourceTitle == null ? "" : sourceTitle) + "|"
                 + (flagKey == null ? "" : flagKey) + "|"
-                + EpisodeSeasonSnapshot.structureFingerprint(flag == null ? null : flag.getEpisodes());
+                + EpisodeSeasonSnapshot.stableStructureFingerprint(flag == null ? null : flag.getEpisodes());
     }
 
     public static String sourceFingerprint(Flag flag, String flagKey, Map<Integer, Integer> seasonCounts) {
@@ -1560,7 +1586,13 @@ public class TmdbUIAdapter {
 
     private TmdbItem getCachedMatch(Vod vod) {
         if (vod == null) return null;
-        return Setting.getTmdbMatchCache().find(cacheSiteKey(vod), cacheVodId(vod), vod.getName());
+        TmdbMatchCache cache = Setting.getTmdbMatchCache();
+        TmdbItem manual = cache.findManual(cacheSiteKey(vod), cacheVodId(vod), vod.getName());
+        return manual != null ? manual : cache.find(cacheSiteKey(vod), cacheVodId(vod), vod.getName());
+    }
+
+    private boolean isManualMatch(Vod vod) {
+        return vod != null && Setting.getTmdbMatchCache().isManual(cacheSiteKey(vod), cacheVodId(vod), vod.getName());
     }
 
     private boolean isCachedSplitSeasonMismatch(String videoName, Vod vod, TmdbItem item) {
@@ -1583,9 +1615,51 @@ public class TmdbUIAdapter {
 
     private void saveMatch(Vod vod, TmdbItem item) {
         if (vod == null || item == null || item.getTmdbId() <= 0) return;
-        TmdbMatchCache cache = Setting.getTmdbMatchCache();
-        cache.put(cacheSiteKey(vod), cacheVodId(vod), vod.getName(), item);
-        Setting.putTmdbMatchCache(cache);
+        // 读-改-写要整体互斥：本方法在后台线程被调用，手动选择在主线程写，
+        // 不加锁会让后到的自动结果基于旧快照覆盖掉刚落盘的手动选择。
+        synchronized (Setting.class) {
+            TmdbMatchCache cache = Setting.getTmdbMatchCache();
+            cache.put(cacheSiteKey(vod), cacheVodId(vod), vod.getName(), item);
+            Setting.putTmdbMatchCache(cache);
+        }
+    }
+
+    /**
+     * 记录手动选择。必须在 load() 之前调用：load() 会重置 sourceCacheTitle，
+     * 而 enrichVod 之后 vod.getName() 已被改写成 TMDB 标题，不能作为唯一的键。
+     */
+    private void saveManualMatch(Vod vod, TmdbItem item) {
+        if (vod == null || item == null || item.getTmdbId() <= 0) return;
+        List<String> aliases = manualMatchTitleAliases(vod);
+        synchronized (Setting.class) {
+            TmdbMatchCache cache = Setting.getTmdbMatchCache();
+            cache.putManual(cacheSiteKey(vod), cacheVodId(vod), aliases, item);
+            Setting.putTmdbMatchCache(cache);
+        }
+    }
+
+    /**
+     * 别名只取站源侧信号。vod.getName() 在 enrichVod 之后已是"上一次"的 TMDB 标题，
+     * 无条件写进去会留下一条指向旧条目的精确键（A→B→C 连续切换后 key(标题A) 仍指向 B），
+     * 而历史记录里存的正是那个旧标题，反查就会读回旧选择。但它未被富集时又正是
+     * getCachedMatch 的读取键，不能一概丢弃——用当前已加载条目的标题判断它是否已被改写。
+     */
+    private List<String> manualMatchTitleAliases(Vod vod) {
+        List<String> aliases = new ArrayList<>();
+        addTitleAlias(aliases, sourceCacheTitle);
+        addTitleAlias(aliases, activityIntentTitle());
+        String vodTitle = vod == null ? "" : vod.getName();
+        if (!isEnrichedVodTitle(vodTitle)) addTitleAlias(aliases, vodTitle);
+        return aliases;
+    }
+
+    private boolean isEnrichedVodTitle(String vodTitle) {
+        return tmdbItem != null && !TextUtils.isEmpty(vodTitle) && vodTitle.equals(tmdbItem.getTitle());
+    }
+
+    private static void addTitleAlias(List<String> aliases, String title) {
+        if (TextUtils.isEmpty(title) || aliases.contains(title)) return;
+        aliases.add(title);
     }
 
     private void saveTitleLearning(Vod vod, TmdbItem item) {

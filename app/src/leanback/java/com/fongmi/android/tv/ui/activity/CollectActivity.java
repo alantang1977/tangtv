@@ -857,7 +857,7 @@ public class CollectActivity extends BaseActivity implements CollectAdapter.OnCl
             else VodActivity.start(this, item.getSiteKey(), Result.folder(item));
         } else {
             String pic = item.getPic().isEmpty() ? getPic() : item.getPic();
-            VideoActivity.collect(this, item.getSiteKey(), item.getId(), item.getName(), pic, getWallPic());
+            VideoActivity.collect(this, item.getSiteKey(), item.getId(), item.getName(), pic, getWallPic(), getKeyword());
         }
         SpiderDebug.log("collect-flow", "activity launch requested cost=%dms", System.currentTimeMillis() - start);
         App.post(() -> {

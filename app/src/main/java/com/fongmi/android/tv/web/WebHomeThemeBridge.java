@@ -276,6 +276,9 @@ final class WebHomeThemeBridge {
         boolean themed = target != null && target.isV2()
                 && target.getManifest().getPage(WebThemePage.DETAIL) != null;
         postIfActive(active, () -> {
+            // 猫源配置站点的动作项（设置页、弹幕服务）点了本意是开网页，不是看片；
+            // 详情页会先建起来闪一下，所以在这里先分流，和原生列表入口一致
+            if (com.fongmi.android.tv.api.CatAction.openWebsite(site.getKey(), vodId, pic)) return;
             if (themed) WebThemeDetailActivity.start(activity, target.getManifest().getManifestUrl(),
                     site.getKey(), vodId, title, pic, remarks, content);
             else TmdbDetailActivity.start(activity, site.getKey(), vodId, title, pic, remarks);

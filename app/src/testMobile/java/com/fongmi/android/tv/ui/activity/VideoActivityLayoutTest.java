@@ -12,10 +12,17 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -280,15 +287,25 @@ public class VideoActivityLayoutTest {
         String chooseBody = chooseMethod >= 0 && chooseMethodEnd > chooseMethod ? source.substring(chooseMethod, chooseMethodEnd) : "";
         int invalidateInternalRefresh = chooseBody.indexOf("playerKernelSwitchRequestId++;");
         int launchExternalPlayer = chooseBody.indexOf("PlayerHelper.choose", invalidateInternalRefresh);
+        int resultMethod = source.indexOf("private void switchPlayerKernelWithResult(");
+        int resultMethodEnd = source.indexOf("private boolean onTextLong()", resultMethod);
+        String resultBody = resultMethod >= 0 && resultMethodEnd > resultMethod ? source.substring(resultMethod, resultMethodEnd) : "";
+        int switchMethod = source.indexOf("private boolean refreshAndSwitchPlayerKernel(");
+        int requestDeclaration = source.indexOf("int requestId = ++playerKernelSwitchRequestId;", switchMethod);
+        int currentFlag = source.indexOf("Flag currentFlag = getFlag();", switchMethod);
 
         assertTrue(sourcePath + " is missing onPlayerKernel", clickMethod >= 0);
         assertTrue("player kernel click must open the shared chooser", clickBody.contains("onChoose();"));
         assertFalse("player kernel click must not switch to the next core before user selection", clickBody.contains("refreshAndSwitchPlayerKernel"));
         assertTrue("the selected core must retain the refreshed-source switch path", chooseBody.contains("refreshAndSwitchPlayerKernel(which)"));
         assertFalse("a later core selection must not be discarded while an earlier refresh is running", source.contains("if (playerKernelSwitchRefreshing) return true;"));
-        assertTrue("only the latest core selection may apply its refreshed result", source.contains("if (requestId != playerKernelSwitchRequestId) return;"));
+        assertTrue("only the latest core selection and current playback context may apply its refreshed result",
+                resultBody.contains("requestId != playerKernelSwitchRequestId")
+                        && resultBody.contains("isCurrentPlayerContentRequest(requestId, generation, key, flag, episode)")
+                        && resultBody.contains("return;"));
         assertTrue("external playback selection must invalidate an in-flight internal core refresh", invalidateInternalRefresh >= 0 && launchExternalPlayer > invalidateInternalRefresh);
-        assertTrue("an internal selection without refresh metadata must still invalidate an older request", source.indexOf("int requestId = ++playerKernelSwitchRequestId;") < source.indexOf("Flag currentFlag = getFlag();"));
+        assertTrue("an internal selection without refresh metadata must still invalidate an older request",
+                switchMethod >= 0 && requestDeclaration >= switchMethod && currentFlag > requestDeclaration);
     }
 
     @Test
@@ -487,8 +504,8 @@ public class VideoActivityLayoutTest {
         assertTrue(label + " playback must update artwork before the new item starts", body.contains("applyPlaybackArtwork(episode);"));
         assertTrue(label + " playback must clear lyrics and karaoke state between episodes",
                 body.contains("clearLyrics();") && body.contains("clearKaraokeState();"));
-        assertTrue(label + " playback must request content with the resolved per-episode flag",
-                body.contains("mViewModel.playerContent(getKey(), playFlag, episode.getUrl());"));
+        assertTrue(label + " playback must request content with the resolved per-episode flag and the show's kernel",
+                body.contains("mViewModel.playerContent(getKey(), playFlag, episode.getUrl(), applyHistoryPlayerKernel());"));
     }
 
     @Test
@@ -684,6 +701,22 @@ public class VideoActivityLayoutTest {
     }
 
     @Test
+    public void playbackHistoryKeepsUnknownDurationUntilMediaReportsOne() throws Exception {
+        for (Path sourcePath : List.of(
+                findLeanbackJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java")),
+                findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java")))) {
+            String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+            String body = methodBody(source,
+                    "private void updatePlaybackHistoryPosition()",
+                    "PlaybackEventCollector.get().updateHistory(mHistory)");
+            assertTrue(sourcePath + " must ignore an unknown player duration",
+                    body.contains("if (duration > 0) mHistory.setDuration(duration);"));
+            assertFalse(sourcePath + " must not materialize an unknown duration as zero",
+                    body.contains("mHistory.setDuration(0)"));
+        }
+    }
+
+    @Test
     public void videoDetailTextKeepsInlineLyricsMetadata() throws Exception {
         Path leanbackPath = findLeanbackJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
         String leanback = new String(Files.readAllBytes(leanbackPath), StandardCharsets.UTF_8);
@@ -696,7 +729,7 @@ public class VideoActivityLayoutTest {
         String mobileText = methodBody(mobile, "private void setText(Vod item)", "private boolean shouldUseTmdbTabletWideLayout()");
         assertTrue("mobile detail content must be captured before TMDB reveal can return early",
                 mobileText.indexOf("setDetailLyrics(item.getContent());") >= 0
-                        && mobileText.indexOf("setDetailLyrics(item.getContent());") < mobileText.indexOf("if (shouldWaitForTmdbDetailReveal())"));
+                        && mobileText.indexOf("setDetailLyrics(item.getContent());") < mobileText.indexOf("if (isTmdbDetailEnrichmentPending())"));
         assertTrue("mobile detail binding must refresh immersive audio labels", mobileText.contains("updateAudioStageText();"));
     }
 
@@ -793,15 +826,69 @@ public class VideoActivityLayoutTest {
     }
 
     @Test
+    public void leanbackSpeedBoostReleaseIsGuarded() throws Exception {
+        String leanback = new String(Files.readAllBytes(findLeanbackJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"))), StandardCharsets.UTF_8);
+        String keyDown = new String(Files.readAllBytes(findLeanbackJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "custom", "CustomKeyDownVod.java"))), StandardCharsets.UTF_8);
+        String releaseBody = methodBody(keyDown, "public void releaseSpeed()", "public void setFull(boolean full)");
+
+        assertTrue("CustomKeyDownVod must expose the guarded speed release state", keyDown.contains("public boolean isChangingSpeed()") && keyDown.contains("public void releaseSpeed()"));
+        assertTrue("releaseSpeed must clear the flag and end the boost", releaseBody.contains("changeSpeed = false;") && releaseBody.contains("listener.onSpeedEnd();"));
+        assertTrue("dispatchKeyEvent must release the boost when a key is released outside the state machine", methodBody(leanback, "public boolean dispatchKeyEvent(KeyEvent event)", "private boolean dispatchLutQuickKey(KeyEvent event)").contains("mKeyDown.releaseSpeed()"));
+        assertTrue("onWindowFocusChanged must release the boost when window focus is lost", methodBody(leanback, "public void onWindowFocusChanged(boolean hasFocus)", "private boolean isInitAuto()").contains("mKeyDown.releaseSpeed()"));
+        assertTrue("onStop must release the boost", methodBody(leanback, "protected void onStop()", "protected void onBackInvoked()").contains("mKeyDown.releaseSpeed()"));
+    }
+
+    @Test
     public void refreshedPlayerKernelSwitchKeepsManualFailureSemantics() throws Exception {
         Path sourcePath = findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "player", "PlayerManager.java"));
         String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
         int method = source.indexOf("public void switchPlayer(int type, Result result");
-        int methodEnd = source.indexOf("private void switchPlayer(int type, boolean persist)", method);
+        int methodEnd = source.indexOf("private void switchPlayer(int type, boolean manual)", method);
         String methodBody = method >= 0 && methodEnd > method ? source.substring(method, methodEnd) : "";
 
         assertTrue(sourcePath + " is missing refreshed-result player switching", method >= 0);
         assertTrue("a user-selected refreshed core must stop instead of auto-falling back on its first failure", methodBody.contains("manualPlayerSwitchPending = true;"));
+    }
+
+    @Test
+    public void playerKernelSwitchStaysScopedToCurrentPlayback() throws Exception {
+        String player = new String(Files.readAllBytes(findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "player", "PlayerManager.java"))), StandardCharsets.UTF_8);
+        String leanback = new String(Files.readAllBytes(findLeanbackJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"))), StandardCharsets.UTF_8);
+        String mobile = new String(Files.readAllBytes(findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"))), StandardCharsets.UTF_8);
+        String tmdb = new String(Files.readAllBytes(findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "TmdbDetailActivity.java"))), StandardCharsets.UTF_8);
+        String history = new String(Files.readAllBytes(findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "bean", "History.java"))), StandardCharsets.UTF_8);
+
+        assertFalse("switching cores inside the player must not rewrite the global default kernel", player.contains("PlayerSetting.putPlayer("));
+        assertTrue("the running kernel must be published as session state instead", player.contains("PlayerSetting.putActivePlayer("));
+        assertTrue("ending playback must drop the session kernel so the global default applies again", player.contains("PlayerSetting.clearActivePlayer();"));
+
+        assertTrue("the per-show kernel must be persisted, not a transient field", history.contains("@SerializedName(\"player\")") && !history.contains("private transient int player"));
+
+        for (String source : new String[]{leanback, mobile}) {
+            assertTrue("playback must restore the show's remembered kernel before resolving the play url",
+                    source.contains("player().preparePlayer(kernel);"));
+            assertTrue("the remembered kernel must fall back to the global default", source.contains("mHistory.getPlayerOrDefault()"));
+            assertTrue("the show's history must remember the user's selection, not an engine/session state",
+                    source.contains("private void rememberPlayerKernel(int type)") && source.contains("mHistory.setPlayer(type);"));
+            // 播放页会重叠存在：上一部剧的收尾存档若也写内核，就会用别人的会话内核
+            // 覆盖本剧记住的选择，历史回归点。
+            assertFalse("routine history saves must not rewrite the show's kernel",
+                    source.contains("mHistory.setPlayer(PlayerSetting.getActivePlayer());"));
+            // 服务可能是上一次播放留活的，它建 PlayerManager 时读到的是上一部剧的内核，
+            // 所以服务就绪前定下的选择必须在连上后补落到引擎。
+            assertTrue("a kernel chosen before the service was ready must be applied once it connects",
+                    source.contains("mPendingPlayerKernel = kernel;")
+                            && source.contains("private void applyPendingPlayerKernel()")
+                            && methodBody(source, "protected void onServiceConnected()", "\n    }").contains("applyPendingPlayerKernel();"));
+        }
+        assertTrue("inline TMDB playback must resolve the play url with the show's kernel",
+                tmdb.contains("SiteApi.playerContent(key, flag, episodeUrl, playerKernel)"));
+        assertTrue("inline TMDB playback must restore the show's remembered kernel",
+                tmdb.contains("player().preparePlayer(inlineHistoryPlayerKernel());"));
+        assertTrue("inline TMDB playback must remember only the user's selection",
+                tmdb.contains("private void rememberInlinePlayerKernel(int type)") && tmdb.contains("history.setPlayer(type);"));
+        assertFalse("inline progress sync must not rewrite the show's kernel",
+                tmdb.contains("history.setPlayer(PlayerSetting.getActivePlayer());"));
     }
 
     @Test
@@ -875,6 +962,197 @@ public class VideoActivityLayoutTest {
         assertTrue(sourcePath + " is missing showControl", showControl >= 0);
         assertTrue("short drama mode must keep the standard setting button visible while fullscreen", setting > shortDrama);
         assertTrue("short drama floating controls must include the standard setting button", dockedSetting > shortDramaViews);
+    }
+
+    @Test
+    public void mobileShortDramaDocksChangeSourceAndQuality() throws Exception {
+        // 反馈回归：短剧模式把整条 action 栏 GONE 掉，换源与画质只有搬进 dock 才可达，
+        // 否则短剧只能在选集里换线路(flag)，无法换站点、无法切画质。
+        Path sourcePath = findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+        int views = source.indexOf("private View[] getShortDramaControlViews()");
+        assertTrue("getShortDramaControlViews must exist", views >= 0);
+        String body = source.substring(views, source.indexOf("\n    }", views));
+        // dock 里全是 48dp 图标，换源/画质/选集必须用专用 ImageView 入口，
+        // 不能直接搬 action 栏的 MaterialTextView，否则文字按钮与图标混排（见用户反馈截图）。
+        assertTrue("short drama dock must expose the change-source icon",
+                body.contains("mBinding.control.shortDramaChangeSource,"));
+        assertTrue("short drama dock must expose the quality icon",
+                body.contains("mBinding.control.shortDramaQuality,"));
+        assertFalse("short drama dock must not mix in action-bar text buttons",
+                body.contains("mBinding.control.action."));
+
+    }
+
+    @Test
+    public void mobileShortDramaPresentationSurvivesSourceChange() throws Exception {
+        // 反馈回归：换源(getDetail)会改写 intent 的 key，isShortDramaSource() 随之翻转为 false，
+        // 同一个竖屏会话中途退回长视频布局（右侧 dock 被拆、横屏 action 栏与全屏按钮露出）。
+        // 呈现形态与返回键行为必须读会话态，只有换到新条目(onNewIntent)才重置。
+        Path sourcePath = findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+
+        assertTrue("session flag must latch once the site-based check passes",
+                source.contains("if (isShortDramaSource()) shortDramaSession = true;"));
+
+        // 重置必须发生在 onNewIntent 里（换到新条目），而不是随便某处 —— 只断言赋值语句存在太弱。
+        String newIntent = methodBody(source, "protected void onNewIntent(Intent intent)", "protected void initView");
+        assertTrue("switching to another title must reset the session presentation",
+                newIntent.contains("shortDramaSession = false;"));
+        // 短剧 -> 非短剧新条目时必须交还竖屏方向与全屏布局，否则长视频卡在竖屏全屏无法旋转
+        int restore = newIntent.indexOf("if (shortDramaSession && !isShortDramaSource()) exitFullscreen();");
+        int reset = newIntent.indexOf("shortDramaSession = false;");
+        assertTrue("leaving a short drama session must hand back the portrait fullscreen chrome", restore >= 0);
+        assertTrue("the fullscreen handback must read the flag before it is cleared", restore < reset);
+
+        int showControl = source.indexOf("private void showControl()");
+        assertTrue("showControl must exist", showControl >= 0);
+        assertTrue("showControl must drive chrome from the session state",
+                source.indexOf("boolean shortDrama = isShortDramaSession();", showControl) > showControl);
+        assertFalse("presentation call sites must not re-derive short drama from the current site",
+                source.contains("canShowPiP(isShortDramaSource())")
+                        || source.contains("isFullscreen() && isShortDramaSource()"));
+    }
+
+    @Test
+    public void mobileShortDramaGesturesSwapAxesToAvoidMisfires() throws Exception {
+        // 用户反馈：竖屏短剧铺满屏幕，左右 1/4 竖滑调亮度/音量与中间竖滑切集互相误触。
+        // 短剧形态改为「整屏上下滑切集 + 长按后上下滑调亮度/音量」，两个手势类同步。
+        List<Path> gestureFiles = Arrays.asList(
+                findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "custom", "CustomKeyDown.java")),
+                findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "custom", "PlayerGesture.java"))
+        );
+
+        for (Path gestureFile : gestureFiles) {
+            String source = new String(Files.readAllBytes(gestureFile), StandardCharsets.UTF_8);
+            assertTrue(gestureFile + " must expose the short drama gesture mode", source.contains("public void setShortDrama(boolean shortDrama)"));
+            // 上下滑切集不再受左右 1/4 亮度/音量分区限制。
+            assertTrue(gestureFile + " must let short drama flings cover the side quarters",
+                    source.contains("(!shortDrama && isSide(e1))"));
+            // 亮度/音量不再由滑动起点的左右 1/4 触发。
+            assertTrue(gestureFile + " must stop routing short drama scrolls to brightness/volume",
+                    source.contains("else if (!shortDrama && isSide(e2)) checkSide(e2);"));
+            // 长按后 GestureDetector 不再回调 onScroll，调节必须由 onTouchEvent 自己驱动。
+            assertTrue(gestureFile + " must drive the long-press adjust from onTouchEvent",
+                    source.contains("action == MotionEvent.ACTION_MOVE") && source.contains("handleAdjust(e);"));
+            assertTrue(gestureFile + " must hand back the speed-up before adjusting", source.contains("private void startAdjust(MotionEvent e)"));
+            // 起点必须在 ACTION_DOWN 时记：onDown 会在边缘/缩放/锁定时提前返回，
+            // 拿上一次手势的起点算位移会让长按转调节一按就跳。
+            assertTrue(gestureFile + " must capture the down point from the raw stream",
+                    source.contains("if (action == MotionEvent.ACTION_DOWN) {") && source.contains("downY = e.getY();"));
+            assertFalse(gestureFile + " must not rely on onDown for the down point",
+                    methodBody(source, "public boolean onDown(@NonNull MotionEvent e)", "\n    }").contains("downY = e.getY();"));
+            // 切集方向在短剧下固定，不跟随直播的「反转」开关。
+            assertTrue(gestureFile + " must pin the short drama fling direction",
+                    source.contains("boolean invert = !shortDrama && LiveSetting.isInvert();"));
+
+            // onDown 在边缘/缩放/锁定时提前返回不走 reset()，所以每次抬手都要主动清标记，
+            // 否则上一次的 changeBright + anchorY 会让下一次手势没长按就跳亮度。
+            assertTrue(gestureFile + " must clear gesture flags when the stream ends",
+                    source.contains("private void clearGesture()") && source.contains("if (end) clearGesture();"));
+            assertTrue(gestureFile + " must reset the adjust anchor on cleanup",
+                    methodBody(source, "private void clearGesture()", "\n    }").contains("anchorY = Float.NaN;"));
+            // 没有本次手势自己建立的基准就不许调节，避免 NaN 基准算出静音/跟随系统亮度。
+            assertTrue(gestureFile + " must require an anchor established by this gesture",
+                    source.contains("if (!changeSpeed && Float.isNaN(anchorY)) return;"));
+            // CANCEL（被父容器拦截/来电）同样要交还倍速，否则播放卡在长按后的速率。
+            assertTrue(gestureFile + " must hand back the speed boost on cancel too", source.contains("if (changeSpeed && end) listener.onSpeedEnd();"));
+            // ACTION_POINTER_UP 不会复位 multiTouch，用实时指数判断才不会永久挡掉单指调节。
+            assertTrue(gestureFile + " must gate the adjust on the live pointer count",
+                    source.contains("action == MotionEvent.ACTION_MOVE && e.getPointerCount() == 1"));
+            // 未测量的播放视图会让 deltaY/height 变成 Infinity/NaN，音量瞬间拉满或静音。
+            assertTrue(gestureFile + " must floor the view height before dividing",
+                    methodBody(source, "private void setVolume(float deltaY)", "\n    }").contains("Math.max(videoView.getMeasuredHeight(), 1)"));
+            assertTrue(gestureFile + " must skip volume when the stream has no range",
+                    source.contains("if (maxVolume <= 0) return;"));
+        }
+
+        // 手势轴向必须由「当前是否处于短剧全屏」推导：退出全屏回到内嵌小窗后若仍是短剧那套，
+        // 详情页上竖滑就会误切集；换到另一部短剧时形态不变，标记也不该被清掉。
+        String video = new String(Files.readAllBytes(findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"))), StandardCharsets.UTF_8);
+        assertTrue("the gesture mode must be derived from the current presentation",
+                video.contains("mKeyDown.setShortDrama(isFullscreen() && isShortDramaSession());"));
+        assertFalse("no call site may pin the gesture mode to a literal",
+                video.contains("mKeyDown.setShortDrama(true)") || video.contains("mKeyDown.setShortDrama(false)"));
+        for (String host : Arrays.asList("private void enterShortDramaFullscreen()", "private void enterFullscreen()", "private void exitFullscreen()", "protected void onNewIntent(Intent intent)")) {
+            int start = video.indexOf(host);
+            assertTrue(host + " must exist in VideoActivity", start >= 0);
+            int end = video.indexOf("\n    }", start);
+            assertTrue("presentation change must resync the gesture axes: " + host,
+                    end > start && video.substring(start, end).contains("syncShortDramaGesture();"));
+        }
+
+        String tmdb = new String(Files.readAllBytes(findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "TmdbDetailActivity.java"))), StandardCharsets.UTF_8);
+        assertTrue("the inline gesture mode must be derived from the current presentation",
+                tmdb.contains("inlineGestureDetector.setShortDrama(inlineFullscreen && shouldUseInlineShortDramaMode());"));
+        assertFalse("no inline call site may pin the gesture mode to a literal",
+                tmdb.contains("inlineGestureDetector.setShortDrama(true)") || tmdb.contains("inlineGestureDetector.setShortDrama(false)"));
+        // enterInlineFullscreen 要直接重算：手动点全屏不走 applyInlineShortDramaMode。
+        // exitInlineFullscreen 经 resetInlineShortDramaMode 间接重算（它先置 inlineFullscreen=false）。
+        for (String host : Arrays.asList("private void applyInlineShortDramaMode()", "private void resetInlineShortDramaMode()", "private void enterInlineFullscreen()")) {
+            int start = tmdb.indexOf(host);
+            assertTrue(host + " must exist in TmdbDetailActivity", start >= 0);
+            int end = tmdb.indexOf("\n    }", start);
+            assertTrue("presentation change must resync the inline gesture axes: " + host,
+                    end > start && tmdb.substring(start, end).contains("syncInlineShortDramaGesture();"));
+        }
+        int exitInline = tmdb.indexOf("private void exitInlineFullscreen()");
+        assertTrue("exitInlineFullscreen must exist", exitInline >= 0);
+        String exitBody = tmdb.substring(exitInline, tmdb.indexOf("\n    }", exitInline));
+        int cleared = exitBody.indexOf("inlineFullscreen = false;");
+        int resync = exitBody.indexOf("resetInlineShortDramaMode();");
+        assertTrue("leaving inline fullscreen must resync the gesture axes after clearing the flag",
+                cleared >= 0 && resync > cleared);
+    }
+
+    @Test
+    public void mobileShortDramaQualityIconHasSingleSourceOfTruth() throws Exception {
+        // setQualityVisible 有 6 个调用点，其中多处显式传 false（未选中集数、切线路重置），
+        // 与 Result.isMulti() 的结论并不一致。dock 图标若自行推导 Result，就会与 action 栏
+        // 按钮状态相反。两者必须共用 setQualityVisible 记下的同一个结论。
+        Path sourcePath = findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+
+        String setter = methodBody(source, "private void setQualityVisible(boolean visible)", "private void updateActionQuality");
+        assertTrue("setQualityVisible must record its verdict for the dock icon to reuse",
+                setter.contains("mQualityVisible = visible;"));
+
+        String sync = methodBody(source, "private void syncShortDramaControlLayout(boolean shortDrama)", "private void dockShortDramaControls");
+        assertTrue("the docked quality icon must reuse the recorded verdict",
+                sync.contains("mBinding.control.shortDramaQuality.setVisibility(mQualityVisible ? View.VISIBLE : View.GONE);"));
+        // 注释里会提到 isMulti() 来解释为何不用它，所以先剥掉注释再断言
+        String syncCode = sync.replaceAll("(?m)//.*$", "");
+        assertFalse("the docked quality icon must not re-derive visibility from the player Result",
+                syncCode.contains("isMulti()") || syncCode.contains("isQualityAvailable()"));
+    }
+
+    @Test
+    public void mobileShortDramaRestoreIsIndependentOfDeclarationOrder() throws Exception {
+        // 同一容器现在有多个搬迁项（cast/keep/换源/画质/选集/设置同属顶部栏）。逐个「摘下并立刻插回」
+        // 会让后来者挤掉前者的位置，且 PlayerButtonSetting.applyOrder 可能已重排容器，
+        // 声明顺序不等于索引升序。还原必须先全部摘下、再按原始索引升序插回。
+        Path sourcePath = findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+        int restore = source.indexOf("private void restoreShortDramaControls()");
+        assertTrue("restoreShortDramaControls must exist", restore >= 0);
+        String body = source.substring(restore, source.indexOf("\n    }", restore));
+
+        int detachLoop = body.indexOf("parent.removeView(item.view);");
+        int sort = body.indexOf("items.sort(Comparator.comparingInt(item -> item.index));");
+        int attachLoop = body.indexOf("item.parent.addView(item.view,");
+        assertTrue("restore must detach every docked view before re-attaching", detachLoop >= 0);
+        assertTrue("restore must re-attach in ascending original index order", sort > detachLoop);
+        assertTrue("restore must re-attach after sorting", attachLoop > sort);
+    }
+
+    @Test
+    public void mobileQualityButtonStaysGatedByMultiUrlResult() throws Exception {
+        // 画质入口只在站点返回多个播放地址时出现；短剧同走这条判定，
+        // 不能为了让按钮常驻而绕开 isMulti()，否则会弹出只有一个选项的空面板。
+        Path sourcePath = findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+        assertTrue("quality visibility must stay driven by Url.isMulti()",
+                source.contains("setQualityVisible(result.getUrl().isMulti());"));
     }
 
     @Test
@@ -1106,7 +1384,7 @@ public class VideoActivityLayoutTest {
         int end = source.indexOf("private void hideProgress()", method);
         String body = method >= 0 && end > method ? source.substring(method, end) : "";
         int showOverlay = body.indexOf("mBinding.progress.getRoot().setVisibility(View.VISIBLE);");
-        int initialDetailGuard = body.indexOf("if (mVod == null && shouldLoadTmdbDetail() && !mTmdbContentLoaded) mBinding.progressLayout.showProgress();");
+        int initialDetailGuard = body.indexOf("if (mVod == null && shouldLoadTmdbDetail() && !mTmdbContentLoaded && !shouldRevealShellWhileLoading()) mBinding.progressLayout.showProgress();");
         int preserveDetail = body.indexOf("else if (mVod != null && !mBinding.progressLayout.isContent()) mBinding.progressLayout.showContent();");
 
         assertTrue(sourcePath + " is missing showProgress", method >= 0);
@@ -1896,20 +2174,105 @@ public class VideoActivityLayoutTest {
     }
 
     @Test
-    public void leanbackOriginalEnhancedKeepsLoadingUntilFinalDetailReveal() throws Exception {
+    public void leanbackOriginalEnhancedRevealsShellInsteadOfStackingASecondLoadingLayer() throws Exception {
         Path sourcePath = findLeanbackJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
         String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
         int method = source.indexOf("private void checkCast()");
         int end = source.indexOf("private void checkId()", method);
         String body = method >= 0 && end > method ? source.substring(method, end) : "";
-        int enhancedLoading = body.indexOf("shouldLoadTmdbDetail() && Setting.isOriginalEnhancedDetailPage()");
-        int initialPreview = body.indexOf("hasInitialPreview()");
+        String overlay = methodBody(source, "private boolean shouldShowTmdbLoadingOverlay()", "private boolean shouldRevealShellWhileLoading()");
+        String shell = methodBody(source, "private boolean shouldRevealShellWhileLoading()", "private void setOriginalEnhancedActionVisibility(");
+        String reveal = methodBody(source, "private void revealShellWhileTmdbLoads()", "private void finishTmdbDetail()");
 
         assertTrue(sourcePath + " is missing checkCast", method >= 0);
-        assertTrue("original enhanced mode must stay on loading instead of showing and then replacing an initial preview",
-                enhancedLoading >= 0
-                        && body.indexOf("mBinding.progressLayout.showProgress();", enhancedLoading) > enhancedLoading
-                        && initialPreview > enhancedLoading);
+        assertFalse("original enhanced entry must not blank the whole page before the player window loading layer",
+                body.contains("shouldLoadTmdbDetail() && Setting.isOriginalEnhancedDetailPage()"));
+        assertTrue("original enhanced entry must reveal the initial preview shell", body.contains("hasInitialPreview()) showInitialPreview();"));
+        assertTrue("the full-screen TMDB loading overlay must be suppressed while the shell is revealed",
+                overlay.contains("!shouldRevealShellWhileLoading()"));
+        assertTrue("shell reveal must be scoped to the original enhanced detail page",
+                shell.contains("Setting.isOriginalEnhancedDetailPage()"));
+        assertTrue("shell reveal must show content instead of leaving the page on progress",
+                reveal.contains("mBinding.progressLayout.showContent();"));
+        assertTrue("shell reveal must pre-suppress the source text that TMDB later overwrites",
+                reveal.contains("suppressTmdbNativeTextFields();"));
+    }
+
+    @Test
+    public void leanbackShellRevealDoesNotStealFocusOnTheLaterTmdbReveal() throws Exception {
+        Path sourcePath = findLeanbackJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+        String body = methodBody(source, "private void revealTmdbDetail()", "private void applyTmdbDetailFields()");
+        String shell = methodBody(source, "private void revealShellWhileTmdbLoads()", "private void finishTmdbDetail()");
+
+        assertTrue(sourcePath + " is missing revealTmdbDetail", !body.isEmpty());
+        assertTrue("the later TMDB reveal must know whether loading actually hid the content",
+                body.contains("boolean hiddenByLoading = !mBinding.progressLayout.isContent();"));
+        assertTrue("focus must only be pulled back to the player when loading had hidden the content",
+                body.contains("if (hiddenByLoading) mBinding.video.post(() -> mBinding.video.requestFocus());"));
+        assertTrue("a shell revealed without an initial preview must restore focus only when nothing else is focused",
+                shell.contains("boolean hiddenByLoading = !mBinding.progressLayout.isContent();")
+                        && shell.contains("if (hiddenByLoading && !mBinding.getRoot().hasFocus())")
+                        && shell.contains("mBinding.video.post(() -> {")
+                        && shell.contains("if (!mBinding.getRoot().hasFocus()) mBinding.video.requestFocus();"));
+    }
+
+    @Test
+    public void mobileOriginalEnhancedRevealsShellWithoutASecondDetailSpinner() throws Exception {
+        Path sourcePath = findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+        String waitReveal = methodBody(source, "private boolean shouldWaitForTmdbDetailReveal()", "private boolean shouldRevealShellWhileLoading()");
+        String shell = methodBody(source, "private boolean shouldRevealShellWhileLoading()", "private void showInitialPreview()");
+        String text = methodBody(source, "private void setText(Vod item)", "private boolean shouldUseTmdbTabletWideLayout()");
+
+        assertTrue("the detail area must stop waiting for TMDB before revealing in original enhanced mode",
+                waitReveal.contains("isTmdbDetailEnrichmentPending() && !shouldRevealShellWhileLoading()"));
+        assertTrue("shell reveal must be scoped to the original enhanced detail page",
+                shell.contains("Setting.isOriginalEnhancedDetailPage()"));
+        assertTrue("source text must still wait for TMDB enrichment so the revealed shell does not swap text",
+                text.contains("if (isTmdbDetailEnrichmentPending()) {"));
+    }
+
+    @Test
+    public void mobileEveryFullPageProgressOnEntryIsGuardedByShellReveal() throws Exception {
+        // 回归：删掉「整页转圈」这一层时只守住了 TMDB overlay 与缓存命中两条路，
+        // 漏了 getDetail 这条常走的主路 —— 它无条件 showProgress()，把刚揭开的骨架又压回
+        // INVISIBLE，于是原生增强进入播放页依旧是两层加载。这里把进入路径上每一处
+        // 整页 showProgress() 都钉住，必须由 shouldRevealShellWhileLoading() 让路。
+        Path sourcePath = findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+        String cached = methodBody(source, "private boolean setCachedTmdbDetail()", "private void checkLand()");
+        String detail = methodBody(source, "private void getDetail(boolean refresh)", "private void prefetchDirectTmdbDetail()");
+        String preview = methodBody(source, "private void showInitialPreview()", "private History createHistory(Vod item)");
+
+        assertTrue("the cache-hit path must not blank the page once the shell is revealed",
+                cached.contains("if (!shouldRevealShellWhileLoading()) mBinding.progressLayout.showProgress();"));
+        assertTrue("the network detail path must not blank the page once the shell is revealed",
+                detail.contains("if (!shouldRevealShellWhileLoading()) mBinding.progressLayout.showProgress();"));
+        assertFalse("getDetail must not call showProgress unconditionally",
+                detail.contains("\n        mBinding.progressLayout.showProgress();"));
+        assertTrue("the initial preview must actually switch ProgressLayout to CONTENT, not just set artwork",
+                preview.contains("mBinding.progressLayout.showContent();"));
+    }
+
+    @Test
+    public void mobileEnhancedBackdropKeepsAnOpaqueBaseColorBehindTheShell() throws Exception {
+        // 原生增强把 root/scroll/swipeLayout/progressLayout 全设成 TRANSPARENT 以便全屏 backdrop 透出，
+        // 但 contextWall 初始是 gone、图还要等网络。root 若留透明，这段空窗期会露出
+        // Material3 DynamicColors 的窗口底色(设备实测为紫色)。root 必须垫不透明底色。
+        Path sourcePath = findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+        String base = methodBody(source, "private int enhancedBackdropBaseColor()", "private void applyOriginalEnhancedBackdropLayout()");
+        String surface = methodBody(source, "private void applyFusionThemeSurface()", "private void applyContextWallScrimTheme()");
+
+        assertTrue("the enhanced backdrop base color must be opaque in both themes",
+                base.contains("0xFFF3F6F9") && base.contains("0xFF0F141A"));
+        assertTrue("initTmdbMode must seed the enhanced root with the opaque base color",
+                source.contains("mBinding.getRoot().setBackgroundColor(enhancedBackdropBaseColor());"));
+        assertTrue("theme re-application must keep the opaque base under the backdrop surface",
+                surface.contains("shouldUseTmdbBackdropSurface() ? enhancedBackdropBaseColor()"));
+        assertFalse("the backdrop surface must no longer reset the root to a transparent window background",
+                surface.contains("mTmdbFallbackToNative || shouldUseTmdbBackdropSurface() ? Color.TRANSPARENT"));
     }
 
     @Test
@@ -2625,20 +2988,74 @@ public class VideoActivityLayoutTest {
     }
 
     @Test
-    public void mobileVideoEpisodeViewportUsesStableCapInsideScrollPage() throws Exception {
+    public void mobileVideoEpisodeViewportKeepsItsCapUnlessThePageOwnsTmdbEpisodeScroll() throws Exception {
         Path sourcePath = findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
         String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
         int method = source.indexOf("private void updateEpisodeViewportHeight()");
-        int nextMethod = source.indexOf("private boolean isTmdbEpisodeCardMode()", method);
+        int nextMethod = source.indexOf("private boolean usesOuterEpisodePageScroll()", method);
         String methodBody = nextMethod > method ? source.substring(method, nextMethod) : source.substring(method);
+        int outerScroll = source.indexOf("private boolean usesOuterEpisodePageScroll()");
+        int outerScrollEnd = source.indexOf("private boolean isTmdbEpisodeCardMode()", outerScroll);
+        String outerScrollBody = outerScrollEnd > outerScroll ? source.substring(outerScroll, outerScrollEnd) : source.substring(outerScroll);
 
         assertTrue(sourcePath + " is missing updateEpisodeViewportHeight", method >= 0);
-        assertTrue("episode viewport must keep a stable dp cap for scrollable detail pages",
-                methodBody.contains("int height = limit;"));
+        assertTrue("episode viewport must keep a stable dp cap unless the page owns the TMDB episode scroll",
+                methodBody.contains("int height = usesOuterEpisodePageScroll() ? 0 : limit;")
+                        && methodBody.contains("!usesOuterEpisodePageScroll() && isTmdbEpisodeCardMode()"));
+        assertTrue("the outer page scroll contract must cover original enhanced pages and reparented backdrop TMDB playback",
+                outerScrollBody.contains("Setting.isOriginalEnhancedDetailPage()")
+                        && outerScrollBody.contains("mTmdbControlsMoved && shouldUseTmdbBackdropSurface()"));
+        assertTrue("a reparented outer-scroll episode grid must release vertical gestures to its page",
+                source.contains("mBinding.episode.setOnTouchListener((view, event) -> {")
+                        && source.contains("if (!usesOuterEpisodePageScroll()) return false;")
+                        && source.contains("int action = event.getActionMasked();")
+                        && source.contains("action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE")
+                        && source.contains("view.getParent().requestDisallowInterceptTouchEvent(false);"));
         assertTrue("episode viewport must not collapse based on current remaining screen height",
                 !methodBody.contains("available ="));
         assertTrue("episode viewport must not depend on root height after the method starts",
                 !methodBody.contains("mBinding.getRoot().getHeight()"));
+    }
+
+    @Test
+    public void mobileOriginalEnhancedEpisodeViewportUsesOuterPageScrollWithoutHeightCap() throws Exception {
+        Path sourcePath = findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+        int outerScroll = source.indexOf("private boolean usesOuterEpisodePageScroll()");
+        int outerScrollEnd = source.indexOf("private boolean isTmdbEpisodeCardMode()", outerScroll);
+        String outerScrollBody = outerScrollEnd > outerScroll ? source.substring(outerScroll, outerScrollEnd) : source.substring(outerScroll);
+
+        assertTrue(sourcePath + " is missing usesOuterEpisodePageScroll", outerScroll >= 0);
+        assertTrue("original enhanced playback must remove the inner episode viewport height cap",
+                outerScrollBody.contains("Setting.isOriginalEnhancedDetailPage()"));
+        assertTrue("the first original-enhanced layout pass must replace the XML max-height default",
+                source.contains("private int mEpisodeMaxHeight = -1;"));
+    }
+
+    @Test
+    public void mobileBackdropTmdbEpisodeGridLetsTheOuterScrollContentGrowAfterReparenting() throws Exception {
+        Path sourcePath = findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+        int move = source.indexOf("private void moveFlagAndEpisodeToTmdb()");
+        int restore = source.indexOf("private void restoreFlagAndEpisodeFromTmdb()");
+        int helper = source.indexOf("private void updateTmdbPlaybackScrollContentHeight()");
+        int helperEnd = source.indexOf("private void moveTmdbSourceToFlagTitle", helper);
+        String moveBody = restore > move ? source.substring(move, restore) : source.substring(move);
+        String restoreBody = helper > restore ? source.substring(restore, helper) : source.substring(restore);
+        String helperBody = helperEnd > helper ? source.substring(helper, helperEnd) : source.substring(helper);
+
+        assertTrue(sourcePath + " is missing TMDB playback scroll content height sync", helper >= 0);
+        assertTrue("reparenting the episode grid must let the outer scroll child expand to content height",
+                helperBody.contains("View child = mBinding.scroll.getChildAt(0);")
+                        && helperBody.contains("if (!(child instanceof ViewGroup content)) return;")
+                        && helperBody.contains("int height = mTmdbControlsMoved && usesOuterEpisodePageScroll()")
+                        && helperBody.contains("? ViewGroup.LayoutParams.WRAP_CONTENT : ViewGroup.LayoutParams.MATCH_PARENT;")
+                        && helperBody.contains("content.setLayoutParams(params);")
+                        && helperBody.contains("mBinding.scroll.requestLayout();"));
+        assertTrue("the expanded content height must be applied after moving the episode grid into TMDB controls",
+                moveBody.contains("updateTmdbPlaybackScrollContentHeight();"));
+        assertTrue("the full-height content contract must be restored when TMDB controls move back",
+                restoreBody.contains("updateTmdbPlaybackScrollContentHeight();"));
     }
 
     @Test
@@ -2697,8 +3114,10 @@ public class VideoActivityLayoutTest {
         assertTrue("unmatched TMDB fallback must keep a readable dark scrim over the app wallpaper",
                 source.indexOf("mBinding.videoContextScrim.setBackgroundResource(R.drawable.shape_video_context_scrim);", scrim) > scrim
                         && source.indexOf("mBinding.videoContextScrim.setVisibility(View.VISIBLE);", scrim) > scrim);
+        // 回退必须排在 backdrop surface 判定之前：原生增强下 TMDB 未匹配时，
+        // 若先命中 backdrop surface 就会拿到不透明底色，App 壁纸再也透不出来。
         assertTrue("fusion theme refresh must not cover unmatched fallback with a solid color",
-                source.indexOf("mBinding.getRoot().setBackgroundColor(mTmdbFallbackToNative || shouldUseTmdbBackdropSurface() ? Color.TRANSPARENT", theme) > theme);
+                source.indexOf("int base = mTmdbFallbackToNative ? Color.TRANSPARENT", theme) > theme);
     }
 
     @Test
@@ -2720,11 +3139,14 @@ public class VideoActivityLayoutTest {
         assertTrue("colorful and native styled TMDB detail must receive backdrop slideshow changes",
                 source.indexOf("shouldUseTmdbBackdropSurface()", init) > init
                         && source.indexOf("setContextWall(imageUrl, true);", init) > init);
-        assertTrue("colorful and native styled TMDB detail must use the transparent fullscreen backdrop layout",
+        assertTrue("colorful and native styled TMDB detail must use the fullscreen backdrop layout with transparent inner layers",
                 source.indexOf("applyOriginalEnhancedBackdropLayout();", init) > init
                         && source.indexOf("mBinding.scroll.setBackgroundColor(Color.TRANSPARENT);", init) > init);
-        assertTrue("colorful and native styled TMDB detail must not be covered by later theme surface refreshes",
-                source.indexOf("mTmdbFallbackToNative || shouldUseTmdbBackdropSurface() ? Color.TRANSPARENT", themeSurface) > themeSurface);
+        // root 例外：内层保持透明让 backdrop 透出，但 root 垫不透明底色。contextWall 初始 gone、
+        // 图要等网络，root 若透明会露出 Material3 DynamicColors 窗口底色(实测紫)。
+        // contextWall 是首个子视图、绘制在 root 底色之上，所以垫底不会遮住 backdrop。
+        assertTrue("the backdrop surface must keep an opaque root base so the window background never shows through",
+                source.indexOf("shouldUseTmdbBackdropSurface() ? enhancedBackdropBaseColor()", themeSurface) > themeSurface);
         assertTrue("header theme refresh must re-hide the standalone hero artwork",
                 source.indexOf("mTmdbHeaderView.refreshTheme();", move) > move
                         && source.indexOf("mTmdbHeaderView.hideNativeHeroBackdrop();", move) > move);
@@ -3055,10 +3477,190 @@ public class VideoActivityLayoutTest {
         }
     }
 
+    @Test
+    public void bothPlayersInitializeEpisodesAndPlaybackFromPreselectedCachedFlags() throws Exception {
+        for (Path root : List.of(findMobileJavaPath(), findLeanbackJavaPath())) {
+            Path sourcePath = root.resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
+            String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+            String click = methodBody(source, "public void onItemClick(Flag item)", "@Override");
+
+            assertFalse(sourcePath + " must not treat a cached selected flag as an initialized page",
+                    click.contains("if (resolved.isSelected()) return;"));
+            String initialBinding = root.equals(findMobileJavaPath())
+                    ? "boolean initialBinding = mEpisodeAdapter == null || mEpisodeAdapter.isEmpty();"
+                    : "boolean initialBinding = mEpisodeAdapter.getItemCount() == 0;";
+            assertTrue(sourcePath + " must distinguish an empty episode adapter from a user re-click",
+                    click.contains(initialBinding)
+                            && click.contains("if (resolved.isSelected() && !initialBinding) return;"));
+            assertTrue(sourcePath + " must start the inherited selected episode after rebuilding its list",
+                    click.contains("if (initialBinding && !episodeChanged) onRefresh();"));
+        }
+    }
+
     private static Path findMobileResPath() {
         Path moduleRelative = Path.of("src", "mobile", "res");
         if (Files.exists(moduleRelative)) return moduleRelative;
         return Path.of("app", "src", "mobile", "res");
+    }
+
+    @Test
+    public void mobileVideoLayoutTreeHasNoConflictingDuplicateIds() throws Exception {
+        // 崩溃回归：activity_video.xml 与它 include 的布局属于同一棵视图树，ViewBinding.bind()
+        // 用 findChildViewById 按 id 查找并强转成声明处的类型。同名 id 指向不同控件类型时，
+        // 先命中的那个会被错误强转 —— 曾因新增 @id/quality(ImageView) 撞上详情页
+        // @id/quality(RecyclerView) 导致 VideoActivity 启动即 ClassCastException。
+        // 判定要贴合 findChildViewById 的真实语义：它返回「深度优先的第一个命中」。
+        // 所以同名 id 本身不危险 —— 危险的是某个 binding 根布局直接声明的 id，在它自己的
+        // inflate 顺序里被更早出现的 include 子树抢先命中且类型不同。
+        // 既有的 @id/video、@id/karaoke 声明在 include 之前，先命中的就是自己，因此安全；
+        // @id/prev、@id/next 分属两个各自独立的 binding 根，互不影响。
+        // 必须覆盖 layout 的所有配置变体：ViewBinding 为它们生成同一个 binding 类，
+        // bind() 在横屏/平板上跑的是另一份 XML，只扫 layout/ 会让变体里的撞名 id 完全没有防护。
+        int checked = 0;
+        for (Path variantDir : collectLayoutVariantDirs()) {
+            for (Path layout : collectVideoLayoutTree(variantDir)) {
+                List<String[]> flattened = flattenInflateOrder(layout, variantDir, new HashSet<>());
+                Map<String, String> firstType = new HashMap<>();
+                for (String[] entry : flattened) firstType.putIfAbsent(entry[0], entry[1]);
+                for (String[] declared : collectDirectIdTypes(layout, variantDir)) {
+                    assertEquals("@id/" + declared[0] + " declared in " + variantDir.getFileName() + "/" + layout.getFileName()
+                                    + " is shadowed by an earlier include with a different view type; "
+                                    + "ViewBinding.bind() will throw ClassCastException",
+                            declared[1], firstType.get(declared[0]));
+                }
+                checked++;
+            }
+        }
+        // 四个 activity_video 变体各自展开出多个布局，远多于 4；防止解析静默失效后测试空转
+        assertTrue("layout variants must all be traversed, only checked " + checked, checked > 12);
+    }
+
+    /** 所有含 activity_video.xml 的 layout 配置变体目录（layout / layout-land / layout-sw600dp / ...）。 */
+    private static List<Path> collectLayoutVariantDirs() throws Exception {
+        List<Path> dirs;
+        try (var stream = Files.list(findMobileResPath())) {
+            dirs = stream.filter(Files::isDirectory)
+                    .filter(path -> path.getFileName().toString().startsWith("layout"))
+                    .filter(path -> Files.exists(path.resolve("activity_video.xml")))
+                    .sorted()
+                    .collect(Collectors.toList());
+        }
+        assertFalse("no mobile layout variants with activity_video.xml found", dirs.isEmpty());
+        return dirs;
+    }
+
+    /** 按 inflate 顺序展开 include，返回 (id, 标签名) 序列，模拟 findChildViewById 的深度优先查找。 */
+    private static List<String[]> flattenInflateOrder(Path layout, Path variantDir, Set<String> guard) throws Exception {
+        List<String[]> flattened = new ArrayList<>();
+        if (layout == null || !guard.add(layout.toString())) return flattened;
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(false);
+        NodeList nodes = factory.newDocumentBuilder().parse(layout.toFile()).getElementsByTagName("*");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Element element = (Element) nodes.item(i);
+            if (element.getTagName().equals("include")) {
+                // include 自身的 android:id 会覆盖被包含布局的根 id，ViewBinding 也会为它生成字段，
+                // 所以要按 inflate 顺序先记下它，再展开子树。
+                // 类型必须取被包含布局的「根元素」：ViewBinding 生成的是该布局的 binding 类，
+                // 其 rootView 就是根元素类型（如 ViewControlVodBinding.rootView 是 RelativeLayout）。
+                // 不能用子树第一个带 id 的元素——根元素往往自己没有 id（view_progress 的根 FrameLayout
+                // 无 id），那样会错记成它的某个子控件类型。
+                String includeId = localId(element);
+                String included = element.getAttribute("layout");
+                int slash = included.indexOf('/');
+                Path target = slash >= 0 ? resolveLayout(included.substring(slash + 1), variantDir) : null;
+                if (includeId != null) {
+                    String rootType = rootTagOf(target);
+                    assertTrue("cannot resolve root element type of " + included, rootType != null);
+                    flattened.add(new String[]{includeId, rootType});
+                }
+                flattened.addAll(flattenInflateOrder(target, variantDir, guard));
+                continue;
+            }
+            String id = localId(element);
+            if (id != null) flattened.add(new String[]{id, element.getTagName()});
+        }
+        return flattened;
+    }
+
+    /**
+     * 只取本布局文件直接声明的 id 及其控件类型，即 ViewBinding 会为该布局生成的字段。
+     * <p>
+     * include 的 id 也要算进来：ViewBinding 同样为它生成字段，类型是被包含布局的根元素
+     * （bind() 内部会走 XxxBinding.bind(view) 把它强转成根元素类型）。漏掉它就意味着
+     * 「撞名方是 include 而非普通控件」的方向完全没有防护 —— 与曾导致启动崩溃的
+     * @id/quality 事故只差一个方向。
+     */
+    private static List<String[]> collectDirectIdTypes(Path layout, Path variantDir) throws Exception {
+        List<String[]> declared = new ArrayList<>();
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(false);
+        NodeList nodes = factory.newDocumentBuilder().parse(layout.toFile()).getElementsByTagName("*");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Element element = (Element) nodes.item(i);
+            String id = localId(element);
+            if (id == null) continue;
+            if (element.getTagName().equals("include")) {
+                String included = element.getAttribute("layout");
+                int slash = included.indexOf('/');
+                String rootType = rootTagOf(slash >= 0 ? resolveLayout(included.substring(slash + 1), variantDir) : null);
+                assertTrue("cannot resolve root element type of " + included, rootType != null);
+                declared.add(new String[]{id, rootType});
+                continue;
+            }
+            declared.add(new String[]{id, element.getTagName()});
+        }
+        return declared;
+    }
+
+    private static String localId(Element element) {
+        String raw = element.getAttribute("android:id");
+        int slash = raw.indexOf('/');
+        return slash >= 0 && slash + 1 < raw.length() ? raw.substring(slash + 1) : null;
+    }
+
+    /** 布局文件根元素的标签名，即 ViewBinding 为它生成的 binding 类 rootView 的类型。 */
+    private static String rootTagOf(Path layout) throws Exception {
+        if (layout == null) return null;
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(false);
+        return factory.newDocumentBuilder().parse(layout.toFile()).getDocumentElement().getTagName();
+    }
+
+    private static List<Path> collectVideoLayoutTree(Path variantDir) throws Exception {
+        List<Path> layouts = new ArrayList<>();
+        Deque<String> pending = new ArrayDeque<>(List.of("activity_video"));
+        Set<String> seen = new HashSet<>();
+        while (!pending.isEmpty()) {
+            String name = pending.poll();
+            if (!seen.add(name)) continue;
+            Path layout = resolveLayout(name, variantDir);
+            assertTrue("include target @layout/" + name + " referenced from " + variantDir.getFileName()
+                    + " must resolve", layout != null);
+            layouts.add(layout);
+            String source = new String(Files.readAllBytes(layout), StandardCharsets.UTF_8)
+                    .replaceAll("(?s)<!--.*?-->", "");
+            Matcher matcher = Pattern.compile("layout=\"@layout/([A-Za-z0-9_]+)\"").matcher(source);
+            while (matcher.find()) pending.add(matcher.group(1));
+        }
+        assertTrue("activity_video include tree must resolve", layouts.size() > 3);
+        return layouts;
+    }
+
+    /**
+     * 按 aapt 的配置匹配顺序解析布局：先找同配置变体目录，再退回 layout/，最后到 main flavor。
+     * 例如横屏下 activity_video 用 layout-land/ 的版本，而它 include 的 view_control_vod
+     * 只有 layout/ 一份，就退回 layout/。
+     */
+    private static Path resolveLayout(String name, Path variantDir) {
+        List<Path> candidates = new ArrayList<>();
+        candidates.add(variantDir.resolve(name + ".xml"));
+        candidates.add(findMobileResPath().resolve(Path.of("layout", name + ".xml")));
+        candidates.add(findMainResPath().resolve(Path.of("layout", name + ".xml")));
+        for (Path candidate : candidates) {
+            if (Files.exists(candidate)) return candidate;
+        }
+        return null;
     }
 
     @Test
@@ -3197,5 +3799,56 @@ public class VideoActivityLayoutTest {
         int first = source.indexOf("android:id=\"@+id/" + firstId + "\"");
         int second = source.indexOf("android:id=\"@+id/" + secondId + "\"");
         return first >= 0 && second >= 0 && first < second;
+    }
+
+    /**
+     * 原生选集列表模式保持单行横向滚动。
+     *
+     * 「按钮内文本居中」的诉求由 adapter_episode_hori.xml 的 gravity=center 加左右成对内边距
+     * 满足，不是把整条列表改成换行居中的 Flexbox —— 那会让列表模式看起来像网格模式，
+     * 两种视图模式失去区分。
+     */
+    @Test
+    public void mobileEpisodeListModeStaysHorizontalSingleRow() throws Exception {
+        Path sourcePath = findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+
+        int method = source.indexOf("private void updateEpisodeLayout(List<Episode> items, boolean useTmdbCard)");
+        assertTrue(sourcePath + " is missing updateEpisodeLayout", method >= 0);
+        int gridBranch = source.indexOf("int span = getEpisodeSpan(items, useTmdbCard);", method);
+        String listBranch = source.substring(method, gridBranch);
+
+        assertTrue("list mode must use a horizontal LinearLayoutManager",
+                listBranch.contains("new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)"));
+        assertFalse("list mode must not wrap items with a Flexbox layout manager",
+                listBranch.contains("FlexboxLayoutManager"));
+        assertFalse(sourcePath + " must not import FlexboxLayoutManager for the episode list",
+                source.contains("import com.google.android.flexbox.FlexboxLayoutManager;"));
+    }
+
+    /**
+     * 原生选集按钮的文本靠左右成对内边距居中。
+     *
+     * shape_video_item 自带 12dp 左右内边距，setPadding 只覆盖左边会把右边一起清成 0，
+     * 文本随之偏向一侧。徽标可见时左边额外让出 92dp 供徽标占位。
+     */
+    @Test
+    public void mobileEpisodeHoriTextKeepsSymmetricHorizontalPadding() throws Exception {
+        Path sourcePath = findMobileJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "holder", "EpisodeHoriHolder.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+
+        assertTrue(sourcePath + " must resolve a shared horizontal padding",
+                source.contains("int horizontal = ResUtil.dp2px(12);"));
+        assertTrue(sourcePath + " must apply the same padding on both sides",
+                source.contains("binding.text.setPadding(visible ? ResUtil.dp2px(92) : horizontal, binding.text.getPaddingTop(), horizontal, binding.text.getPaddingBottom());"));
+
+        Path layout = findMobileResPath().resolve(Path.of("layout", "adapter_episode_hori.xml"));
+        String xml = new String(Files.readAllBytes(layout), StandardCharsets.UTF_8);
+        int text = xml.indexOf("android:id=\"@+id/text\"");
+        int card = xml.indexOf("android:id=\"@+id/card\"");
+        assertTrue(layout + " is missing @+id/text", text >= 0);
+        assertTrue("the episode button text must be centered inside the button",
+                xml.indexOf("android:gravity=\"center\"", text) > text
+                        && xml.indexOf("android:gravity=\"center\"", text) < card);
     }
 }

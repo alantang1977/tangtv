@@ -51,8 +51,8 @@
     },
     "ffmpeg": {
       "repo": "https://github.com/FongMi/FFmpeg.git",
-      "commit": "04482c8d13ac27b2a9fe93f5d388929eef8af5f4",
-      "version": "9.0-fongmi"
+      "commit": "177f090e0503b7e013922ca903bde14b1c375f18",
+      "version": "9.0.1-fongmi"
     },
     "freetype2": {
       "repo": "https://gitlab.freedesktop.org/freetype/freetype.git",

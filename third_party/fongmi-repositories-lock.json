@@ -41,7 +41,7 @@
     "ffmpeg": {
       "repo": "https://github.com/FongMi/FFmpeg.git",
       "selected_branch": "release-9.0-fongmi",
-      "selected_commit": "04482c8d13ac27b2a9fe93f5d388929eef8af5f4",
+      "selected_commit": "177f090e0503b7e013922ca903bde14b1c375f18",
       "default_branch": "master",
       "default_commit": "f947bc9c1532e7bcc95da11d9574cac3543490b3",
       "usage": "MPV native stack; mirrored by third_party/mpv-native-lock.json"

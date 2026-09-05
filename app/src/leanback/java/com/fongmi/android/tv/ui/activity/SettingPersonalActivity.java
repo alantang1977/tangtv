@@ -11,6 +11,7 @@ import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.HomeButton;
 import com.fongmi.android.tv.databinding.ActivitySettingPersonalBinding;
 import com.fongmi.android.tv.event.RefreshEvent;
+import com.fongmi.android.tv.setting.AppBranding;
 import com.fongmi.android.tv.setting.AutoBackupPolicy;
 import com.fongmi.android.tv.setting.GroupRuleConfig;
 import com.fongmi.android.tv.setting.PlayerSetting;
@@ -75,6 +76,7 @@ public class SettingPersonalActivity extends BaseActivity {
         mBinding.searchUi.setOnClickListener(this::setSearchUi);
         mBinding.searchResultSort.setOnClickListener(this::setSearchResultSort);
         // mBinding.searchColumn.setOnClickListener(this::setSearchColumn); // 在搜索页面切换更方便
+        mBinding.appBranding.setOnClickListener(this::startAppBranding);
         mBinding.resetApp.setOnClickListener(this::showResetAppDialog);
     }
 
@@ -101,6 +103,7 @@ public class SettingPersonalActivity extends BaseActivity {
         mBinding.searchUiText.setText((searchUi = getResources().getStringArray(R.array.select_search_ui))[Setting.getSearchUi()]);
         mBinding.searchResultSortText.setText((searchResultSort = getResources().getStringArray(R.array.select_search_result_sort))[Setting.getSearchResultSort()]);
         // mBinding.searchColumnText.setText(getSearchColumnText()); // 在搜索页面切换更方便
+        mBinding.appBrandingText.setText(AppBranding.getSummary(this));
     }
 
     private String getSearchColumnText() {
@@ -216,6 +219,10 @@ public class SettingPersonalActivity extends BaseActivity {
                 .setNegativeButton(R.string.dialog_negative, null)
                 .setPositiveButton(R.string.dialog_positive, (dialog, which) -> resetApp())
                 .show();
+    }
+
+    private void startAppBranding(View view) {
+        AppBrandingActivity.start(this);
     }
 
     private void resetApp() {

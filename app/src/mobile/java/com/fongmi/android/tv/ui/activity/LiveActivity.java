@@ -2187,6 +2187,7 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
         if (mOsd != null) mOsd.release();
         mViewModel.url().removeObserver(mObserveUrl);
         mViewModel.epg().removeObserver(mObserveEpg);
+        if (mKeyDown != null) mKeyDown.release();
         super.onDestroy();
     }
 }

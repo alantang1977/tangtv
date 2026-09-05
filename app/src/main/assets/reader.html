@@ -335,6 +335,15 @@ function renderContent(){
     // 内容被替换 → 作废在途的恢复定位循环，并解除它设下的上报锁
     restoreGen++;
     restoringPage = false;
+    // 换章即清锚点记忆：PDF 章在 pdfDoc 解析完成前 anchorTotal() 为 0，
+    // effectiveAnchorIndex() 会在 total<=0 处早退，不经过 currentAnchorIndex()
+    // 的归零短路 —— 上一章的高位值会残留下来，把新章第 1 页记成上一章的位置。
+    lastAnchorIndex = 0;
+    // PDF 代号在这里也要自增：renderPdf() 只在新章还是 PDF 时才调用，
+    // 从 PDF 切到漫画时上一章的 pageSettled 仍会跑，把 pdfAppendedCount 加到
+    // numPages 后调 appendChapterNav()，翻页按钮就被插到漫画第 5 张图后面。
+    pdfGen++;
+    pdfDoc = null; pdfAppendedCount = 0;
     var r = document.getElementById('reader');
     r.innerHTML = '';
     navAppended = false;
@@ -496,22 +505,34 @@ function loadMoreComic(){
 
 /* ===================== PDF 漫画渲染（PDF.js） ===================== */
 var pdfDoc = null, pdfPageIdx = 0, renderedPdfPages = {}, pdfRendering = false, pdfAppendedCount = 0;
+/** PDF 渲染代号：每次换章自增，作废上一章仍在途的渲染回调。 */
+var pdfGen = 0;
 function renderPdf(){
     var r = document.getElementById('reader');
     r.innerHTML = '';
+    pdfGen++;
     pdfDoc = null; pdfPageIdx = 0; renderedPdfPages = {}; pdfRendering = false; pdfAppendedCount = 0;
     if(!DATA.pdfFile){ r.innerHTML = '<div class="pdf-error">未找到 PDF 文件</div>'; return; }
     if(!window.pdfjsLib){ r.innerHTML = '<div class="pdf-error">PDF 组件加载失败</div>'; return; }
     showLoading(true);
+    // getDocument 的两个回调也必须带代号：#reader 是所有章节共用的容器，
+    // 上一章的 PDF 慢加载在用户已切到别章后完成/失败时，会把新章的内容整段替换掉
+    // （失败分支写 pdf-error）或把旧章的 canvas 与 pdfDoc 塞进新章。
+    var gen = pdfGen;
     pdfjsLib.getDocument(DATA.pdfFile).promise.then(function(doc){
-        pdfDoc = doc;
+        // 先收遮罩再判代号：遮罩是全屏 z-index:10002，只有这里和首屏注入会隐藏它。
+        // 放在代号判定之后，跨类型换章（PDF→漫画）时旧章的 getDocument 早退，
+        // 遮罩就永久盖在新章上面吞掉所有点击，只能按返回键退出。
         showLoading(false);
+        if(gen !== pdfGen) return;
+        pdfDoc = doc;
         renderPdfMore();
         // 此时才知道总页数：注入时 pdfDoc 还是 null，anchorTotal() 为 0，
         // 那一刻的上报会被 ReaderHistory 丢掉，所以这里补一次。
         reportProgress();
     }).catch(function(e){
         showLoading(false);
+        if(gen !== pdfGen) return;
         // 用 textContent：本地模式下 DATA.pdfFile 是用户真实路径，
         // pdf.js 会把它拼进异常消息，走 innerHTML 等于把文件名当 HTML 执行。
         var d = document.createElement('div');
@@ -544,15 +565,28 @@ function renderPdfPage(n){
     c.style.width = '100%'; c.style.height = 'auto';
     c.dataset.page = n;
     document.getElementById('reader').appendChild(c);
+    // 代号：换章会把计数清零，上一章仍在途的渲染回调若继续 ++，
+    // 会把新章的 pdfAppendedCount 撑到 numPages，让「一页未画」也被判成排版完成。
+    var gen = pdfGen;
+    // 无论渲染成功还是失败都要计数：anchorsSettled() 用它判断「整章是否已排版完」，
+    // 少算一页就会让这一章永远无法记录成读完，进度也永远停在失败页之前。
+    function pageSettled(){
+        if(gen !== pdfGen) return;   // 本次渲染属于已被替换的章节
+        updateProgressBar();
+        pdfAppendedCount++;
+        if(pdfDoc && pdfAppendedCount >= pdfDoc.numPages) appendChapterNav();
+    }
     pdfDoc.getPage(n).then(function(p){
-        var viewport = p.getViewport({scale:2});
-        c.width = viewport.width; c.height = viewport.height;
-        p.render({canvasContext:c.getContext('2d'), viewport:viewport}).promise.then(function(){
-            updateProgressBar();
-            pdfAppendedCount++;
-            if(pdfDoc && pdfAppendedCount >= pdfDoc.numPages) appendChapterNav();
-        });
-    });
+        // fulfillment 里同步抛错（getContext 返回 null、canvas 尺寸分配失败等）
+        // 不会被同一个 then 的 rejection 处理器捕获，必须自己兜住，否则这一页永不计数。
+        try {
+            var viewport = p.getViewport({scale:2});
+            c.width = viewport.width; c.height = viewport.height;
+            p.render({canvasContext:c.getContext('2d'), viewport:viewport}).promise.then(pageSettled, pageSettled);
+        } catch(e){
+            pageSettled();
+        }
+    }, pageSettled);
 }
 function showLoading(v){ var el = document.getElementById('loadingOverlay'); if(el) el.style.display = v ? 'flex' : 'none'; }
 
@@ -844,18 +878,26 @@ document.getElementById('toggleScroll').addEventListener('click', toggleAuto);
 
 /* ===================== 书签功能已移除，改用 APP 内播放历史记录 ===================== */
 
+/** 单调毫秒时钟：不受系统时间校正影响，用于所有时长比较。 */
+function nowMs(){
+    return (window.performance && performance.now) ? performance.now() : Date.now();
+}
+
 /* ===================== 进度条 ===================== */
 function updateProgressBar(){
     var wrap = document.getElementById('progressBar'), fill = document.getElementById('progressFill'), text = document.getElementById('progressText');
     if(!wrap || !fill || !text) return;
     // 与进度记录用同一套锚点，保证进度条读数和恢复位置一致
-    var els = anchorEls(), total = anchorTotal();
+    var total = anchorTotal();
     if(total <= 0) return;
     wrap.style.display = 'flex';
-    var loaded = 0, vh = window.innerHeight;
-    for(var i = 0; i < els.length; i++){ if(els[i].getBoundingClientRect().top < vh) loaded++; else break; }
-    var current = Math.min(total, Math.max(1, loaded));
-    fill.style.width = Math.min(100, (loaded / total) * 100) + '%';
+    // 读数取「当前锚点」而不是「已加载数量」：漫画首批就挂 5 张 DOM，
+    // 按已加载算会在刚打开时显示 5 / 95，让人以为跳到了第 5 页。
+    // 例外是整章第一屏就全部露出来了，此时确实全读到了，读数给总数。
+    // 判据用「最后一个锚点的底边落在视口内」，不能用 body 是否可滚动 ——
+    // #reader 的 min-height:105vh 让页面永远可滚动，那个判据恒为真。
+    var current = Math.min(total, effectiveAnchorIndex() + 1);
+    fill.style.width = Math.min(100, (current / total) * 100) + '%';
     text.textContent = current + ' / ' + total;
 }
 
@@ -863,7 +905,7 @@ function updateProgressBar(){
 var lastTap = 0;
 document.getElementById('reader').addEventListener('click', function(e){
     e.stopPropagation();
-    var now = Date.now(), delta = now - lastTap; lastTap = now;
+    var now = nowMs(), delta = now - lastTap; lastTap = now;
     if(delta > 0 && delta < 300){
         if(crystalVisible){ if(panelVisible) hidePanel(); else hideCrystalOverlay(); }
         else showCrystalOverlay();
@@ -919,15 +961,76 @@ function anchorTotal(){
 /**
  * 视口顶部所在的锚点序号（0 基）。
  * 小说取仍露在视口内的第一段（阈值 0）；漫画整页很高，取跨过视口中线的那页。
+ *
+ * 只能用 bottom 判断，不能用 height：小说段落带 content-visibility:auto，
+ * 实测 getBoundingClientRect().height 恒为 0 而 bottom 有效且单调递增，
+ * 拿 height 当「未就绪」信号会让所有小说章的进度永远停在第 1 段。
+ *
+ * 两道退化保护，缺一个都会把进度虚报到批次末尾（95 页漫画停在第 2 页却记成第 5 页、
+ * 33 段小说刚打开就记成第 33 段）：
+ * 1) 停在顶部时当前锚点必然是第 0 个，直接短路，不依赖任何 rect；
+ * 2) 没有任何锚点跨过阈值时，循环末尾的 `idx = i` 已经推到了最后一个锚点。
+ *    只有锚点确已排版完（anchorsSettled）且真的滚到文末，才说明确实读到那里；
+ *    否则是图未解码/加载失败造成的退化测量 —— 此时文档异常地矮，轻扫就能「到底」，
+ *    沿用上一次可信值，既不虚报也不倒退。
  */
+var lastAnchorIndex = 0;
 function currentAnchorIndex(){
+    var scrolled = window.scrollY || window.pageYOffset || 0;
+    if(scrolled <= 0) return lastAnchorIndex = 0;
     var els = anchorEls();
     var threshold = DATA.kind === 1 ? 0 : window.innerHeight * 0.5;
-    var idx = 0;
+    var idx = 0, found = false;
     for(var i = 0; i < els.length; i++){
-        if(els[i].getBoundingClientRect().bottom > threshold){ idx = i; break; }
+        if(els[i].getBoundingClientRect().bottom > threshold){ idx = i; found = true; break; }
         idx = i;
     }
+    if(found || (anchorsSettled() && atDocumentEnd())) return lastAnchorIndex = idx;
+    return lastAnchorIndex;
+}
+
+/** 是否已滚到文档末尾。单独用不可信，必须与 anchorsSettled() 一起判，详见后者注释。 */
+function atDocumentEnd(){
+    return (window.scrollY || window.pageYOffset || 0) + window.innerHeight >= document.body.scrollHeight - 2;
+}
+
+/**
+ * 锚点是否已真正排版完 —— 只有此时才能相信「已滚到文档末尾」这类整体判据。
+ *
+ * 退化态下文档会异常地矮，轻扫就能满足「到底」，把没读到的内容记成读完：
+ * - 漫画：图加载失败/未解码时高度恒为 0，不占空间。末页有真实高度才算排版完。
+ * - PDF：canvas 先按页序插进 DOM 再异步绘制，未绘制的 canvas 不是 0×0 而是固有
+ *   300×150（配合 width:100% 后高约为视口宽的一半），有高度但并非真实页高，
+ *   所以要看真正画完的页数 pdfAppendedCount。
+ * - 小说：段落受 content-visibility 影响高度恒为 0，无法据高度判断，只能认已到底。
+ */
+function anchorsSettled(){
+    var total = anchorTotal();
+    var els = anchorEls();
+    if(total <= 0 || els.length < total) return false;
+    if(DATA.kind === 3) return pdfDoc != null && pdfAppendedCount >= pdfDoc.numPages;
+    if(DATA.kind === 1) return true;
+    // 漫画看末尾两页：图是一批批各自异步解码的，末页并不保证最后完成
+    // （体积小 / 命中缓存 / 是占位错误图时尤其容易先出来）。只看末页时，
+    // 用户实际停在前几页却可能被记成整章读完。
+    for(var i = Math.max(0, total - 2); i < total; i++){
+        if(els[i].getBoundingClientRect().height <= 0) return false;
+    }
+    return true;
+}
+
+/**
+ * 落库与进度条共用的锚点序号：两边必须同一个真值，否则会出现
+ * 「进度条显示 33/33、退出再进却回到第 30 段」这种读数与记录分叉。
+ */
+function effectiveAnchorIndex(){
+    var total = anchorTotal();
+    if(total <= 0) return 0;
+    var idx = Math.min(total - 1, currentAnchorIndex());   // 先算，保证 memo 始终被更新
+    // 已滚到文档末尾且锚点确已排版完 → 视为读完本章。
+    // 不能只靠 currentAnchorIndex()：小说正文下方还有 140px 内边距 + 章节导航（约 309px），
+    // 末段底边永远进不了视口，历史列表就永远到不了 100%。
+    if(anchorsSettled() && atDocumentEnd()) return total - 1;
     return idx;
 }
 
@@ -935,7 +1038,7 @@ function reportProgress(){
     if(!window.AndroidReader || !AndroidReader.saveProgress) return;
     if(restoringPage || switchingChapter) return;
     var ch = (DATA.chapters || [])[DATA.current] || {};
-    try { AndroidReader.saveProgress(DATA.current|0, ch.url || '', ch.name || DATA.title || '', currentAnchorIndex(), anchorTotal()); } catch(e){}
+    try { AndroidReader.saveProgress(DATA.current|0, ch.url || '', ch.name || DATA.title || '', effectiveAnchorIndex(), anchorTotal()); } catch(e){}
 }
 
 /**
@@ -950,14 +1053,69 @@ function __restoreScroll(pos, total){
     restoreAnchor(Math.round(p));
 }
 
+/**
+ * 用户主动触摸/滚轮/按键后立即放弃恢复。
+ *
+ * 百分比恢复与锚点恢复都会在收敛期反复 scrollTo；漫画/PDF 慢源可能持续数秒乃至 60s。
+ * 若用户开始手动阅读却继续把视口拉回旧位置，体验等同于页面卡死。用户交互的当前位置
+ * 比旧记录优先，作废循环、解锁上报，让下一次 scroll debounce 写入用户真实位置。
+ */
+function cancelRestoreForUser(){
+    if(!restoringPage) return;
+    restoreGen++;
+    restoringPage = false;
+    updateProgressBar();
+    reportProgress();
+}
+window.addEventListener('touchstart', cancelRestoreForUser, {passive:true});
+window.addEventListener('pointerdown', cancelRestoreForUser, {passive:true});
+window.addEventListener('wheel', cancelRestoreForUser, {passive:true});
+window.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'PageUp' || e.key === 'PageDown' || e.key === ' ') cancelRestoreForUser();
+});
+
 /** 旧记录兼容：按章节内滚动百分比定位。 */
 function restoreScrollPercent(p){
-    var tries = 0;
+    // 代号：内容一旦被替换（切章 / 重新注入），本次恢复立即作废，
+    // 否则它会继续对新章 scrollTo，并把新章的进度按旧百分比写掉。
+    var gen = ++restoreGen;
+    restoringPage = true;
+    // 预算给足：漫画要一批批（BATCH 张）催到全部进 DOM 才算排版完，20 次×100ms 不够
+    var deadline = nowMs() + 60000;
+    var lastMax = null, stable = 0;
     (function seek(){
+        if(gen !== restoreGen) return;
+        // 小说的 content-visibility 估算高度在用户滚动前根本不变，所以「高度稳定」
+        // 对它是空护栏（首帧即稳定）。真正的判据是「按目标百分比滚过去之后，
+        // 换算回来的锚点位置也稳定下来」—— 与 restoreAnchor 一样先滚再收敛。
         var max = document.body.scrollHeight - window.innerHeight;
-        if(max <= 0 && tries++ < 20){ setTimeout(seek, 100); return; }
-        window.scrollTo(0, max * p);
+        if(max > 0) window.scrollTo(0, max * p);
+        var idx = effectiveAnchorIndex();
+        var settled = anchorTotal() > 0 && anchorsSettled();
+        if(!settled || lastMax === null || lastMax !== idx) stable = 0;
+        else stable++;
+        lastMax = idx;
+        if(stable < 3 && nowMs() < deadline){
+            // 漫画 / PDF 要主动催加载：光等不会让剩下的页自己进 DOM，
+            // anchorsSettled() 就永远为假，旧百分比记录既恢复不了也迁移不了。
+            if(DATA.kind === 3) renderPdfMore();
+            else if(DATA.kind !== 1) loadMoreComic();
+            setTimeout(seek, 60);
+            return;
+        }
+        var ready = stable >= 3;
+        // 必须解锁：__injectReader 在 DATA.restore 时设了 restoringPage，
+        // 这条旧记录分支不解锁的话整个会话都不再上报进度，旧记录也永远迁不到新语义。
+        restoringPage = false;
         updateProgressBar();
+        // 迁移旧记录时不能盲目上报：短章内容一屏放得下时，滚到 max*p（min-height 撑出的
+        // 约 5vh）后当前锚点仍是第 0 个，上报等于把用户存的 90% 覆盖成章首。
+        // 只有换算出的锚点不比原百分比对应的位置更靠前，才是一次有意义的迁移。
+        if(ready){
+            var total = anchorTotal();
+            var expected = Math.min(total - 1, Math.floor(p * total));
+            if(effectiveAnchorIndex() >= expected) reportProgress();
+        }
     })();
 }
 
@@ -973,7 +1131,9 @@ function restoreAnchor(index){
     // 代号：内容一旦被替换（切章 / 重新注入），旧的 seek 循环立即作废。
     // 否则它会继续对新章执行 scrollTo，并让 restoringPage 一直为真，堵住进度上报。
     var gen = ++restoreGen;
-    var deadline = Date.now() + 60000;   // 总预算 60s：远程漫画一批批加载到第 N 页很慢
+    // 用 performance.now()：Date.now() 会被系统时间校正影响，向前跳会立刻超时（位置恢复不了），
+    // 向后跳会让循环跑得远超预算。
+    var deadline = nowMs() + 60000;   // 总预算 60s：远程漫画一批批加载到第 N 页很慢
     var lastTop = null, stable = 0;
 
     /** 目标页之前尚未撑开高度（未解码）的页数。 */
@@ -985,12 +1145,15 @@ function restoreAnchor(index){
 
     (function seek(){
         if(gen !== restoreGen) return;   // 内容已被替换，本次恢复作废
-        if(Date.now() > deadline){
+        if(nowMs() > deadline){
             // 超时：停在当前位置，不再纠正（此时至少已滚到已加载部分的目标附近）
             console.log('[reader] restoreAnchor timeout index=' + index);
             restoringPage = false;
             updateProgressBar();
-            reportProgress();
+            // 只有确实到达（或超过）目标锚点才补报。部分加载时 seek 只能滚到已加载末尾，
+            // 此刻上报会把「存第 50 页」倒退成「第 9 页」；一次都没滚动成功时更是直接清成开头。
+            // 不报的代价仅是本次不刷新记录，用户存的位置原样保留。
+            if(effectiveAnchorIndex() >= index) reportProgress();
             return;
         }
         var els = anchorEls();

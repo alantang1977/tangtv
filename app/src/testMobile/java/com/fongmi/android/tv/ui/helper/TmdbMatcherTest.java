@@ -82,6 +82,23 @@ public class TmdbMatcherTest {
         assertThrows(TmdbService.AuthException.class, () -> matcher.searchAndMatch("test title"));
     }
 
+    @Test
+    public void sortSearchResults_ordersExactTitleMatchFirst() {
+        TmdbConfig config = TmdbConfig.objectFrom("{\"apiKey\":\"test\"}");
+        TmdbMatcher matcher = new TmdbMatcher(null, config);
+        List<TmdbItem> results = new ArrayList<>(List.of(
+                item(1, "tv", "后宫露营!", "2022"),
+                item(2, "tv", "甄嬛传", "2011"),
+                item(3, "tv", "宫", "2011")
+        ));
+
+        matcher.sortSearchResults(results, "宫");
+
+        assertEquals(3, results.get(0).getTmdbId());
+        assertEquals(1, results.get(1).getTmdbId());
+        assertEquals(2, results.get(2).getTmdbId());
+    }
+
     private static TmdbItem item(int id, String mediaType, String title, String subtitle) {
         return new TmdbItem(id, mediaType, title, subtitle, "", "", "", "", 8.0, "", "", new ArrayList<>());
     }

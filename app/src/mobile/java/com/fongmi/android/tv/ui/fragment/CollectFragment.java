@@ -476,7 +476,7 @@ public class CollectFragment extends BaseFragment implements MenuProvider, Colle
         }
         String pic = item.getPic().isEmpty() ? getPic() : item.getPic();
         if (isHistoryResume()) HistoryResumeCoordinator.openSelected(requireActivity(), getHistoryResumeCid(), getHistoryResumeKey(), getHistoryResumeTargetCid(), item);
-        else VideoActivity.collect(requireActivity(), item.getSiteKey(), item.getId(), item.getName(), pic, getWallPic());
+        else VideoActivity.collect(requireActivity(), item.getSiteKey(), item.getId(), item.getName(), pic, getWallPic(), getKeyword());
     }
 
     @Override

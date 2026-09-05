@@ -10,6 +10,7 @@ public final class MediaTitleRequest {
     private String vodId;
     private String rawTitle;
     private String rawRemarks;
+    private String searchKeyword;
     private String vodYear;
     private String episodeName;
     private String flag;
@@ -22,6 +23,7 @@ public final class MediaTitleRequest {
         this.vodId = clean(builder.vodId);
         this.rawTitle = clean(builder.rawTitle);
         this.rawRemarks = clean(builder.rawRemarks);
+        this.searchKeyword = clean(builder.searchKeyword);
         this.vodYear = clean(builder.vodYear);
         this.episodeName = clean(builder.episodeName);
         this.flag = clean(builder.flag);
@@ -48,6 +50,10 @@ public final class MediaTitleRequest {
 
     public String getRawRemarks() {
         return rawRemarks;
+    }
+
+    public String getSearchKeyword() {
+        return searchKeyword;
     }
 
     public String getVodYear() {
@@ -84,6 +90,7 @@ public final class MediaTitleRequest {
         private String vodId;
         private String rawTitle;
         private String rawRemarks;
+        private String searchKeyword;
         private String vodYear;
         private String episodeName;
         private String flag;
@@ -108,6 +115,11 @@ public final class MediaTitleRequest {
 
         public Builder rawRemarks(String rawRemarks) {
             this.rawRemarks = rawRemarks;
+            return this;
+        }
+
+        public Builder searchKeyword(String searchKeyword) {
+            this.searchKeyword = searchKeyword;
             return this;
         }
 

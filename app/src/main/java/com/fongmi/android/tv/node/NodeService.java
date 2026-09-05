@@ -76,6 +76,9 @@ public class NodeService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        // startForegroundService 的每个请求都必须有 startForeground 响应；
+        // 系统强杀/更新后重启的 intents 可能不带猫源参数，也不能只依赖 onCreate。
+        startForegroundCompat(notification(getString(R.string.node_prepare)));
         if (intent != null && intent.hasExtra(EXTRA_URL) && nodeLaunched.compareAndSet(false, true)) {
             String url = intent.getStringExtra(EXTRA_URL);
             Messenger reply = intent.getParcelableExtra(EXTRA_REPLY_MESSENGER);
@@ -223,6 +226,7 @@ public class NodeService extends Service {
         msg.setData(data);
         try {
             reply.send(msg);
+            stopSelf();
         } catch (RemoteException ignored) {
         }
     }

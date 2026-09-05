@@ -127,38 +127,6 @@
 
         </androidx.appcompat.widget.LinearLayoutCompat>
 
-        <com.google.android.material.textview.MaterialTextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24dp" android:layout_marginBottom="4dp" android:text="@string/setting_ai_group_detection" android:textColor="@color/white" android:textSize="20sp" android:textStyle="bold" />
-        <androidx.appcompat.widget.LinearLayoutCompat
-            android:id="@+id/aiAdDetection"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/selector_item"
-            android:focusable="true"
-            android:focusableInTouchMode="true"
-            android:orientation="horizontal"
-            android:visibility="gone"
-            tools:visibility="visible">
-
-            <com.google.android.material.textview.MaterialTextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="16dp"
-                android:text="@string/setting_ai_ad_detection"
-                android:textColor="@color/white"
-                android:textSize="18sp" />
-
-            <com.google.android.material.textview.MaterialTextView
-                android:id="@+id/aiAdDetectionText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="end"
-                android:textColor="@color/white"
-                android:textSize="18sp"
-                tools:text="@string/setting_on" />
-
-        </androidx.appcompat.widget.LinearLayoutCompat>
-
 
 
 

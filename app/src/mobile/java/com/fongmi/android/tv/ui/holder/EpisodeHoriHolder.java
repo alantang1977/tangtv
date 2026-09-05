@@ -138,7 +138,10 @@ public class EpisodeHoriHolder extends BaseEpisodeHolder {
         binding.nativeFileSize.setText(fileSize);
         binding.nativeFileSize.setVisibility(visible ? View.VISIBLE : View.GONE);
         binding.nativeFileSize.setSelected(binding.text.isActivated() || binding.text.hasFocus());
-        binding.text.setPadding(visible ? ResUtil.dp2px(92) : 0, binding.text.getPaddingTop(), binding.text.getPaddingEnd(), binding.text.getPaddingBottom());
+        // 左右必须成对给：只改左边会让 shape_video_item 的 12dp 右内边距落单，
+        // 按钮里的文本就偏向一侧而不是居中。徽标占位时左边额外让出 92dp。
+        int horizontal = ResUtil.dp2px(12);
+        binding.text.setPadding(visible ? ResUtil.dp2px(92) : horizontal, binding.text.getPaddingTop(), horizontal, binding.text.getPaddingBottom());
     }
 
     private void bindFileSize(String fileSize) {

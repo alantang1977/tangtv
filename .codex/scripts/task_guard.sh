@@ -7,17 +7,14 @@ usage() {
 Usage:
   task_guard.sh start --id ID --mode MODE --scope PATH [--scope PATH ...]
                       [--adopt-dirty PATH ...]
-  task_guard.sh check [--cycle]
-  task_guard.sh replan --reason TEXT --next TEXT
-  task_guard.sh checkpoint [--document PATH] --message TEXT --next TEXT
+  task_guard.sh check
   task_guard.sh finish --verified EVIDENCE --commit-message MESSAGE
   task_guard.sh status
 
 Modes: quick-fix, standard, assessment, upstream
 
-Exit codes: 0 pass, 2 usage/setup error, 3 checkpoint required,
+Exit codes: 0 pass, 2 usage/setup error,
 4 safety gate (scope, dirty-file, branch, or HEAD violation),
-5 replan required; continue the same task after checkpoint/replan,
 6 commit created but recovery-tag creation needs a direct fix and one retry.
 EOF
 }
@@ -31,12 +28,6 @@ fail_usage() {
 safety_gate() {
   printf 'SAFETY_GATE: %s\n' "$1" >&2
   exit 4
-}
-
-replan_required() {
-  printf 'REPLAN_REQUIRED_CONTINUE: %s\n' "$1" >&2
-  printf 'ACTION_REQUIRED: checkpoint if needed, run replan with a materially different next action, then continue the same task.\n' >&2
-  exit 5
 }
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || fail_usage "not inside a Git worktree"
@@ -72,16 +63,26 @@ path_matches_file() {
 }
 
 list_dirty() {
-  local output="$1"
   {
     git diff --name-only
     git diff --cached --name-only
     git ls-files --others --exclude-standard
-  } | LC_ALL=C sort -u > "$output"
+  } | LC_ALL=C sort -u
 }
 
 list_staged() {
-  git diff --cached --name-only | LC_ALL=C sort -u > "$1"
+  git diff --cached --name-only | LC_ALL=C sort -u
+}
+
+check_staged_whitespace() {
+  local -a paths=()
+  local path
+  while IFS= read -r path; do
+    [[ -n "$path" ]] || continue
+    [[ "$path" == *.patch ]] && continue
+    paths+=("$path")
+  done < <(list_staged)
+  ((${#paths[@]} == 0)) || git diff --cached --check -- "${paths[@]}"
 }
 
 fingerprint_path() {
@@ -106,16 +107,6 @@ write_state() {
   printf '%s\n' "$2" > "$state_dir/$1"
 }
 
-mode_defaults() {
-  case "$1" in
-    quick-fix) printf '%s %s %s\n' 15 4 2 ;;
-    standard) printf '%s %s %s\n' 30 8 3 ;;
-    assessment) printf '%s %s %s\n' 45 6 3 ;;
-    upstream) printf '%s %s %s\n' 45 16 3 ;;
-    *) return 1 ;;
-  esac
-}
-
 show_status() {
   [[ -d "$state_dir" ]] || fail_usage "no task guard state"
   printf 'Task: %s\n' "$(read_state id)"
@@ -123,8 +114,6 @@ show_status() {
   printf 'Status: %s\n' "$(read_state status)"
   printf 'Branch: %s\n' "$(read_state branch)"
   printf 'Base HEAD: %s\n' "$(read_state base_head)"
-  printf 'Cycles: %s/%s\n' "$(read_state cycles)" "$(read_state max_cycles)"
-  printf 'Start/interval-end: %s / %s\n' "$(read_state start_epoch)" "$(read_state interval_end_epoch)"
   printf '%s\n' 'Scope:'
   sed 's/^/  - /' "$state_dir/scope"
   if [[ -s "$state_dir/adopted" ]]; then
@@ -134,15 +123,10 @@ show_status() {
 }
 
 scope_check() {
-  local enforce_interval="$1"
-  local count_cycle="$2"
   local expected_branch
   local expected_head
   local current_branch
   local current_head
-  local current_dirty="$state_dir/current-dirty.tmp"
-  local current_staged="$state_dir/current-staged.tmp"
-  local task_dirty="$state_dir/task-dirty.tmp"
   local path
   local saved_hash
   local current_hash
@@ -166,8 +150,6 @@ scope_check() {
     fi
   done < "$state_dir/protected-fingerprints"
 
-  list_dirty "$current_dirty"
-  : > "$task_dirty"
   while IFS= read -r path; do
     [[ -n "$path" ]] || continue
     if path_matches_file "$path" "$state_dir/protected"; then
@@ -178,66 +160,22 @@ scope_check() {
       violations=$((violations + 1))
       continue
     fi
-    printf '%s\n' "$path" >> "$task_dirty"
-  done < "$current_dirty"
-  LC_ALL=C sort -u "$task_dirty" -o "$task_dirty"
+  done < <(list_dirty)
 
-  list_staged "$current_staged"
   while IFS= read -r path; do
     [[ -n "$path" ]] || continue
     if path_matches_file "$path" "$state_dir/protected" || ! path_matches_file "$path" "$state_dir/scope"; then
       printf 'SCOPE_VIOLATION: staged path is not task-owned: %s\n' "$path" >&2
       violations=$((violations + 1))
     fi
-  done < "$current_staged"
+  done < <(list_staged)
 
   if ((violations > 0)); then
-    safety_gate "$violations scope/worktree violation(s); checkpoint and reconcile before continuing"
+    safety_gate "$violations scope/worktree violation(s); reconcile the declared scope or worktree before continuing"
   fi
 
-  local changed_count
-  local max_files
-  changed_count="$(wc -l < "$task_dirty" | tr -d ' ')"
-  max_files="$(read_state max_files)"
-  if ((changed_count > max_files)); then
-    safety_gate "task-owned changed files $changed_count exceed mode limit $max_files"
-  fi
-
-  if [[ "$count_cycle" == "1" ]]; then
-    local cycles
-    cycles=$(( $(read_state cycles) + 1 ))
-    write_state cycles "$cycles"
-  fi
-
-  local now
-  local start
-  local interval_end
-  local threshold
-  local cycles
-  local max_cycles
-  now="$(date +%s)"
-  start="$(read_state start_epoch)"
-  interval_end="$(read_state interval_end_epoch)"
-  threshold="$(read_state checkpoint_threshold_epoch)"
-  cycles="$(read_state cycles)"
-  max_cycles="$(read_state max_cycles)"
-
-  if [[ "$enforce_interval" == "1" ]]; then
-    if ((cycles > max_cycles)); then
-      replan_required "diagnosis/edit cycles $cycles exceed the current route limit $max_cycles; checkpoint and choose a materially different path"
-    fi
-    if ((now >= threshold)); then
-      local checkpoint_epoch
-      checkpoint_epoch="$(read_state checkpoint_epoch)"
-      if ((checkpoint_epoch < threshold)); then
-        printf 'CHECKPOINT_REQUIRED: 70%% of the review interval has elapsed; persist state before more exploration\n' >&2
-        exit 3
-      fi
-    fi
-  fi
-
-  printf 'PASS: task=%s elapsed=%sm changed=%s/%s cycles=%s/%s\n' \
-    "$(read_state id)" "$(( (now - start) / 60 ))" "$changed_count" "$max_files" "$cycles" "$max_cycles"
+  printf 'PASS: task=%s branch/HEAD, protected dirty paths, scope, and staged paths are safe\n' \
+    "$(read_state id)"
 }
 
 start_task() {
@@ -259,8 +197,10 @@ start_task() {
 
   [[ "$id" =~ ^[A-Za-z0-9._-]+$ ]] || fail_usage "task id must use letters, digits, dot, underscore, or hyphen"
   [[ ${#scopes[@]} -gt 0 ]] || fail_usage "at least one --scope is required"
-  local defaults
-  defaults="$(mode_defaults "$mode")" || fail_usage "unknown mode: $mode"
+  case "$mode" in
+    quick-fix|standard|assessment|upstream) ;;
+    *) fail_usage "unknown mode: $mode" ;;
+  esac
 
   if [[ -d "$state_dir" && -f "$state_dir/status" ]]; then
     local previous_status
@@ -268,17 +208,6 @@ start_task() {
     if [[ "$previous_status" == "active" || "$previous_status" == "commit_needs_tag" ]]; then
       fail_usage "another task guard is unfinished: $(sed -n '1p' "$state_dir/id") ($previous_status)"
     fi
-  fi
-  mkdir -p "$state_root"
-  if [[ -d "$state_dir" ]]; then
-    local archive_dir
-    local previous_id="partial"
-    if [[ -f "$state_dir/id" ]]; then
-      previous_id="$(sed -n '1p' "$state_dir/id")"
-    fi
-    archive_dir="$state_root/archive/$previous_id-$(TZ=Asia/Shanghai date +%Y%m%d%H%M%S)-$$"
-    mkdir -p "$state_root/archive"
-    mv -- "$state_dir" "$archive_dir"
   fi
   mkdir -p "$state_dir"
   : > "$state_dir/scope"
@@ -300,8 +229,8 @@ start_task() {
   done
   LC_ALL=C sort -u "$state_dir/adopted" -o "$state_dir/adopted"
 
-  list_dirty "$state_dir/initial-dirty"
-  list_staged "$state_dir/initial-staged"
+  list_dirty > "$state_dir/initial-dirty"
+  list_staged > "$state_dir/initial-staged"
   local adopted_match
   while IFS= read -r value; do
     [[ -n "$value" ]] || continue
@@ -340,94 +269,14 @@ start_task() {
     fi
   done < "$state_dir/initial-dirty"
 
-  local minutes max_files max_cycles now
-  read -r minutes max_files max_cycles <<< "$defaults"
-  now="$(date +%s)"
   write_state id "$id"
   write_state mode "$mode"
   write_state status active
   write_state branch "$(git branch --show-current)"
   write_state base_head "$(git rev-parse HEAD)"
-  write_state start_epoch "$now"
-  write_state interval_end_epoch "$((now + minutes * 60))"
-  write_state checkpoint_threshold_epoch "$((now + minutes * 60 * 70 / 100))"
-  write_state checkpoint_epoch 0
-  write_state max_files "$max_files"
-  write_state max_cycles "$max_cycles"
-  write_state cycles 0
 
   show_status
   printf 'PASS: task guard started; protected %s pre-existing dirty path(s)\n' "$(wc -l < "$state_dir/protected" | tr -d ' ')"
-}
-
-checkpoint_task() {
-  local document=""
-  local message=""
-  local next_action=""
-  while (($# > 0)); do
-    case "$1" in
-      --document) (($# >= 2)) || fail_usage "--document needs a value"; document="$2"; shift 2 ;;
-      --message) (($# >= 2)) || fail_usage "--message needs a value"; message="$2"; shift 2 ;;
-      --next) (($# >= 2)) || fail_usage "--next needs a value"; next_action="$2"; shift 2 ;;
-      *) fail_usage "unknown checkpoint option: $1" ;;
-    esac
-  done
-  [[ -n "$message" && -n "$next_action" ]] || fail_usage "checkpoint message and next action are required"
-  if [[ -n "$document" ]]; then
-    document="$(normalize_path "$document")" || fail_usage "unsafe checkpoint document path"
-    path_matches_file "$document" "$state_dir/scope" || safety_gate "checkpoint document is outside declared scope: $document"
-    [[ -f "$document" ]] || safety_gate "checkpoint document does not exist: $document"
-    rg -Fq -- "$message" "$document" || safety_gate "checkpoint document does not contain the supplied completion message"
-    rg -Fq -- "$next_action" "$document" || safety_gate "checkpoint document does not contain the supplied next action"
-  else
-    document="-"
-  fi
-  scope_check 0 0
-  local now
-  local minutes
-  now="$(date +%s)"
-  case "$(read_state mode)" in
-    quick-fix) minutes=15 ;;
-    standard) minutes=30 ;;
-    assessment|upstream) minutes=45 ;;
-    *) fail_usage "invalid stored mode" ;;
-  esac
-  write_state checkpoint_epoch "$now"
-  write_state start_epoch "$now"
-  write_state interval_end_epoch "$((now + minutes * 60))"
-  write_state checkpoint_threshold_epoch "$((now + minutes * 60 * 70 / 100))"
-  printf '%s\t%s\t%s\t%s\n' "$now" "$document" "$message" "$next_action" >> "$state_dir/checkpoints.log"
-  printf 'PASS: checkpoint recorded from %s; review cadence reset and task remains active\n' "$document"
-}
-
-replan_task() {
-  local reason=""
-  local next_action=""
-  while (($# > 0)); do
-    case "$1" in
-      --reason) (($# >= 2)) || fail_usage "--reason needs a value"; reason="$2"; shift 2 ;;
-      --next) (($# >= 2)) || fail_usage "--next needs a value"; next_action="$2"; shift 2 ;;
-      *) fail_usage "unknown replan option: $1" ;;
-    esac
-  done
-  [[ -n "$reason" && -n "$next_action" ]] || fail_usage "replan reason and next action are required"
-  scope_check 0 0
-  local now
-  local minutes
-  now="$(date +%s)"
-  case "$(read_state mode)" in
-    quick-fix) minutes=15 ;;
-    standard) minutes=30 ;;
-    assessment|upstream) minutes=45 ;;
-    *) fail_usage "invalid stored mode" ;;
-  esac
-  printf '%s\t%s\t%s\n' "$now" "$reason" "$next_action" >> "$state_dir/replans.log"
-  write_state start_epoch "$now"
-  write_state interval_end_epoch "$((now + minutes * 60))"
-  write_state checkpoint_threshold_epoch "$((now + minutes * 60 * 70 / 100))"
-  write_state checkpoint_epoch "$now"
-  write_state cycles 0
-  printf 'PASS: review interval reset after replan; next=%s\n' "$next_action"
 }
 
 create_recovery_tag() {
@@ -475,34 +324,31 @@ finish_task() {
     create_recovery_tag "$(read_state committed_head)" "$(read_state verification)"
     return
   fi
-  scope_check 0 0
+  scope_check
 
-  local task_dirty="$state_dir/task-dirty.tmp"
-  [[ -s "$task_dirty" ]] || safety_gate "no task-owned changes to commit"
   local path
+  local task_change_count=0
   while IFS= read -r path; do
     [[ -n "$path" ]] || continue
+    path_matches_file "$path" "$state_dir/protected" && continue
+    path_matches_file "$path" "$state_dir/scope" || continue
     git add -A -- "$path"
-  done < "$task_dirty"
+    task_change_count=$((task_change_count + 1))
+  done < <(list_dirty)
+  ((task_change_count > 0)) || safety_gate "no task-owned changes to commit"
 
-  git diff --cached --check || safety_gate "staged task diff failed git diff --cached --check"
-  local staged="$state_dir/finish-staged.tmp"
-  list_staged "$staged"
-  [[ -s "$staged" ]] || safety_gate "task changes did not produce a staged diff"
+  check_staged_whitespace || safety_gate "staged non-patch diff failed whitespace validation"
+  local staged_count=0
   while IFS= read -r path; do
     [[ -n "$path" ]] || continue
+    staged_count=$((staged_count + 1))
     if ! path_matches_file "$path" "$state_dir/scope" || path_matches_file "$path" "$state_dir/protected"; then
       safety_gate "automatic commit would include non-task path: $path"
     fi
-  done < "$staged"
+  done < <(list_staged)
+  ((staged_count > 0)) || safety_gate "task changes did not produce a staged diff"
 
-  local message_file="$state_dir/commit-message.txt"
-  {
-    printf '%s\n\n' "$commit_message"
-    printf 'Verification: %s\n' "$verified"
-    printf 'Task-Guard: %s\n' "$(read_state id)"
-  } > "$message_file"
-  git commit -F "$message_file"
+  git commit -m "$commit_message" -m "Verification: $verified" -m "Task-Guard: $(read_state id)"
   local commit
   commit="$(git rev-parse HEAD)"
   write_state committed_head "$commit"
@@ -518,16 +364,7 @@ shift
 
 case "$command_name" in
   start) start_task "$@" ;;
-  check)
-    count_cycle=0
-    if (($# > 0)); then
-      [[ "$1" == "--cycle" && $# == 1 ]] || fail_usage "check accepts only --cycle"
-      count_cycle=1
-    fi
-    scope_check 1 "$count_cycle"
-    ;;
-  checkpoint) checkpoint_task "$@" ;;
-  replan) replan_task "$@" ;;
+  check) (($# == 0)) || fail_usage "check accepts no options"; scope_check ;;
   finish) finish_task "$@" ;;
   status) (($# == 0)) || fail_usage "status accepts no options"; show_status ;;
   -h|--help|help) usage ;;

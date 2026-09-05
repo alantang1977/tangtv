@@ -53,7 +53,6 @@ public class SettingPlayerActivity extends BaseActivity implements UaListener, B
     private String[] render;
     private String[] scale;
     private String[] osd;
-    private String[] introSkipMode;
 
     public static void start(Activity activity) {
         activity.startActivity(new Intent(activity, SettingPlayerActivity.class));
@@ -79,7 +78,6 @@ public class SettingPlayerActivity extends BaseActivity implements UaListener, B
         mBinding.tunnelText.setText(getSwitch(PlayerSetting.isTunnel()));
         setPerformanceText();
         setPlayerButtonsText();
-        mBinding.adblockText.setText(getSwitch(Setting.isAdblock()));
         mBinding.speedText.setText(format.format(PlayerSetting.getSpeed()));
         mBinding.bufferText.setText(String.valueOf(PlayerSetting.getBuffer()));
         mBinding.bufferBytesText.setText((bufferBytes = ResUtil.getStringArray(R.array.select_buffer_bytes))[PlayerSetting.getBufferBytesOption()]);
@@ -89,7 +87,6 @@ public class SettingPlayerActivity extends BaseActivity implements UaListener, B
         mBinding.autoPlayText.setText(getSwitch(PlayerSetting.isAutoPlay()));
         mBinding.autoChangeText.setText(getSwitch(PlayerSetting.isAutoChange()));
         mBinding.failureFallbackText.setText((failureFallback = ResUtil.getStringArray(R.array.select_player_failure_fallback))[PlayerSetting.getFailureFallback()]);
-        mBinding.autoSkipIntroOutroText.setText((introSkipMode = getResources().getStringArray(R.array.select_auto_skip_intro_outro))[Setting.getIntroSkipMode()]);
         mBinding.backgroundText.setText(getSwitch(PlayerSetting.isBackgroundOn()));
         mBinding.musicNotificationText.setText(getSwitch(PlayerSetting.isMusicNotification()));
         mBinding.audioBookNotificationText.setText(getSwitch(PlayerSetting.isAudioBookNotification()));
@@ -134,12 +131,10 @@ public class SettingPlayerActivity extends BaseActivity implements UaListener, B
         mBinding.autoPlay.setOnClickListener(this::setAutoPlay);
         mBinding.autoChange.setOnClickListener(this::setAutoChange);
         mBinding.failureFallback.setOnClickListener(this::setFailureFallback);
-        mBinding.autoSkipIntroOutro.setOnClickListener(this::setAutoSkipIntroOutro);
         mBinding.render.setOnClickListener(this::setRender);
         mBinding.tunnel.setOnClickListener(this::setTunnel);
         mBinding.exo4kCompat.setOnClickListener(this::onPerformance);
         mBinding.caption.setOnClickListener(this::setCaption);
-        mBinding.adblock.setOnClickListener(this::setAdblock);
         mBinding.caption.setOnLongClickListener(this::onCaption);
         mBinding.background.setOnClickListener(this::onBackground);
         mBinding.musicNotification.setOnClickListener(this::setMusicNotification);
@@ -388,11 +383,6 @@ public class SettingPlayerActivity extends BaseActivity implements UaListener, B
         });
     }
 
-    private void setAutoSkipIntroOutro(View view) {
-        Setting.putIntroSkipMode((Setting.getIntroSkipMode() + 1) % introSkipMode.length);
-        mBinding.autoSkipIntroOutroText.setText(introSkipMode[Setting.getIntroSkipMode()]);
-    }
-
     private void setRender(View view) {
         if (PlayerSetting.isTunnel() && PlayerSetting.getRender() == 0) setTunnel(view);
         int index = (PlayerSetting.getRender() + 1) % render.length;
@@ -456,11 +446,6 @@ public class SettingPlayerActivity extends BaseActivity implements UaListener, B
     private void setCaption(View view) {
         PlayerSetting.putCaption(!PlayerSetting.isCaption());
         mBinding.captionText.setText(caption[PlayerSetting.isCaption() ? 1 : 0]);
-    }
-
-    private void setAdblock(View view) {
-        Setting.putAdblock(!Setting.isAdblock());
-        mBinding.adblockText.setText(getSwitch(Setting.isAdblock()));
     }
 
     private boolean onCaption(View view) {

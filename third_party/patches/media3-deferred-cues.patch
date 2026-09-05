@@ -1,22 +1,15 @@
 diff --git a/libraries/extractor/src/main/java/androidx/media3/extractor/mkv/MatroskaExtractor.java b/libraries/extractor/src/main/java/androidx/media3/extractor/mkv/MatroskaExtractor.java
-index 1b24e3d976..5af42a7caa 100644
+index 78c969e459..f48fa42592 100644
 --- a/libraries/extractor/src/main/java/androidx/media3/extractor/mkv/MatroskaExtractor.java
 +++ b/libraries/extractor/src/main/java/androidx/media3/extractor/mkv/MatroskaExtractor.java
-@@ -130,7 +130,9 @@ public class MatroskaExtractor implements Extractor {
-   @Target(TYPE_USE)
-   @IntDef(
-       flag = true,
+@@ -82,0 +83 @@ import java.util.HashMap;
++import java.util.HashSet;
+@@ -133 +134,3 @@ public class MatroskaExtractor implements Extractor {
 -      value = {FLAG_DISABLE_SEEK_FOR_CUES, FLAG_EMIT_RAW_SUBTITLE_DATA})
 +      value = {
 +        FLAG_DISABLE_SEEK_FOR_CUES, FLAG_EMIT_RAW_SUBTITLE_DATA, FLAG_DEFER_SEEK_FOR_CUES
 +      })
-   public @interface Flags {}
-
-   /**
-@@ -149,6 +151,15 @@ public class MatroskaExtractor implements Extractor {
-    */
-   public static final int FLAG_EMIT_RAW_SUBTITLE_DATA = 1 << 1; // 2
-
+@@ -151,0 +155,9 @@ public class MatroskaExtractor implements Extractor {
 +  /**
 +   * Flag to defer reading a tail Cues element until a non-zero seek is requested.
 +   *
@@ -26,65 +19,44 @@ index 1b24e3d976..5af42a7caa 100644
 +   */
 +  public static final int FLAG_DEFER_SEEK_FOR_CUES = 1 << 2; // 4
 +
-   /**
-    * @deprecated Use {@link #newFactory(SubtitleParser.Factory)} instead.
-    */
-@@ -162,6 +173,7 @@ public class MatroskaExtractor implements Extractor {
-   private static final String TAG = "MatroskaExtractor";
-
-   private static final int UNSET_ENTRY_ID = -1;
+@@ -164,0 +177,2 @@ public class MatroskaExtractor implements Extractor {
 +  private static final long MIN_DEFERRED_CUES_LENGTH_BYTES = 64L * 1024L * 1024L;
-
-   private static final int BLOCK_STATE_START = 0;
-   private static final int BLOCK_STATE_HEADER = 1;
-@@ -477,6 +489,7 @@ public class MatroskaExtractor implements Extractor {
-   private final SparseArray<Track> tracks;
-   private final LongSparseArray<ChapterEntry> chapters;
-   private final boolean seekForCuesEnabled;
++  private static final int MAX_DEFERRED_SEEK_HEADS = 10;
+@@ -479,0 +494 @@ public class MatroskaExtractor implements Extractor {
 +  private final boolean deferSeekForCuesEnabled;
-   private final boolean parseSubtitlesDuringExtraction;
-   private final SubtitleParser.Factory subtitleParserFactory;
-   private final boolean emitDolbyVisionBlockAdditionalData;
-@@ -514,6 +527,11 @@ public class MatroskaExtractor implements Extractor {
-
-   // Whether a seek map has been sent to the output.
-   private boolean sentSeekMap;
+@@ -516,0 +532,6 @@ public class MatroskaExtractor implements Extractor {
 +  private boolean provisionalSeekMapSent;
 +  private boolean deferredCuesEvaluated;
 +  private boolean deferredCuesActive;
++  private boolean deferredSeekMapResolutionFailed;
 +  private long deferredSeekTimeUs = C.TIME_UNSET;
 +  @Nullable private SeekMap lastSeekMap;
-
-   // Master seek entry related elements.
-   private int seekEntryId;
-@@ -660,6 +678,7 @@ public class MatroskaExtractor implements Extractor {
-     this.emitDolbyVisionBlockAdditionalData = emitDolbyVisionBlockAdditionalData;
-     this.perTrackCues = new SparseArray<>();
-     seekForCuesEnabled = (flags & FLAG_DISABLE_SEEK_FOR_CUES) == 0;
+@@ -520,0 +542,2 @@ public class MatroskaExtractor implements Extractor {
++  private final ArrayList<Long> pendingSeekHeadPositions = new ArrayList<>();
++  private final HashSet<Long> visitedSeekHeadPositions = new HashSet<>();
+@@ -530,0 +554 @@ public class MatroskaExtractor implements Extractor {
++  private boolean seekForSeekHead;
+@@ -662,0 +687 @@ public class MatroskaExtractor implements Extractor {
 +    deferSeekForCuesEnabled = (flags & FLAG_DEFER_SEEK_FOR_CUES) != 0;
-     parseSubtitlesDuringExtraction = (flags & FLAG_EMIT_RAW_SUBTITLE_DATA) == 0;
-     varintReader = new VarintReader();
-     chapters = new LongSparseArray<>();
-@@ -695,6 +714,15 @@ public class MatroskaExtractor implements Extractor {
-   @CallSuper
-   @Override
-   public void seek(long position, long timeUs) {
+@@ -697,0 +723,17 @@ public class MatroskaExtractor implements Extractor {
++    if (!sentSeekMap && position == 0 && timeUs == 0) {
++      pendingSeekHeadPositions.clear();
++      visitedSeekHeadPositions.clear();
++      seekForSeekHead = false;
++      deferredSeekMapResolutionFailed = false;
++    }
 +    if (deferSeekForCuesEnabled && !sentSeekMap && timeUs > 0) {
 +      deferredSeekTimeUs = timeUs;
 +      seekPositionAfterBuildingCues =
 +          deferredCuesActive && position == cuesContentPosition ? position : C.INDEX_UNSET;
++      markPendingSeekHeadVisited(position);
 +    } else if (timeUs == 0 || sentSeekMap) {
 +      deferredSeekTimeUs = C.TIME_UNSET;
 +      seekPositionAfterBuildingCues = C.INDEX_UNSET;
 +    }
 +    seekForCues = false;
-     clusterTimecodeUs = C.TIME_UNSET;
-     blockState = BLOCK_STATE_START;
-     reader.reset();
-@@ -723,6 +751,14 @@ public class MatroskaExtractor implements Extractor {
-
-   @Override
-   public final int read(ExtractorInput input, PositionHolder seekPosition) throws IOException {
++    seekForSeekHead = false;
+@@ -725,0 +768,8 @@ public class MatroskaExtractor implements Extractor {
 +    if (!deferredCuesEvaluated) {
 +      long inputLength = input.getLength();
 +      deferredCuesActive =
@@ -93,13 +65,13 @@ index 1b24e3d976..5af42a7caa 100644
 +              && inputLength >= MIN_DEFERRED_CUES_LENGTH_BYTES;
 +      deferredCuesEvaluated = true;
 +    }
-     haveOutputSample = false;
-     boolean continueReading = true;
-     while (continueReading && !haveOutputSample) {
-@@ -928,18 +964,8 @@ public class MatroskaExtractor implements Extractor {
-       case ID_CLUSTER:
-         if (tracksContentPosition != C.INDEX_UNSET && !readTracks) {
-           seekForTracks = true;
+@@ -730,3 +780,2 @@ public class MatroskaExtractor implements Extractor {
+-      if (continueReading
+-          && (maybeSeekForTracks(seekPosition, input.getPosition())
+-              || maybeSeekForCues(seekPosition, input.getPosition()))) {
++      if (maybeSeekForTracks(seekPosition, input.getPosition())
++          || maybeSeekForCues(seekPosition, input.getPosition())) {
+@@ -931,12 +980,2 @@ public class MatroskaExtractor implements Extractor {
 -        }
 -        if (!sentSeekMap) {
 -          // We need to build cues before parsing the cluster.
@@ -114,50 +86,42 @@ index 1b24e3d976..5af42a7caa 100644
 -          }
 +        } else {
 +          maybePrepareSeekMap();
-         }
-         break;
-       case ID_BLOCK_GROUP:
-@@ -1009,22 +1035,24 @@ public class MatroskaExtractor implements Extractor {
-               break;
-             }
-           }
+@@ -997 +1036,3 @@ public class MatroskaExtractor implements Extractor {
+-        if (seekEntryId == ID_CUES) {
++        if (seekEntryId == ID_SEEK_HEAD) {
++          addPendingSeekHeadPosition(seekEntryPosition);
++        } else if (seekEntryId == ID_CUES) {
+@@ -1002,0 +1044,13 @@ public class MatroskaExtractor implements Extractor {
++      case ID_SEEK_HEAD:
++        if (deferredSeekTimeUs != C.TIME_UNSET && !sentSeekMap) {
++          long deferredIndexPosition = getDeferredIndexPosition();
++          if (cuesContentPosition != C.INDEX_UNSET
++              && deferredIndexPosition == cuesContentPosition) {
++            seekForCues = true;
++          } else if (deferredIndexPosition != C.INDEX_UNSET) {
++            seekForSeekHead = true;
++          } else {
++            deferredSeekMapResolutionFailed = true;
++          }
++        }
++        break;
+@@ -1011,0 +1066 @@ public class MatroskaExtractor implements Extractor {
 +          SeekMap seekMap;
-           if (!hasAnyCues || durationUs == C.TIME_UNSET) {
-             // Cues are missing, empty, or duration is unknown.
+@@ -1014 +1069 @@ public class MatroskaExtractor implements Extractor {
 -            extractorOutput.seekMap(new SeekMap.Unseekable(durationUs));
 +            seekMap = new SeekMap.Unseekable(durationUs);
-           } else {
-             for (int i = 0; i < perTrackCues.size(); i++) {
-               Collections.sort(perTrackCues.valueAt(i));
-             }
+@@ -1019 +1074 @@ public class MatroskaExtractor implements Extractor {
 -            MatroskaSeekMap seekMap =
 +            seekMap =
-                 new MatroskaSeekMap(
-                     perTrackCues,
-                     durationUs,
-                     primarySeekTrackNumber,
-                     segmentContentPosition,
-                     segmentContentSize);
+@@ -1026 +1080,0 @@ public class MatroskaExtractor implements Extractor {
 -            extractorOutput.seekMap(seekMap);
-           }
+@@ -1027,0 +1082,2 @@ public class MatroskaExtractor implements Extractor {
 +          checkNotNull(extractorOutput).seekMap(seekMap);
 +          lastSeekMap = seekMap;
-           sentSeekMap = true;
-           inCuesElement = false;
-           for (int i = 0; i < tracks.size(); i++) {
-@@ -1032,7 +1060,7 @@ public class MatroskaExtractor implements Extractor {
-             if (!track.waitingForDtsAnalysis) {
-               updateTrackFormatWithMetadata(track);
-               track.assertOutputInitialized();
+@@ -1035 +1091 @@ public class MatroskaExtractor implements Extractor {
 -              track.output.format(checkNotNull(track.format));
 +              maybeOutputTrackFormat(track);
-             }
-           }
-           maybeEndTracks();
-@@ -1075,7 +1103,12 @@ public class MatroskaExtractor implements Extractor {
-         break;
-       case ID_EDITION_ENTRY:
-         for (int i = 0; i < tracks.size(); i++) {
+@@ -1078 +1134,6 @@ public class MatroskaExtractor implements Extractor {
 -          updateTrackFormatWithMetadata(tracks.valueAt(i));
 +          Track track = tracks.valueAt(i);
 +          updateTrackFormatWithMetadata(track);
@@ -165,50 +129,37 @@ index 1b24e3d976..5af42a7caa 100644
 +            track.assertOutputInitialized();
 +            maybeOutputTrackFormat(track);
 +          }
-         }
-         break;
-       case ID_BLOCK_GROUP:
-@@ -1189,7 +1222,7 @@ public class MatroskaExtractor implements Extractor {
-             if (!trackItem.waitingForDtsAnalysis) {
-               updateTrackFormatWithMetadata(trackItem);
-               trackItem.assertOutputInitialized();
+@@ -1192 +1253 @@ public class MatroskaExtractor implements Extractor {
 -              trackItem.output.format(checkNotNull(trackItem.format));
 +              maybeOutputTrackFormat(trackItem);
-             }
-           }
-         }
-@@ -1207,6 +1240,9 @@ public class MatroskaExtractor implements Extractor {
-         }
-
-         readTracks = true;
+@@ -1209,0 +1271,3 @@ public class MatroskaExtractor implements Extractor {
 +        if (seekPositionAfterReadingTracks != C.INDEX_UNSET) {
 +          maybePrepareSeekMap();
 +        }
-         if (maybeSendFormatsEarly) {
-           maybeEndTracks();
-         }
-@@ -1965,7 +2001,7 @@ public class MatroskaExtractor implements Extractor {
-     if (track.waitingForDtsAnalysis) {
-       checkNotNull(track.format);
-       track.format = DtsUtil.updateFormatWithDtsHdInfo(input, size, track.format);
+@@ -1968 +2032 @@ public class MatroskaExtractor implements Extractor {
 -      track.output.format(track.format);
 +      maybeOutputTrackFormat(track);
-       track.waitingForDtsAnalysis = false;
-       maybeEndTracks();
-     }
-@@ -2126,7 +2162,7 @@ public class MatroskaExtractor implements Extractor {
-           track.trueHdAtmosAnalysisComplete = true;
-           if (track.trueHdSampleRechunker.isAtmos()) {
-             track.format = checkNotNull(track.format).buildUpon().setCodecs("atmos").build();
+@@ -2129 +2193 @@ public class MatroskaExtractor implements Extractor {
 -            track.output.format(track.format);
 +            maybeOutputTrackFormat(track);
-           }
-         }
-       }
-@@ -2327,7 +2363,15 @@ public class MatroskaExtractor implements Extractor {
-     // After parsing Cues, seek back to original position if available. We will not do this unless
-     // we seeked to get to the Cues in the first place.
-     if (sentSeekMap && seekPositionAfterBuildingCues != C.INDEX_UNSET) {
+@@ -2320,0 +2385,16 @@ public class MatroskaExtractor implements Extractor {
++    if (deferredSeekMapResolutionFailed) {
++      publishUnseekableSeekMap();
++      deferredSeekMapResolutionFailed = false;
++      deferredSeekTimeUs = C.TIME_UNSET;
++      seekPositionAfterBuildingCues = C.INDEX_UNSET;
++      seekPosition.position = 0;
++      return true;
++    }
++    if (seekForSeekHead) {
++      long nextSeekHeadPosition = takeNextPendingSeekHeadPosition();
++      seekForSeekHead = false;
++      if (nextSeekHeadPosition != C.INDEX_UNSET) {
++        seekPosition.position = nextSeekHeadPosition;
++        return true;
++      }
++    }
+@@ -2330 +2410,9 @@ public class MatroskaExtractor implements Extractor {
 -      seekPosition.position = seekPositionAfterBuildingCues;
 +      if (deferredSeekTimeUs != C.TIME_UNSET && lastSeekMap != null) {
 +        seekPosition.position =
@@ -219,20 +170,15 @@ index 1b24e3d976..5af42a7caa 100644
 +      } else {
 +        seekPosition.position = seekPositionAfterBuildingCues;
 +      }
-       seekPositionAfterBuildingCues = C.INDEX_UNSET;
-       return true;
-     }
-@@ -2420,6 +2464,45 @@ public class MatroskaExtractor implements Extractor {
-     checkNotNull(extractorOutput);
-   }
-
+@@ -2422,0 +2511,89 @@ public class MatroskaExtractor implements Extractor {
 +  private void maybePrepareSeekMap() {
 +    if (sentSeekMap) {
 +      return;
 +    }
++    long deferredIndexPosition = getDeferredIndexPosition();
 +    if (deferredCuesActive
 +        && seekForCuesEnabled
-+        && cuesContentPosition != C.INDEX_UNSET) {
++        && deferredIndexPosition != C.INDEX_UNSET) {
 +      if (!provisionalSeekMapSent) {
 +        for (int i = 0; i < tracks.size(); i++) {
 +          Track track = tracks.valueAt(i);
@@ -244,11 +190,15 @@ index 1b24e3d976..5af42a7caa 100644
 +        }
 +        maybeEndTracks();
 +        checkNotNull(extractorOutput)
-+            .seekMap(new DeferredSeekMap(durationUs, cuesContentPosition));
++            .seekMap(new DeferredSeekMap(durationUs, deferredIndexPosition));
 +        provisionalSeekMapSent = true;
 +      }
 +      if (deferredSeekTimeUs != C.TIME_UNSET) {
-+        seekForCues = true;
++        if (deferredIndexPosition == cuesContentPosition) {
++          seekForCues = true;
++        } else {
++          seekForSeekHead = true;
++        }
 +      }
 +      return;
 +    }
@@ -259,19 +209,58 @@ index 1b24e3d976..5af42a7caa 100644
 +    } else {
 +      // We don't know where the Cues element is located. It's most likely omitted. Allow
 +      // playback, but disable seeking.
-+      checkNotNull(extractorOutput).seekMap(new SeekMap.Unseekable(durationUs));
-+      sentSeekMap = true;
-+      lastSeekMap = new SeekMap.Unseekable(durationUs);
++      publishUnseekableSeekMap();
 +    }
 +  }
 +
-   private void maybeEndTracks() {
-     if (!pendingEndTracks) {
-       return;
-@@ -2442,6 +2525,15 @@ public class MatroskaExtractor implements Extractor {
-         perTrackCues, durationUs, segmentContentPosition, segmentContentSize);
-   }
-
++  private void addPendingSeekHeadPosition(long position) {
++    if (!deferSeekForCuesEnabled
++        || segmentContentPosition == C.INDEX_UNSET
++        || position <= segmentContentPosition
++        || (segmentContentSize != C.LENGTH_UNSET
++            && position - segmentContentPosition >= segmentContentSize)
++        || visitedSeekHeadPositions.contains(position)
++        || pendingSeekHeadPositions.contains(position)
++        || visitedSeekHeadPositions.size() + pendingSeekHeadPositions.size()
++            >= MAX_DEFERRED_SEEK_HEADS) {
++      return;
++    }
++    pendingSeekHeadPositions.add(position);
++  }
++
++  private long getDeferredIndexPosition() {
++    if (cuesContentPosition != C.INDEX_UNSET) {
++      return cuesContentPosition;
++    }
++    return pendingSeekHeadPositions.isEmpty()
++        ? C.INDEX_UNSET
++        : pendingSeekHeadPositions.get(pendingSeekHeadPositions.size() - 1);
++  }
++
++  private long takeNextPendingSeekHeadPosition() {
++    if (pendingSeekHeadPositions.isEmpty()) {
++      return C.INDEX_UNSET;
++    }
++    int lastIndex = pendingSeekHeadPositions.size() - 1;
++    long position = pendingSeekHeadPositions.remove(lastIndex);
++    visitedSeekHeadPositions.add(position);
++    return position;
++  }
++
++  private void markPendingSeekHeadVisited(long position) {
++    if (pendingSeekHeadPositions.remove(Long.valueOf(position))) {
++      visitedSeekHeadPositions.add(position);
++    }
++  }
++
++  private void publishUnseekableSeekMap() {
++    SeekMap seekMap = new SeekMap.Unseekable(durationUs);
++    checkNotNull(extractorOutput).seekMap(seekMap);
++    sentSeekMap = true;
++    lastSeekMap = seekMap;
++  }
++
+@@ -2444,0 +2622,9 @@ public class MatroskaExtractor implements Extractor {
 +  @RequiresNonNull("#1.output")
 +  private static void maybeOutputTrackFormat(Track track) {
 +    Format format = checkNotNull(track.format);
@@ -281,21 +270,15 @@ index 1b24e3d976..5af42a7caa 100644
 +    }
 +  }
 +
-   /** Passes events through to the outer {@link MatroskaExtractor}. */
-   private final class InnerEbmlProcessor implements EbmlProcessor {
-
-@@ -2588,6 +2680,7 @@ public class MatroskaExtractor implements Extractor {
-     // Set when the output is initialized. nalUnitLengthFieldLength is only set for H264/H265.
-     public @MonotonicNonNull TrackOutput output;
-     public @MonotonicNonNull Format format;
+@@ -2512,0 +2699,2 @@ public class MatroskaExtractor implements Extractor {
++    // CTA-861.3 stores minimum mastering luminance in units of 0.0001 cd/m2.
++    private static final int MIN_MASTERING_LUMINANCE_SCALE = 10_000;
+@@ -2590,0 +2779 @@ public class MatroskaExtractor implements Extractor {
 +    @Nullable public Format lastOutputFormat;
-     public int nalUnitLengthFieldLength;
-
-     /** Builds the {@link Format} for the track. */
-@@ -3309,6 +3402,34 @@ public class MatroskaExtractor implements Extractor {
-     }
-   }
-
+@@ -2605,2 +2793,0 @@ public class MatroskaExtractor implements Extractor {
+-    // CTA-861.3 stores minimum mastering luminance in units of 0.0001 cd/m2.
+-    private static final int MIN_MASTERING_LUMINANCE_SCALE = 10_000;
+@@ -3314,0 +3502,28 @@ public class MatroskaExtractor implements Extractor {
 +  private static final class DeferredSeekMap implements SeekMap {
 +
 +    private final long durationUs;
@@ -324,42 +307,41 @@ index 1b24e3d976..5af42a7caa 100644
 +    }
 +  }
 +
-   private static final class MatroskaSeekMap implements TrackAwareSeekMap, ChunkIndexProvider {
-
-     @Nullable private final ChunkIndex chunkIndex;
 diff --git a/libraries/extractor/src/test/java/androidx/media3/extractor/mkv/MatroskaExtractorNonParameterizedTest.java b/libraries/extractor/src/test/java/androidx/media3/extractor/mkv/MatroskaExtractorNonParameterizedTest.java
-index 5df042682b..2c913b32ce 100644
+index f3e9309f08..ef004d2e7a 100644
 --- a/libraries/extractor/src/test/java/androidx/media3/extractor/mkv/MatroskaExtractorNonParameterizedTest.java
 +++ b/libraries/extractor/src/test/java/androidx/media3/extractor/mkv/MatroskaExtractorNonParameterizedTest.java
-@@ -18,12 +18,15 @@ package androidx.media3.extractor.mkv;
- import static androidx.media3.extractor.Extractor.RESULT_SEEK;
- import static com.google.common.truth.Truth.assertThat;
-
+@@ -21,0 +22 @@ import static com.google.common.truth.Truth.assertThat;
 +import androidx.media3.extractor.ForwardingExtractorInput;
- import androidx.media3.extractor.PositionHolder;
+@@ -22,0 +24 @@ import androidx.media3.extractor.PositionHolder;
 +import androidx.media3.extractor.SeekMap;
- import androidx.media3.extractor.SeekPoint;
- import androidx.media3.extractor.TrackAwareSeekMap;
- import androidx.media3.extractor.text.SubtitleParser;
- import androidx.media3.test.utils.FakeExtractorInput;
- import androidx.media3.test.utils.FakeExtractorOutput;
+@@ -27,0 +30 @@ import androidx.media3.test.utils.FakeExtractorOutput;
 +import androidx.media3.test.utils.FakeTrackOutput;
- import androidx.media3.test.utils.TestUtil;
- import androidx.test.core.app.ApplicationProvider;
- import androidx.test.ext.junit.runners.AndroidJUnit4;
-@@ -34,6 +37,8 @@ import org.junit.runner.RunWith;
- @RunWith(AndroidJUnit4.class)
- public class MatroskaExtractorNonParameterizedTest {
-
+@@ -30,0 +34,5 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
++import java.nio.ByteBuffer;
++import java.nio.ByteOrder;
++import java.util.ArrayList;
++import java.util.Arrays;
++import java.util.List;
+@@ -34,2 +41,0 @@ import org.junit.runner.RunWith;
+-import java.nio.ByteBuffer;
+-import java.nio.ByteOrder;
+@@ -41,3 +46,0 @@ public class MatroskaExtractorNonParameterizedTest {
+-  public void seek_afterSeekMapSent_seekMapRemainsValid() throws Exception {
+-    String fileName = "media/mkv/sample.mkv";
+-  @Test
+@@ -79,0 +83,10 @@ public class MatroskaExtractorNonParameterizedTest {
 +  private static final long LARGE_INPUT_LENGTH_BYTES = 64L * 1024L * 1024L;
++  private static final int SEGMENT_CONTENT_POSITION = 52;
++  private static final int ROOT_CUES_ID_POSITION = 93;
++  private static final int ROOT_CUES_SEEK_POSITION = 100;
++  private static final int NESTED_SEEK_HEAD_POSITION = 100_000;
++  private static final int CUES_POSITION = 107_445;
 +
-   @Test
-   public void seek_afterSeekMapSent_seekMapRemainsValid() throws Exception {
-     String fileName = "media/mkv/sample.mkv";
-@@ -67,4 +72,79 @@ public class MatroskaExtractorNonParameterizedTest {
-     assertThat(trackAwareSeekMap.getSeekPoints(timeStampUs, videoTrackId).first)
-         .isEqualTo(expectedTrackSpecificSeekPoint);
-   }
++  @Test
++  public void seek_afterSeekMapSent_seekMapRemainsValid() throws Exception {
++    String fileName = "media/mkv/sample.mkv";
+@@ -109,0 +123,216 @@ public class MatroskaExtractorNonParameterizedTest {
 +
 +  @Test
 +  public void tracksAfterClusters_buildsSeekableMap() throws Exception {
@@ -435,4 +417,144 @@ index 5df042682b..2c913b32ce 100644
 +    assertThat(output.seekMap.isSeekable()).isTrue();
 +    assertThat(output.seekMap.getSeekPoints(targetTimeUs).first.position).isGreaterThan(0);
 +  }
- }
++
++  @Test
++  public void deferredCues_chainedSeekHead_resolvesCuesOnlyAfterNonZeroSeek() throws Exception {
++    byte[] fileBytes = createChainedSeekHeadSample(/* nestedSeekHeadPointsToCues= */ true);
++    MatroskaExtractor extractor = createDeferredExtractor();
++    FakeExtractorOutput output = createDeduplicatingOutput();
++    extractor.init(output);
++    FakeExtractorInput delegateInput =
++        new FakeExtractorInput.Builder().setData(fileBytes).build();
++    ForwardingExtractorInput input = largeInput(delegateInput);
++    PositionHolder positionHolder = new PositionHolder();
++    extractor.seek(/* position= */ 0, /* timeUs= */ 0);
++
++    while (output.seekMap == null) {
++      assertThat(extractor.read(input, positionHolder)).isNotEqualTo(RESULT_SEEK);
++    }
++
++    SeekMap provisionalSeekMap = output.seekMap;
++    long targetTimeUs = provisionalSeekMap.getDurationUs() / 2;
++    SeekPoint provisionalSeekPoint = provisionalSeekMap.getSeekPoints(targetTimeUs).first;
++    assertThat(provisionalSeekPoint.position).isEqualTo(NESTED_SEEK_HEAD_POSITION);
++
++    extractor.seek(provisionalSeekPoint.position, targetTimeUs);
++    delegateInput.setPosition((int) provisionalSeekPoint.position);
++    List<Long> requestedPositions = new ArrayList<>();
++    while (output.seekMap == provisionalSeekMap) {
++      int readResult = extractor.read(input, positionHolder);
++      if (readResult == RESULT_SEEK) {
++        requestedPositions.add(positionHolder.position);
++        delegateInput.setPosition((int) positionHolder.position);
++      }
++    }
++
++    assertThat(requestedPositions.get(0)).isEqualTo(CUES_POSITION);
++    assertThat(output.seekMap).isInstanceOf(TrackAwareSeekMap.class);
++    assertThat(output.seekMap.isSeekable()).isTrue();
++    assertThat(output.seekMap.getSeekPoints(targetTimeUs).first.position).isGreaterThan(0);
++  }
++
++  @Test
++  public void deferredCues_cyclicSeekHead_fallsBackToUnseekableWithoutLooping() throws Exception {
++    byte[] fileBytes = createChainedSeekHeadSample(/* nestedSeekHeadPointsToCues= */ false);
++    MatroskaExtractor extractor = createDeferredExtractor();
++    FakeExtractorOutput output = createDeduplicatingOutput();
++    extractor.init(output);
++    FakeExtractorInput delegateInput =
++        new FakeExtractorInput.Builder().setData(fileBytes).build();
++    ForwardingExtractorInput input = largeInput(delegateInput);
++    PositionHolder positionHolder = new PositionHolder();
++    extractor.seek(/* position= */ 0, /* timeUs= */ 0);
++
++    while (output.seekMap == null) {
++      assertThat(extractor.read(input, positionHolder)).isNotEqualTo(RESULT_SEEK);
++    }
++
++    SeekMap provisionalSeekMap = output.seekMap;
++    long targetTimeUs = provisionalSeekMap.getDurationUs() / 2;
++    SeekPoint provisionalSeekPoint = provisionalSeekMap.getSeekPoints(targetTimeUs).first;
++    extractor.seek(provisionalSeekPoint.position, targetTimeUs);
++    delegateInput.setPosition((int) provisionalSeekPoint.position);
++
++    int seekCount = 0;
++    while (output.seekMap == provisionalSeekMap && seekCount < 10) {
++      if (extractor.read(input, positionHolder) == RESULT_SEEK) {
++        seekCount++;
++        delegateInput.setPosition((int) positionHolder.position);
++      }
++    }
++
++    assertThat(seekCount).isEqualTo(1);
++    assertThat(positionHolder.position).isEqualTo(0);
++    assertThat(output.seekMap.isSeekable()).isFalse();
++  }
++
++  private static MatroskaExtractor createDeferredExtractor() {
++    return new MatroskaExtractor(
++        SubtitleParser.Factory.UNSUPPORTED, MatroskaExtractor.FLAG_DEFER_SEEK_FOR_CUES);
++  }
++
++  private static FakeExtractorOutput createDeduplicatingOutput() {
++    return new FakeExtractorOutput(
++        (id, type) -> new FakeTrackOutput(type, /* deduplicateConsecutiveFormats= */ true));
++  }
++
++  private static ForwardingExtractorInput largeInput(FakeExtractorInput delegateInput) {
++    return new ForwardingExtractorInput(delegateInput) {
++      @Override
++      public long getLength() {
++        return LARGE_INPUT_LENGTH_BYTES;
++      }
++    };
++  }
++
++  private static byte[] createChainedSeekHeadSample(boolean nestedSeekHeadPointsToCues)
++      throws Exception {
++    byte[] fileBytes =
++        Arrays.copyOf(
++            TestUtil.getByteArray(
++                ApplicationProvider.getApplicationContext(), "media/mkv/sample.mkv"),
++            CUES_POSITION + 64);
++    byte[] nestedElementId =
++        nestedSeekHeadPointsToCues
++            ? new byte[] {0x1c, 0x53, (byte) 0xbb, 0x6b}
++            : new byte[] {0x11, 0x4d, (byte) 0x9b, 0x74};
++    int nestedTargetPosition =
++        nestedSeekHeadPointsToCues ? CUES_POSITION : NESTED_SEEK_HEAD_POSITION;
++
++    System.arraycopy(
++        new byte[] {0x11, 0x4d, (byte) 0x9b, 0x74},
++        0,
++        fileBytes,
++        ROOT_CUES_ID_POSITION,
++        4);
++    writeUnsignedInt24(
++        fileBytes,
++        ROOT_CUES_SEEK_POSITION,
++        NESTED_SEEK_HEAD_POSITION - SEGMENT_CONTENT_POSITION);
++
++    byte[] nestedSeekHead =
++        new byte[] {
++          0x11, 0x4d, (byte) 0x9b, 0x74, (byte) 0x8f,
++          0x4d, (byte) 0xbb, (byte) 0x8d,
++          0x53, (byte) 0xab, (byte) 0x84,
++          nestedElementId[0], nestedElementId[1], nestedElementId[2], nestedElementId[3],
++          0x53, (byte) 0xac, (byte) 0x83,
++          0, 0, 0
++        };
++    writeUnsignedInt24(
++        nestedSeekHead,
++        nestedSeekHead.length - 3,
++        nestedTargetPosition - SEGMENT_CONTENT_POSITION);
++    System.arraycopy(
++        nestedSeekHead, 0, fileBytes, NESTED_SEEK_HEAD_POSITION, nestedSeekHead.length);
++    return fileBytes;
++  }
++
++  private static void writeUnsignedInt24(byte[] data, int offset, int value) {
++    data[offset] = (byte) (value >> 16);
++    data[offset + 1] = (byte) (value >> 8);
++    data[offset + 2] = (byte) value;
++  }

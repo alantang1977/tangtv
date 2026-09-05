@@ -397,7 +397,7 @@ public final class LabRunner {
                 boolean daemon = false;
                 long deadline = System.currentTimeMillis() + 2000;
                 while (System.currentTimeMillis() < deadline) {
-                    if (LabProcManager.groupAlive(pid)) {
+                    if (LabProcManager.trackGroup(key, pid)) {
                         daemon = true;
                         break;
                     }

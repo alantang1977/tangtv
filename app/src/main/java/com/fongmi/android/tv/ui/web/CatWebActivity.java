@@ -1,11 +1,14 @@
 package com.fongmi.android.tv.ui.web;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -14,10 +17,15 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.utils.FileChooser;
 import com.github.catvod.crawler.SpiderDebug;
+
+import java.io.File;
 
 /**
  * 猫源设置中心的内嵌浏览页。
@@ -39,6 +47,12 @@ public class CatWebActivity extends AppCompatActivity {
     private WebView webView;
     private ProgressBar progress;
     private View loading;
+
+    /**
+     * {@code <input type="file">} 的待回调。WebView 要求每次请求必须回一次值——
+     * 用户取消也得回 null，否则那个 input 永久卡住，再点没有任何反应。
+     */
+    private ValueCallback<Uri[]> chooser;
 
     public static Intent intent(Context context, String url) {
         return new Intent(context, CatWebActivity.class).putExtra(EXTRA_URL, url);
@@ -110,8 +124,86 @@ public class CatWebActivity extends AppCompatActivity {
                         msg.messageLevel(), msg.message(), msg.sourceId(), msg.lineNumber());
                 return true;
             }
+
+            /**
+             * 设置页的「导入」是 antd Upload，底层就是 {@code <input type="file">}。
+             * 不实现这个回调，WebView 对文件选择请求什么都不做——点击毫无反应。
+             */
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+                // 上一次的请求还没回值就被新请求顶掉时，先把它收尾，避免页面那侧一直挂着
+                cancelChooser();
+                chooser = callback;
+                SpiderDebug.log(TAG, "fileChooser accept=%s", java.util.Arrays.toString(params.getAcceptTypes()));
+                try {
+                    // 复用仓库既有选择器：它在 TV 或没有系统文件管理器时会退到内置 FileActivity
+                    String mime = mime(params.getAcceptTypes());
+                    FileChooser.from(picker).show(mime, new String[]{mime});
+                    return true;
+                } catch (Throwable e) {
+                    SpiderDebug.log(TAG, e);
+                    cancelChooser();
+                    return false;
+                }
+            }
+        });
+        // 「导出」是 <a href="/website/backup"> + Content-Disposition: attachment。
+        // WebView 不下载附件，没有这个监听器响应就被丢弃，同样是「点了没反应」。
+        webView.setDownloadListener((url, userAgent, disposition, mime, length) -> {
+            SpiderDebug.log(TAG, "download url=%s mime=%s len=%d", url, mime, length);
+            if (CatWebDownload.enqueue(this, url, userAgent, disposition, mime)) return;
+            // blob:/data: 不是真实网络地址，系统下载器读不到；如实提示而不是静默失败
+            SpiderDebug.log(TAG, "downloadUnsupported url=%s", url);
+            com.fongmi.android.tv.utils.Notify.show(R.string.cat_web_download_failed);
         });
         webView.setWebViewClient(client());
+    }
+
+    /**
+     * 把网页的 accept 收敛成一个 MIME，只认已经是 MIME 的那种。
+     *
+     * <p>刻意不把 {@code .json} 这类扩展名换算成 MIME：设置页给的就是 {@code .json}，
+     * 而选择器列表里文件的类型由 DocumentsProvider 按扩展名反推——两边只要有一边不认
+     * json，严格按 {@code application/json} 过滤就会把用户要导入的那个文件藏起来，
+     * 比多列几个文件糟得多。备份文件被聊天工具转发后改名、丢后缀也很常见。
+     * 仓库其它入口（{@code ConfigDialog}）同样不做类型过滤。
+     */
+    private String mime(String[] accepts) {
+        if (accepts == null) return "*/*";
+        for (String accept : accepts) {
+            if (TextUtils.isEmpty(accept)) continue;
+            String value = accept.trim();
+            if (value.contains("/") && !value.startsWith("*")) return value;
+        }
+        return "*/*";
+    }
+
+    /**
+     * 文件选择的结果回给页面。
+     *
+     * <p>取消、失败都必须回一次值（null）——漏掉的话页面那个 input 再也无法触发。
+     * 内置 FileActivity 回的是 {@code file://}，系统选择器回 {@code content://}，
+     * 两者 WebView 都能读，所以直接原样传回；只有取不到 URI 时才当作取消。
+     */
+    private final ActivityResultLauncher<Intent> picker = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(), result -> {
+                ValueCallback<Uri[]> callback = chooser;
+                chooser = null;
+                if (callback == null) return;
+                Uri uri = result.getResultCode() == Activity.RESULT_OK && result.getData() != null
+                        ? result.getData().getData() : null;
+                // 目录（内置 FileActivity 的「选当前目录」）不是可上传的文件，按取消处理
+                if (uri != null && "file".equals(uri.getScheme()) && uri.getPath() != null
+                        && new File(uri.getPath()).isDirectory()) uri = null;
+                SpiderDebug.log(TAG, "fileChosen uri=%s", uri);
+                callback.onReceiveValue(uri == null ? null : new Uri[]{uri});
+            });
+
+    /** 回 null 把页面那侧的等待解开，并清掉引用避免跨页面复用。 */
+    private void cancelChooser() {
+        ValueCallback<Uri[]> callback = chooser;
+        chooser = null;
+        if (callback != null) callback.onReceiveValue(null);
     }
 
     private WebViewClient client() {
@@ -182,6 +274,8 @@ public class CatWebActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        // 选择器还挂着就销毁，WebView 那侧会一直等；先收尾再拆页面
+        cancelChooser();
         if (webView != null) {
             try {
                 webView.stopLoading();

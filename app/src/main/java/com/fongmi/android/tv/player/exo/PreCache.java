@@ -46,6 +46,7 @@ public class PreCache implements Player.Listener {
     private static final long TICK_MS = 5000;
     private static final long BUFFER_GAP_MS = 1250;
     private static final long DISK_RANGE_GAP_TOLERANCE_MS = 2000;
+    private static final int PRELOAD_FAILURE_CIRCUIT_THRESHOLD = 2;
 
     private final PreloadLifecycleTracker lifecycle = new PreloadLifecycleTracker();
     private final PlaybackDiskBufferStore diskBufferStore = PlaybackDiskBufferStore.process();
@@ -93,6 +94,9 @@ public class PreCache implements Player.Listener {
     private String mediaKey = "";
     private boolean playable;
     private boolean refillActive;
+    private boolean seekPreloadSuppressed;
+    private boolean preloadErrorCircuitOpen;
+    private int preloadFailureStreak;
     private boolean externalPreloadCircuitOpen;
     private boolean diskPreloadCircuitOpen;
     private boolean memoryPreloadPaused;
@@ -176,6 +180,9 @@ public class PreCache implements Player.Listener {
         clearSeek();
         playable = false;
         refillActive = true;
+        seekPreloadSuppressed = false;
+        preloadErrorCircuitOpen = false;
+        preloadFailureStreak = 0;
         externalPreloadCircuitOpen = false;
         diskPreloadCircuitOpen = false;
         bufferGate = BufferGate.FIRST_FRAME;
@@ -223,6 +230,9 @@ public class PreCache implements Player.Listener {
         clearSeek();
         playable = false;
         refillActive = true;
+        seekPreloadSuppressed = false;
+        preloadErrorCircuitOpen = false;
+        preloadFailureStreak = 0;
         externalPreloadCircuitOpen = false;
         diskPreloadCircuitOpen = false;
         memoryPreloadPaused = false;
@@ -287,7 +297,9 @@ public class PreCache implements Player.Listener {
 
     @Override
     public void onIsPlayingChanged(boolean isPlaying) {
-        if (!isPlaying || playable || player == null) return;
+        if (player == null) return;
+        if (isPlaying && seekPreloadSuppressed) check();
+        if (!isPlaying || playable) return;
         if (!player.getCurrentTracks().containsType(C.TRACK_TYPE_VIDEO) && player.getCurrentTracks().containsType(C.TRACK_TYPE_AUDIO)) {
             markPlayable();
         }
@@ -310,9 +322,11 @@ public class PreCache implements Player.Listener {
         if (!isSeek(reason) || helper == null) return;
         transition(PreloadLifecycleTracker.State.CANCELLED_SEEK, "seek", "generation=%d oldPosition=%d newPosition=%d", generation, oldPosition.positionMs, newPosition.positionMs);
         if (autoPolicy != null) autoPolicy.disrupt(SystemClock.elapsedRealtime());
+        seekPreloadSuppressed = true;
+        preloadFailureStreak = 0;
         stopCurrentTask("seek");
         markSeek(newPosition.positionMs);
-        refillActive = true;
+        refillActive = false;
         if (playable) bufferGate = BufferGate.RECOVERY;
         check();
     }
@@ -343,6 +357,16 @@ public class PreCache implements Player.Listener {
         }
         int state = player.getPlaybackState();
         if (isStopped(state)) return false;
+        if (seekPreloadSuppressed) {
+            SafeBufferStatus status = getSafeBufferStatus();
+            if (!shouldReleaseSeekPreloadSuppression(state, player.isPlaying(), status.loading(), status.safe())) {
+                transition(PreloadLifecycleTracker.State.WAIT_RECOVERY_BUFFER, "seek-suppressed", "generation=%d state=%d playing=%s requiredMs=%d bufferedMs=%d loading=%s", generation, state, player.isPlaying(), status.requiredMs(), status.bufferedMs(), status.loading());
+                return true;
+            }
+            seekPreloadSuppressed = false;
+            refillActive = true;
+            PlaybackTrace.log("exo-preload", playbackTraceId, "event=seek-suppressed-release session=%d generation=%d bufferedMs=%d requiredMs=%d", lifecycle.sessionId(), generation, status.bufferedMs(), status.requiredMs());
+        }
         if (state != Player.STATE_READY) return true;
         if (!playable) {
             transition(PreloadLifecycleTracker.State.WAIT_FIRST_FRAME, "first-frame", "generation=%d position=%d buffered=%d loading=%s", generation, player.getCurrentPosition(), player.getTotalBufferedDuration(), player.isLoading());
@@ -370,6 +394,10 @@ public class PreCache implements Player.Listener {
         if (player.isCurrentMediaItemLive()) {
             transition(PreloadLifecycleTracker.State.SKIPPED, "live", "generation=%d", generation);
             stop("live");
+            return false;
+        }
+        if (preloadErrorCircuitOpen) {
+            transition(PreloadLifecycleTracker.State.PAUSED_AUTO, "preload-error-circuit-open", "generation=%d position=%d buffered=%d", generation, player.getCurrentPosition(), player.getTotalBufferedDuration());
             return false;
         }
         if (diskPreloadCircuitOpen) {
@@ -660,7 +688,16 @@ public class PreCache implements Player.Listener {
     private void handleTaskError(PreloadLifecycleTracker.TaskEvent.Outcome outcome, String reason, Throwable error) {
         if (finishTask(outcome, reason, error) == null) return;
         if (ExoCacheWriteErrorClassifier.isDiskWriteFailure(error)) openDiskCircuit(reason, error);
-        else openExternalCircuit(reason, error);
+        else if (route == PlaybackRoute.EXTERNAL_LOOPBACK_PROXY) openExternalCircuit(reason, error);
+        else if (shouldOpenPreloadFailureCircuit(++preloadFailureStreak)) openPreloadErrorCircuit(reason, error);
+    }
+
+    private void openPreloadErrorCircuit(String reason, Throwable error) {
+        if (preloadErrorCircuitOpen) return;
+        preloadErrorCircuitOpen = true;
+        PlaybackTrace.log("exo-preload", playbackTraceId, "event=preload-circuit-open session=%d generation=%d reason=%s error=%s action=stop-preload-keep-playback", lifecycle.sessionId(), generation, reason, error == null ? "-" : error.getClass().getSimpleName());
+        stopCurrentTask("preload-error-circuit-open");
+        transition(PreloadLifecycleTracker.State.PAUSED_AUTO, "preload-error-circuit-open", "generation=%d failures=%d", generation, preloadFailureStreak);
     }
 
     private void openDiskCircuit(String reason, Throwable error) {
@@ -1233,6 +1270,7 @@ public class PreCache implements Player.Listener {
         PreloadLifecycleTracker.State state = outcome == PreloadLifecycleTracker.TaskEvent.Outcome.COMPLETED ? PreloadLifecycleTracker.State.WAIT_NEXT_RANGE : PreloadLifecycleTracker.State.WAIT_RETRY;
         transition(state, reason, "generation=%d task=%d", event.generation(), event.taskId());
         if (outcome == PreloadLifecycleTracker.TaskEvent.Outcome.COMPLETED) {
+            preloadFailureStreak = 0;
             diskBufferStore.recordCompleted(mediaKey, event.startMs(), saturatedAdd(event.startMs(), event.lengthMs()));
             requestImmediateCheck(event.generation());
         }
@@ -1248,6 +1286,14 @@ public class PreCache implements Player.Listener {
     private static long saturatedAdd(long value, long increment) {
         if (increment <= 0) return value;
         return value > Long.MAX_VALUE - increment ? Long.MAX_VALUE : value + increment;
+    }
+
+    static boolean shouldReleaseSeekPreloadSuppression(int playbackState, boolean playing, boolean loading, boolean safeBuffer) {
+        return playbackState == Player.STATE_READY && playing && !loading && safeBuffer;
+    }
+
+    static boolean shouldOpenPreloadFailureCircuit(int consecutiveFailures) {
+        return consecutiveFailures >= PRELOAD_FAILURE_CIRCUIT_THRESHOLD;
     }
 
     private void beginPreloadTraffic() {

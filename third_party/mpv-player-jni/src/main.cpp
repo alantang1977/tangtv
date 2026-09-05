@@ -170,18 +170,7 @@ jni_func(jint, destroy) {
         return MPV_ERROR_SUCCESS;
     }
 
-    if (g_shutdown_requested.exchange(true))
-        return MPV_ERROR_SUCCESS;
-
-    const char *arguments[] = {"quit", NULL};
-    int result = mpv_command_async(context, 0, arguments);
-    if (result < 0) {
-        ALOGE("failed to queue asynchronous mpv shutdown: %s",
-              mpv_error_string(result));
-        g_force_shutdown = true;
-        mpv_wakeup(context);
-    }
-    return MPV_ERROR_SUCCESS;
+    return enqueue_shutdown(env);
 }
 
 static int run_command(JNIEnv *env, jobjectArray jarray, uint64_t request_id) {

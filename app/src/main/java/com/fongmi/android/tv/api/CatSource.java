@@ -3,12 +3,16 @@ package com.fongmi.android.tv.api;
 import android.text.TextUtils;
 
 import com.fongmi.android.tv.App;
+import com.fongmi.android.tv.node.NodeBundle;
 import com.fongmi.android.tv.node.NodeRuntime;
 import com.github.catvod.crawler.SpiderDebug;
 import com.github.catvod.utils.Json;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 把「猫源」（CatPawOpen 一类的 CatVod T4 服务端）返回的配置整形成标准 TVBox 配置。
@@ -19,11 +23,17 @@ import com.google.gson.JsonObject;
  */
 public class CatSource {
 
-    /** 猫源地址指向 Node bundle 本身（如 {@code .../index.js.md5}），不是可直接解析的配置。 */
+    /**
+     * 猫源地址指向 Node bundle 本身（如 {@code .../index.js.md5}），不是可直接解析的配置。
+     *
+     * <p>本地包（用户自己解压的目录）也算：这时地址是路径而不是 URL，靠目录里有
+     * {@code index.js.md5} 认定，与 CatPawOpen 的发布约定一致。
+     */
     public static boolean isBundle(String url) {
         if (TextUtils.isEmpty(url)) return false;
-        String value = url.trim().toLowerCase();
-        return value.endsWith(".js.md5") || value.endsWith("/index.js");
+        String value = url.trim().toLowerCase(Locale.ROOT);
+        if (value.endsWith(".js.md5") || value.endsWith("/index.js")) return true;
+        return NodeBundle.isLocal(url);
     }
 
     /**
@@ -49,7 +59,9 @@ public class CatSource {
                 latch.countDown();
             }
         });
-        latch.await();
+        if (!latch.await(60, TimeUnit.SECONDS)) {
+            throw new Exception("猫源启动超时");
+        }
         if (error.get() != null) throw new Exception("猫源启动失败: " + error.get());
         return NodeRuntime.configUrl();
     }

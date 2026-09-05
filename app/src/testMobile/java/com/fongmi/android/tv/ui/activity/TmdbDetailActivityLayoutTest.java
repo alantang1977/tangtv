@@ -60,11 +60,53 @@ public class TmdbDetailActivityLayoutTest {
                 queryFilter > helper && source.indexOf("shouldSkipRawTmdbQuery(rawTitle, resolution)", queryFilter) > queryFilter);
         int originalSearch = source.indexOf("AutoTmdbMatch match = searchResolvedTmdbMatch(rawTitle, resolution, attempted);", helper);
         int cleaned = source.indexOf("resolver.queryCleanedTitles(request, 4)", originalSearch);
-        int aiFallback = source.indexOf("resolver.resolveWithAiFallback(request)", originalSearch);
+        int aiFallback = source.indexOf("resolver.resolveWithAiFallback(aiRequest)", originalSearch);
         assertTrue("automatic TMDB detail matching must try code-cleaned title candidates before AI fallback",
                 originalSearch > helper && cleaned > originalSearch && aiFallback > cleaned);
         assertTrue("automatic TMDB detail matching must accept exact same-title ties from TMDB search order",
                 exactTie > 0 && source.indexOf("shouldAcceptFirstExactTmdbCandidate(best, second, keyword, sourceVod)", load) > load);
+    }
+
+    @Test
+    public void searchResultKeywordFlowsIntoBothTmdbAutoMatchPaths() throws Exception {
+        String collect = readFlavorJava("leanback", "com", "fongmi", "android", "tv", "ui", "activity", "CollectActivity.java");
+        assertTrue("search result cards must pass the original search keyword to VideoActivity",
+                collect.contains("VideoActivity.collect(this, item.getSiteKey(), item.getId(), item.getName(), pic, getWallPic(), getKeyword());"));
+
+        String mobileFragment = readFlavorJava("mobile", "com", "fongmi", "android", "tv", "ui", "fragment", "CollectFragment.java");
+        assertTrue("mobile search result cards must pass the original search keyword to VideoActivity",
+                mobileFragment.contains("VideoActivity.collect(requireActivity(), item.getSiteKey(), item.getId(), item.getName(), pic, getWallPic(), getKeyword());"));
+
+        String leanbackFragment = readFlavorJava("leanback", "com", "fongmi", "android", "tv", "ui", "fragment", "CollectFragment.java");
+        assertTrue("leanback search result cards must pass the original search keyword to VideoActivity",
+                leanbackFragment.contains("VideoActivity.collect(requireActivity(), item.getSiteKey(), item.getId(), item.getName(), item.getPic(), null, getKeyword());"));
+
+        for (String flavor : List.of("leanback", "mobile")) {
+            String source = readFlavorJava(flavor, "com", "fongmi", "android", "tv", "ui", "activity", "VideoActivity.java");
+            int keywordGetter = source.indexOf("getSearchKeyword()");
+            int autoMatch = source.indexOf("mTmdbUIAdapter.autoMatch(item.getName(), item, getSearchKeyword())");
+            int extra = source.indexOf("search_keyword");
+
+            assertTrue(flavor + " must read the search keyword from the detail Intent", keywordGetter >= 0 && extra >= 0);
+            assertTrue(flavor + " must pass the search keyword into TMDB auto matching", autoMatch > keywordGetter);
+        }
+    }
+
+    @Test
+    public void independentTmdbDetailUsesSearchKeywordAfterCardNameAndBeforeCleanedAiFallback() throws Exception {
+        String source = readJava("com", "fongmi", "android", "tv", "ui", "activity", "TmdbDetailActivity.java");
+        int getter = source.indexOf("private String getTmdbSearchKeyword()");
+        int match = source.indexOf("private AutoTmdbMatch searchResolvedTmdbMatch(String rawTitle, @Nullable Vod sourceVod)");
+        int card = source.indexOf("searchResolvedTmdbMatch(rawTitle, resolution, attempted)", match);
+        int keyword = source.indexOf("searchResolvedTmdbMatch(rawTitle, searchKeyword,", card);
+        int cleaned = source.indexOf("resolver.queryCleanedTitles(request, 4)", keyword);
+        int ai = source.indexOf("resolver.resolveWithAiFallback(aiRequest)", cleaned);
+
+        assertTrue("independent TMDB detail must read the search keyword extra", getter >= 0 && source.indexOf("search_keyword", getter) > getter);
+        assertTrue("independent TMDB detail must keep card-name matching first", match >= 0 && card > match);
+        assertTrue("independent TMDB detail must try the search keyword after card-name matching", keyword > card);
+        assertTrue("independent TMDB detail must clean titles after search-keyword matching", cleaned > keyword);
+        assertTrue("independent TMDB detail must keep AI as the last fallback", ai > cleaned);
     }
 
     @Test
@@ -529,6 +571,18 @@ public class TmdbDetailActivityLayoutTest {
                 body.contains("if (defaultPlaybackLaunchPending) return;"));
         assertTrue("detail playback must leave the current click/input dispatch before launching VideoActivity",
                 body.contains("ActivityLaunch.postOnAnimation(this, () ->"));
+    }
+
+    @Test
+    public void colorfulDetailDoesNotKeepPlaybackServiceBoundBetweenEpisodeLaunches() throws Exception {
+        String source = readJava("com", "fongmi", "android", "tv", "ui", "activity", "TmdbDetailActivity.java");
+        int method = source.indexOf("protected boolean shouldBindPlaybackService()");
+        int methodEnd = source.indexOf("private ", method + 1);
+        String body = method >= 0 && methodEnd > method ? source.substring(method, methodEnd) : "";
+
+        assertTrue("detail page must decide whether its mode owns an inline player", method >= 0);
+        assertTrue("colorful detail must leave PlaybackService ownership to each standalone VideoActivity",
+                body.contains("return isFusionMode() || isPlayerMode();"));
     }
 
     @Test
@@ -3249,6 +3303,38 @@ public class TmdbDetailActivityLayoutTest {
                 load.contains("boolean cacheChanged = cache.pruneRouteBindings")
                         && load.contains("cacheChanged |= cache.recordRouteBinding")
                         && load.contains("if (cacheChanged) Setting.putTmdbSeasonMatchCache(cache)"));
+    }
+
+    @Test
+    public void automaticSeasonChoiceRestoresUnboundEpisodeResolution() throws Exception {
+        String source = readJava("com", "fongmi", "android", "tv", "ui", "activity", "TmdbDetailActivity.java");
+        String seasonChoice = source.substring(source.indexOf("public void onSeason(int seasonNumber)"),
+                source.indexOf("private void analyzeTmdbSeasonWithAi"));
+        String clear = source.substring(source.indexOf("private void clearTmdbSeasonBinding"),
+                source.indexOf("private String selectedSeasonFlagKey"));
+
+        assertTrue("automatic choice must leave manual season state before episode re-render",
+                clear.contains("selectedSeasonNumber = -1;")
+                        && clear.indexOf("selectedSeasonNumber = -1;") < clear.indexOf("refreshEpisodesAfterSeasonBinding()"));
+        assertTrue("manual season choice must keep its explicit season selected",
+                seasonChoice.contains("selectedSeasonNumber = seasonNumber;")
+                        && seasonChoice.indexOf("selectedSeasonNumber = seasonNumber;") < seasonChoice.indexOf("refreshEpisodesAfterSeasonBinding()"));
+    }
+
+    @Test
+    public void automaticEpisodeMetadataUsesResolvedFallbackSeason() throws Exception {
+        String source = readJava("com", "fongmi", "android", "tv", "ui", "activity", "TmdbDetailActivity.java");
+        String dataSeason = source.substring(source.indexOf("private int tmdbEpisodeDataSeason"),
+                source.indexOf("private void fetchSeasonIfNeeded(int seasonNumber)"));
+        String episodeDetail = source.substring(source.indexOf("private void showTmdbEpisodeDetail"),
+                source.indexOf("private EpisodePosition historyEpisodePosition"));
+
+        assertTrue("empty auto grouping must reuse the resolver's unique season for episode data",
+                dataSeason.contains("tmdbSeasonChoiceResolution().getSelectedSeason()"));
+        assertTrue("episode detail must use the same resolved fallback season as episode data",
+                episodeDetail.contains("int detailSeasonNumber = tmdbEpisodeDataSeason(")
+                        && episodeDetail.contains("int displaySeasonNumber = detailSeasonNumber;")
+                        && episodeDetail.contains("int seasonNumber = detailSeasonNumber;"));
     }
 
     @Test

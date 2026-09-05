@@ -187,6 +187,138 @@ public class CatWebWiringTest {
         }
     }
 
+    /**
+     * 设置页要在点击那一刻就开，不能靠详情页事后退场。
+     *
+     * <p>事后退场（{@code onCatWebEvent} / {@code shouldYieldDetail}）只能让播放页尽快消失，
+     * 消不掉「它已经被创建并闪了一下」——用户看到的就是「先进播放页，再跳到配置页」。
+     * 真正的修法是在 {@code startActivity} 之前分流，跟音频源/小说源同一个机制。
+     * 那两套判定<b>保留</b>：它们兜住本 handler 覆盖不到的入口（历史、搜索、推送）。
+     */
+    @Test
+    public void websiteActionDispatchesBeforeAnyDetailPage() throws IOException {
+        String app = read("com/fongmi/android/tv/App.java");
+        assertTrue("必须注册猫源动作项的 handler", app.contains("new com.fongmi.android.tv.content.CatActionContentHandler()"));
+
+        String handler = read("com/fongmi/android/tv/content/CatActionContentHandler.java");
+        assertTrue("站点级分流要落在 handleSite 上", handler.contains("CatAction.openWebsite(key, id, pic)"));
+
+        String action = read("com/fongmi/android/tv/api/CatAction.java");
+        int open = action.indexOf("public static boolean openWebsite(");
+        assertTrue("CatAction 必须提供点击即开页的入口", open >= 0);
+        assertTrue("命中要直接开网页", action.indexOf("CatWebview.open(", open) > open);
+        // 走 detail 让 bundle dispatch 会被详情缓存吃掉：命中缓存时压根不调 spider，消息永不再发
+        assertTrue("不得靠调 detail 让 bundle 去 dispatch，那条路会被详情缓存吃掉",
+                !action.contains("detailContent("));
+    }
+
+    /**
+     * 判定不得写死动作名。
+     *
+     * <p>动作名是 bundle 的实现细节且在增长：老 bundle 只有 {@code openInternalWebsite}
+     * （点击/通用配置），新的又加了 {@code builtinDanmuApiQr}（弹幕服务）。写死名字等于
+     * 每加一项都要再改一次代码，漏掉的那项继续闪播放页——这正是弹幕服务复现的原因。
+     *
+     * <p>改按「能不能从 vod_pic 的 proxy 段解出要打开的地址」判定：bundle 在 category 里就把
+     * 地址 base64 编进了 pic，detail 里 dispatch 的是同一个地址。
+     */
+    @Test
+    public void dispatchDoesNotHardcodeActionNames() throws IOException {
+        String action = read("com/fongmi/android/tv/api/CatAction.java");
+        int is = action.indexOf("public static boolean isWebsiteAction(");
+        assertTrue("要有独立的动作项判定", is >= 0);
+
+        // 动作名只该出现在注释里（说明来历），不能进判定逻辑
+        assertTrue("判定不得比对具体动作名，否则每加一项都要改代码",
+                !action.contains("\"openInternalWebsite\"") && !action.contains("\"builtinDanmuApiQr\""));
+        assertTrue("地址要从 pic 的 proxy 段解出来", action.contains("PROXY") && action.contains("Base64.decode"));
+        // 范围必须收在配置站点内，否则真片源会被当成动作项
+        assertTrue("判定必须限定在猫源的配置站点内", action.indexOf("isSettingSite(key)", is) > is);
+    }
+
+    /**
+     * 老 bundle 的「扫码配置」仍要能进详情页看二维码。
+     *
+     * <p>它的 pic 同样是 proxy 地址，所以按地址判定会把它一起吞掉；靠 {@code vod_id} 的形状
+     * 排除——它是 {@code String(Math.random())}（纯小数），动作项的 id 都是具名标识符。
+     */
+    @Test
+    public void qrItemStillOpensDetail() throws IOException {
+        String action = read("com/fongmi/android/tv/api/CatAction.java");
+        int id = action.indexOf("private static boolean isActionId(");
+        assertTrue("必须按 id 形状排除扫码项", id >= 0);
+        assertTrue("纯小数 id（Math.random）不能算动作项",
+                action.indexOf("isDigit", id) > id || action.indexOf("isLetter", id) > id);
+    }
+
+    /** 解不出 http(s) 地址时要退回原来的详情页路径，不能拿可疑地址去开页。 */
+    @Test
+    public void undecodableTargetFallsBack() throws IOException {
+        String action = read("com/fongmi/android/tv/api/CatAction.java");
+        int target = action.indexOf("private static String target(");
+        int bodyEnd = action.indexOf("\n    }", target);
+        assertTrue("要有地址解码", target >= 0);
+        assertTrue("只接受 http(s)", action.indexOf("startsWith(\"http://\")", target) > target);
+        assertTrue("proxy 后的 Base64 必须整段解码，不能按 slash 截断",
+                action.indexOf("encoded.indexOf('/')", target) < 0
+                        || action.indexOf("encoded.indexOf('/')", target) > bodyEnd);
+    }
+
+    /**
+     * 解出来的地址必须与站点同 host。
+     *
+     * <p>{@code vod_pic} 是服务端下发的，不做这一关，第三方源就能让我们把任意外部页面
+     * 当成「设置页」加载进 WebView。动作项的地址本该指向猫源自己那台服务。
+     */
+    @Test
+    public void targetMustBeSameHostAsSite() throws IOException {
+        String action = read("com/fongmi/android/tv/api/CatAction.java");
+        int url = action.indexOf("private static String websiteUrl(");
+        assertTrue("判定与取值要合在一处，避免两边条件走岔", url >= 0);
+        assertTrue("必须做同源校验", action.indexOf("sameHost(", url) > url);
+        // userinfo 里可以藏 @host 混淆（http://good@evil.com/），必须取最后一个 @ 之后
+        assertTrue("host 提取要防 userinfo 混淆", action.contains("lastIndexOf('@')"));
+    }
+
+    /**
+     * 本机 bundle 自报局域网 IP 时不能被同源校验拦掉。
+     *
+     * <p>宿主始终用 {@code 127.0.0.1:<port>} 访问本机 bundle，而 bundle 在 {@code vod_pic} 里
+     * 自报的是局域网 IP（按 Host 头推自己的地址）。纯字符串比对会把这两种写法判成跨 host，
+     * 表现就是「点击配置仍先进详情页」——实测踩过。
+     *
+     * <p>放行范围收在私有网段内：本机源指向公网域名/公网 IP 仍要拦截。
+     */
+    @Test
+    public void loopbackSiteTrustsPrivateTarget() throws IOException {
+        String action = read("com/fongmi/android/tv/api/CatAction.java");
+        int same = action.indexOf("private static boolean sameHost(");
+        assertTrue("要有同源判定", same >= 0);
+        assertTrue("api 是回环时要放行私有网段，否则本机 bundle 自报的地址会被误拦",
+                action.indexOf("isLocal(left) && isPrivate(right)", same) > same);
+        assertTrue("放行范围必须收在私有网段，不能放行公网",
+                action.contains("192.168.") && action.contains("169.254."));
+    }
+
+    /**
+     * 网页主题首页也要分流。
+     *
+     * <p>首页用 Web 主题渲染时，点击走的是 {@code navigation.openDetail} 桥而不是原生列表，
+     * 那条路不经 {@code ContentDispatcher}——只改原生入口会让动作项在这条路上原样闪详情页，
+     * 实测踩过（START 先是 TmdbDetailActivity，1 秒后才是 CatWebActivity）。
+     */
+    @Test
+    public void webThemeBridgeAlsoDispatches() throws IOException {
+        String bridge = read("com/fongmi/android/tv/web/WebHomeThemeBridge.java");
+        int open = bridge.indexOf("private String openDetail(");
+        assertTrue("桥必须有 openDetail", open >= 0);
+
+        int dispatch = bridge.indexOf("CatAction.openWebsite(", open);
+        int detail = bridge.indexOf("TmdbDetailActivity.start(", open);
+        assertTrue("openDetail 必须先分流猫源动作项", dispatch > open);
+        assertTrue("分流要排在打开详情页之前", dispatch < detail);
+    }
+
     private static String read(String relative) throws IOException {
         return text(mainJava().resolve(path(relative)));
     }

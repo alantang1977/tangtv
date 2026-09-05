@@ -45,6 +45,7 @@ public class AiTitleExtractionServiceTest {
         config.setTitleExtractionPrompt("自定义名称提取提示词：把 F 凡人#修仙传 动漫 B 提取为凡人修仙传");
         MediaTitleRequest request = MediaTitleRequest.builder()
                 .rawTitle("F 凡人#修仙传 动漫 B")
+                .searchKeyword("凡人修仙传")
                 .build();
         MediaTitleResolution rule = new MediaTitleParser().parse(request);
 
@@ -53,6 +54,7 @@ public class AiTitleExtractionServiceTest {
         assertTrue(prompt.startsWith("自定义名称提取提示词"));
         assertTrue(prompt.contains("输入 JSON:"));
         assertTrue(prompt.contains("\"rawTitle\":\"F 凡人#修仙传 动漫 B\""));
+        assertTrue(prompt.contains("\"searchKeyword\":\"凡人修仙传\""));
     }
 
     @Test

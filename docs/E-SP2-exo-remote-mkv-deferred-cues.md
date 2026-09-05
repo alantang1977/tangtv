@@ -5,8 +5,8 @@
 - 唯一文档：`docs/E-SP2-exo-remote-mkv-deferred-cues.md`
 - 评估日期：2026-08-22（Asia/Shanghai）
 - 范围：Exo 起播速度、远程百度网盘 MKV、Matroska Cues/索引，以及首次随机访问。
-- 状态：Media3 补丁、extractor AAR 和 HTTP/HTTPS App gate 已完成并提交；定向测试和双产品编译通过，真实设备起播/seek 性能验收待完成。
-- 下一动作：同一设备、资源和网络下完成基线/候选至少 3 次中位数及首次/连续 seek 回归；未取得该证据前不宣称性能验收完成。
+- 状态：链式 `SeekHead` 修正已完成；定向测试、extractor 发布、双产品 arm64 编译和 vivo 实机连续 seek 均通过。
+- 下一动作：无；本单元提交并创建 recovery tag 后关闭。
 
 ## 结论先行
 
@@ -328,7 +328,7 @@ first seek/非零 prepare
 - 工作区：分支 `fongmi-sync`，HEAD `3aae091dbba7a2140f4c157f86aa42d901f01ff9`；活动 task id 为 `exo-sp2-defer-cues-implementation-20260822`。
 - 已完成：新增显式 `FLAG_DEFER_SEEK_FOR_CUES`、64 MiB/已知长度门槛、临时可更新 SeekMap、首次非零 seek 时加载 Cues 的状态机，并等价纳入 Media3 `859f7b3b5388378698ff23a667d3e2db5ac41aed` 的 Tracks-after-Clusters 顺序修复；补丁顺序已固定。App 的 HTTP/HTTPS URI 收窄将在候选 AAR 接入单元中完成。
 - 已有验证：完整补丁链上的 `git apply --check` 和仓库 `git diff --check` 已通过；尚不能据此声明运行时 seek 或性能正确。
-- 构建环境：机器原先只有 JDK 17，已于 2026-08-23 安装 Homebrew OpenJDK `21.0.12.1`；后续构建显式设置 `JAVA_HOME=/usr/local/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home`。使用隔离临时 checkout，不清理或覆盖预存 `third_party/sources/media/`。
+- 构建环境：使用 JDK 21；后续构建显式设置 `JAVA_HOME=/usr/local/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home`。使用隔离临时 checkout，不清理或覆盖预存 `third_party/sources/media/`。
 - 保护路径：`.gitignore`、`third_party/fongmi-repositories-lock.json`、`.codex/`、`AGENTS.md`、`docs/agents-md-effective-constraints-review-2026-08-21.md`、`docs/upstream-player-dependency-merge-assessment-2026-08-20.md`、`third_party/sources/media/` 均保持在本提交之外。
 - 回滚锚点：`3aae091dbba7a2140f4c157f86aa42d901f01ff9`；若 extractor、seek、DV 或产物验证失败，整体撤销 E-SP2 source/AAR/App 单元，不改变 E-SP1。
 - 未决风险：首次/连续/反向 seek、Cues 缺失/损坏、未知长度、IO 重试、递归 SeekHead、Tracks-after-Clusters，以及 DV7→P8.1/HDR10、TrueHD/字幕邻接能力仍需由定向测试和代表性播放验证。
@@ -357,3 +357,73 @@ first seek/非零 prepare
 - 回滚：若只需关闭新行为，回滚最终 App URI gate 即可；若候选 artifact 有兼容问题，再一并回滚 `71514fdb101db56e836902405700f39c891428e5`；若要完全撤销 E-SP2，再回滚 `fb2a9ab839958a711a73ee34232d5baa082bddc7`，E-SP1 不受影响。
 - 未决：当前无 ADB 设备；实机首帧、首次 seek、连续 seek、DV7→P8.1、DV7→HDR10、字幕/TrueHD 及网络失败率需在候选包阶段验收。该限制不影响源码、AAR 与 App 编译结论，但禁止宣称性能提升已在设备上验证。
 - 下一步：用同一远程大 MKV 做基线/候选至少 3 次中位数及首次/连续 seek、DV fallback 回归；该实机证据完成前不宣称性能验收完成。
+
+## Checkpoint 7：2026-08-28 链式 SeekHead 实机失败与修正设计
+
+### 现场证据与根因
+
+- 设备：vivo V2453A，Android 15；App `com.fongmi.android.tv`；Exo 播放约 4.20 GB 远程 MKV。
+- 用户连续三次拖动进度条，系统日志逐次输出 `Controller isn't allowed to call command= 5`；Media3 `COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM` 的值为 5，说明请求在 `MediaController` 层被当前不可 seek 时间线拒绝，未到达 Exo seek 状态机。
+- 通过播放链原有认证参数和用户指定代理执行最小 Range 检查，没有记录或输出 URL、Cookie、token：文件长度为 `4508956833` 字节，Segment content 起点为绝对偏移 `52`。
+- 文件头绝对偏移 `52` 的首个 `SeekHead` 不含直接 `Cues` 条目，只含 `SeekID=SeekHead`，其相对位置为 `4508956696`、绝对位置为 `4508956748`。
+- 文件尾绝对偏移 `4508956748` 的第二个 `SeekHead` 含 `SeekID=Cues`，其相对位置为 `4508747919`、绝对位置为 `4508747971`；直接读取该位置的前四字节为 `1c53bb6b`，确认目标确实是 `Cues`。
+- 当前 `media3-deferred-cues.patch` 只在 `SeekID` 为 `Cues` 或 `Tracks` 时保存位置，忽略 `SeekID=SeekHead`。因此到首个 Cluster 时 `cuesContentPosition == C.INDEX_UNSET`，`maybePrepareSeekMap()` 发布 `SeekMap.Unseekable`，MediaSession 随后移除当前媒体内 seek 命令。
+- 结论：这是 E-SP2 未覆盖链式/递归 `SeekHead` 的 correctness 缺口，不是 E-SP3 seek 恢复门槛或统计隔离引入的回归。
+
+### 上游 PR #2268 完整提交处置
+
+上游 PR <https://github.com/androidx/media/pull/2268> 截至 2026-08-28 仍为 closed、未合并。维护者验证了三个 `SeekHead`、未知长度和每个读位置注入 IOException 的组合，指出早期实现会丢样本或在重试后得到不一致的 seekability。以下提交全部纳入本修正的来源账本：
+
+| Full commit | 内容 | E-SP2 处置 |
+| --- | --- | --- |
+| `ffca82f981e975d302c6480ba9cbce6e05260e74` | 初版递归 SeekHead + 样片/测试 | `partial`：采用识别 `ID_SEEK_HEAD` 和二阶段跳转思想，不采用起播阶段立即尾跳 |
+| `3a79ac28707f138adb8a2f9c09c3b59125bdf261` | 初版在 PR 分支上的重落基 | `superseded`：由同 PR 后续实现覆盖 |
+| `04c8b3da1b1538ab10caf926e75bae4beeeb9226` | 增加 extractor dump | `test-only`：测试意图保留，本地使用更小的定向构造输入 |
+| `f5a6ed0f3f5e3ad827e886de088bd93ecbc2178e` | 三 SeekHead 实验样片 | `evidence-only`：证明单位置字段不足，需要 pending/visited 集合 |
+| `a77bd285dcfe3ebd56eb5f487f55638625005e35` | 任意数量 SeekHead 的 pending/visited 状态 | `partial`：采用有界 pending/visited 设计，访问时机改为首次非零 seek |
+| `73a79cb0c496b55d7a1eb14d30785cd537be7954` | PR 分支 merge | `maintenance-only`：无独立行为移植 |
+| `3525b89ef2bdb549bb9744cc7c51af3a56a2cb58` | 补 HashSet import | `covered`：随本地状态集合实现自然覆盖 |
+| `705b31db25dd08708cf578e39b60e3b9e14574e0` | 三 SeekHead dump 更新 | `test-only`：不复制 dump，覆盖相同行为断言 |
+| `5ee7bd2fa4f2416d3cb75c437444c20585d1a468` | 补漏 dump 更新 | `test-only`：不影响生产逻辑 |
+| `46f72f3e8ead70c3b6b375d1b7f41e5b15d82329` | IO 重试状态清理及向前位置限制 | `partial`：采用 `seek(0,0)` 重置和位置/边界检查，不在 Segment 回调无条件清空 |
+| `6d8ce0f41e8c688ef4fff1b1ae7403e6deb0871d` | 最终 dump 同步 | `test-only`：不影响生产逻辑 |
+
+### 方案比较与批准设计
+
+| 方案 | correctness | 起播性能 | 风险 | 决定 |
+| --- | --- | --- | --- | --- |
+| 不变更 | 链式 SeekHead 永久不可 seek | 保持当前首帧 | 用户核心功能失败 | 拒绝 |
+| 强制 MediaSession 暴露 seek 命令 | UI 请求可下发，但底层没有有效 SeekMap | 无直接影响 | 可能回到 0、错误定位或循环读取 | 拒绝 |
+| 原样采用 PR #2268 | 能查找多个 SeekHead | 首个 Cluster 前访问尾部 SeekHead/Cues，重新把尾部 RTT 放回起播路径 | PR 未合并，且重试/未知长度测试曾失败 | 拒绝原样移植 |
+| WebHTV 惰性链式 SeekHead | 起播先发布临时可 seek map，首次非零 seek 才解析 SeekHead 链和 Cues | 保留 E-SP2 起播收益 | 需要有界状态、重试清理和定向测试 | 批准实施 |
+
+最终设计：
+
+1. 解析 `SeekID=SeekHead` 时记录绝对位置；只接受位于当前 Segment 内、严格向前、尚未访问的条目，并限制最多 10 个待访问 SeekHead，避免循环或恶意唯一链造成无界 I/O。
+2. deferred 模式下，只要已知直接 Cues 或至少一个待访问 SeekHead，就发布 `isSeekable=true` 的临时 SeekMap。非零 seek 的临时 byte position 优先指向 Cues，否则指向待访问 SeekHead；起播阶段不主动执行尾部跳转。
+3. 首次非零 seek 到达 SeekHead 后，若解析出 Cues 则继续跳到 Cues；否则访问下一个未访问 SeekHead。完整 Cues map 发布后，用原目标时间计算最终 Cluster 位置并继续正常 seek。
+4. `seek(0, 0)` 和新的 Segment 重启清理 pending/visited/中间跳转状态；相同位置的 unchanged-position IOException 重试保留状态。链耗尽、越界或超过上限时回退 `SeekMap.Unseekable`，不得死循环、无限分配或强制暴露错误命令。
+5. 保留直接 Cues、Tracks-after-Clusters、Format 去重、DV BlockAdditional、字幕、TrueHD/DTS 分析和其他 extractor 语义；不修改 App 工厂、LoadControl、PreCache、E-SP3、MPV/native 或网络超时。
+
+### 验收、可观测性与回滚
+
+- 定向测试：直接 Cues 保持原行为；单层链式 SeekHead 在 prepare 阶段不读取尾部、临时 map 可 seek；首次非零 seek 按 `SeekHead -> Cues -> Cluster` 顺序完成；循环/重复/超过上限不死循环；`seek(0,0)` 后可重新解析；IO 短读/重试不丢状态。
+- 构建：锁定 Media3 `e3e922d5c01bc0b564849940fe589daf37360d15` 应用完整补丁链，运行 Matroska 定向测试并发布 extractor AAR/sources；更新补丁、artifact 和 lock SHA-256；Mobile/Leanback arm64 Java 编译通过。
+- 实机：同一 vivo、同一 MKV 连续 seek 至少三次；不得再出现 `command=5` 拒绝；第一次 seek 必须出现尾部 SeekHead/Cues Range，播放位置到达目标且后续连续播放；起播阶段不得提前读取尾部 SeekHead。
+- 日志：不另做大范围诊断 APK；修复中只增加一条 debug 级分支日志（disabled/direct-cues/nested-seekhead/unseekable）或等价测试可观测点，不记录 URL、Cookie、token。
+- 回滚：作为独立 extractor source/artifact/lock 单元回滚到当前 HEAD `9fcab83f9084446566240a8e8f5233d87d0274cc`；App gate 和 E-SP3 不需回滚。
+- 用户批准：2026-08-28 用户明确要求忽略 C2、集中解决该 bug；C2 文档保持受保护且不进入本单元。
+- 下一动作：修改 `media3-deferred-cues.patch` 和定向测试，重建 extractor 产物后执行实机验收。
+
+## Checkpoint 8：2026-08-29 链式 SeekHead 修正完成
+
+- 完成：`MatroskaExtractor` 在 deferred 模式记录有界 pending/visited `SeekHead`，起播只发布临时可 seek map，首次非零 seek 才按 `SeekHead -> Cues -> Cluster` 解析；循环、重复、越界或链耗尽安全回退，`seek(0,0)` 可重置重试状态。
+- 补丁链：扩展后的 deferred patch 会改变后续零上下文补丁的行号，因此 `scripts/build_media_deps.sh` 固定为 `media3-upstream-playback-fixes-2026-08.patch -> media3-exo-hdr-parser-safety.patch -> media3-deferred-cues.patch`。从锁定源码重新应用全部 Media3 补丁后，最终 Java 源码与已测试源码 SHA-256 逐字节一致。
+- 定向测试：锁定 Media3 `e3e922d5c01bc0b564849940fe589daf37360d15` 上运行 `:lib-extractor:testDebugUnitTest --tests androidx.media3.extractor.mkv.MatroskaExtractorNonParameterizedTest`，`BUILD SUCCESSFUL`；覆盖直接 Cues、Tracks-after-Clusters、首次非零 seek、链式 SeekHead 成功和自循环回退。
+- Artifact：deferred patch SHA-256 `ebbfbe0bcd1f002780b2db300bdcf42d9c3309c0738b43212ffa224eedcba8dd`；extractor AAR SHA-256 `59a090bad8efc32552cf5a7ec1d2fb66444168bfbc97bd45e50764527f80c768`；sources JAR SHA-256 `9314a303f402e903dd075db5e9babf9be6474da539a4b76bb1ed765b95b6ef4e`。AAR、sources、module 及各自 MD5/SHA-1/SHA-256/SHA-512 sidecar 一致，module 内嵌摘要一致，POM 未变化。
+- 发布与编译：`:lib-extractor:publishReleasePublicationToMavenRepository`、`:app:compileMobileArm64_v8aDebugJavaWithJavac` 和 `:app:compileLeanbackArm64_v8aDebugJavaWithJavac` 均 `BUILD SUCCESSFUL`；Gradle transform 中实际消费的 `MatroskaExtractor` 已包含 `pendingSeekHeadPositions`。
+- APK：Mobile arm64 debug APK SHA-256 `1563a1208b4721140fd88abf9548732e752ae700c00ad3a6711f010385b2e4b1`；vivo 流式安装被 OEM 拒绝，改用 `adb install --no-streaming -r -d -g` 后成功，不属于 APK 或代码失败。
+- 实机验收：vivo V2453A、Android 15、EXO、同一 4.20 GB 远程 MKV；用户完成连续拖动后明确确认“可以了”。本次日志未出现 `Controller isn't allowed to call command=5` 或 App fatal exception。
+- 可观测性决定：不增加额外运行时调试日志。定向测试已覆盖分支状态，现有 MediaSession 拒绝日志、播放器位置和网络 Range 行为足以判定本缺陷；避免在 extractor 热路径增加长期噪声或泄露请求信息的风险。
+- 回滚：整体回滚本单元即可恢复至 `9fcab83f9084446566240a8e8f5233d87d0274cc` 的 extractor patch/artifact/lock/build-order 状态；App URI gate 和 E-SP3 无需回滚。
+- 下一动作：运行最终一致性校验，使用 task guard 原子提交并立即创建 recovery tag。

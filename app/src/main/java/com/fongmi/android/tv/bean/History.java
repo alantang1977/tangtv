@@ -115,7 +115,9 @@ public class History implements Diffable<History> {
     @ColumnInfo(defaultValue = "0")
     private int tmdbEpisodeNumber;
 
-    private transient int player = PlayerSetting.NONE;
+    @SerializedName("player")
+    @ColumnInfo(defaultValue = "-1")
+    private int player = PlayerSetting.NONE;
     private transient long updateTime;
     private transient String playbackSourceKey;
     @Ignore
@@ -873,7 +875,15 @@ public class History implements Diffable<History> {
     public boolean setTmdbEpisodePosition(Episode episode) {
         TmdbEpisode tmdbEpisode = episode == null ? null : episode.getTmdbEpisode();
         int episodeNumber = tmdbEpisode == null ? 0 : tmdbEpisode.getNumber();
-        int seasonNumber = tmdbEpisode == null ? 0 : tmdbEpisode.getSeasonNumber();
+        return setTmdbEpisodePosition(tmdbEpisode, episodeNumber);
+    }
+
+    public boolean setTmdbEpisodePositionWithUnknownSeason(int episodeNumber) {
+        return setTmdbEpisodePosition(null, Math.max(0, episodeNumber));
+    }
+
+    private boolean setTmdbEpisodePosition(TmdbEpisode tmdbEpisode, int episodeNumber) {
+        int seasonNumber = tmdbEpisode == null ? -1 : tmdbEpisode.getSeasonNumber();
         return setTmdbEpisodePosition(seasonNumber, episodeNumber);
     }
 
@@ -1062,9 +1072,16 @@ public class History implements Diffable<History> {
      * 将历史记录的 key 迁移到新值。
      * 仅在 key 实际变化时删除旧 key，避免同 key 先删后写失败导致历史消失。
      * 迁移后立即 save 新 key，缩短「旧已删、新未写」窗口。
+     *
+     * <p>push（网盘/推送/本地文件）记录不迁移：它的 key 第二段就是那条播放地址本身
+     * （见 {@link #getVodId()} 与 SiteApi#pushDetail），而从历史进入播放正是靠这一段反解
+     * 出 vodId。普通站点的 vodId 是稳定的条目 id，迁移无害；push 迁移则会把记录改写成详情
+     * 阶段解析出的另一条地址，那条地址往往带时效，下次从历史打开必然失败，用户只能回网盘
+     * 重新找。按名合并（{@link #canMergeByName()}）已对 push 豁免，这里补齐同样的豁免。
      */
     public void replace(String key) {
         if (TextUtils.isEmpty(key) || TextUtils.equals(getKey(), key)) return;
+        if (isPushHistory()) return;
         String previous = getKey();
         enrichTmdbId();
         updateTime = System.currentTimeMillis();

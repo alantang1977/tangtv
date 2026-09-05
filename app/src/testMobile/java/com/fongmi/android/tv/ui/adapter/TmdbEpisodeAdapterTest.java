@@ -1,5 +1,7 @@
 package com.fongmi.android.tv.ui.adapter;
 
+import com.fongmi.android.tv.ui.helper.TmdbEpisodeGridPolicy;
+
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -10,6 +12,30 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class TmdbEpisodeAdapterTest {
+
+    @Test
+    public void nativeEnhancedNonCardGridUsesStandardEpisodeHeight() {
+        assertEquals(TmdbEpisodeGridPolicy.GRID_CARD_HEIGHT_DP,
+                TmdbEpisodeAdapter.nativeEnhancedGridCardHeightDp(false, false));
+        assertEquals(TmdbEpisodeGridPolicy.GRID_CARD_HEIGHT_DP,
+                TmdbEpisodeAdapter.nativeEnhancedGridCardHeightDp(true, false));
+        assertEquals(TmdbEpisodeGridPolicy.NATIVE_MOBILE_GRID_CARD_HEIGHT_DP,
+                TmdbEpisodeAdapter.nativeEnhancedGridCardHeightDp(true, true));
+        assertEquals(TmdbEpisodeGridPolicy.NATIVE_GRID_CARD_HEIGHT_DP,
+                TmdbEpisodeAdapter.nativeEnhancedGridCardHeightDp(false, true));
+    }
+
+    @Test
+    public void nativeEnhancedGridUsesOneHeightForEveryItemOnThePage() throws Exception {
+        String source = tmdbEpisodeAdapterSource();
+
+        assertTrue("native-enhanced grid sizing must use one page-wide TMDB data decision",
+                source.contains("private boolean pageHasTmdbEpisodeData;")
+                        && source.contains("pageHasTmdbEpisodeData = hasPageTmdbEpisodeData();")
+                        && source.contains("applyCardSize(holder, compact, pageHasTmdbEpisodeData);")
+                        && source.contains("private boolean hasPageTmdbEpisodeData()")
+                        && !source.contains("applyCardSize(holder, compact, tmdbEpisode != null);"));
+    }
 
     @Test
     public void nativeEnhancedPhoneGridUsesReadableCleanTitle() {
@@ -55,7 +81,7 @@ public class TmdbEpisodeAdapterTest {
         String source = tmdbEpisodeAdapterSource();
         int setMode = source.indexOf("public void setMode(Mode mode)");
         int setGridSpan = source.indexOf("public void setGridSpanCount(int gridSpanCount)");
-        int applyCardSize = source.indexOf("private void applyCardSize(ViewHolder holder, boolean compact)");
+        int applyCardSize = source.indexOf("private void applyCardSize(ViewHolder holder, boolean compact, boolean hasTmdbEpisodeData)");
 
         assertTrue("TMDB episode adapter must rebind visible cards when grid/list style changes",
                 setMode >= 0
@@ -73,12 +99,12 @@ public class TmdbEpisodeAdapterTest {
     @Test
     public void gridEpisodeCardsUseSymmetricHorizontalMargins() throws Exception {
         String source = tmdbEpisodeAdapterSource();
-        int method = source.indexOf("private void applyCardSize(ViewHolder holder, boolean compact)");
+        int method = source.indexOf("private void applyCardSize(ViewHolder holder, boolean compact, boolean hasTmdbEpisodeData)");
         int methodEnd = source.indexOf("private boolean nativeEnhancedMobileGrid", method);
         String body = method >= 0 && methodEnd > method ? source.substring(method, methodEnd) : "";
 
         assertTrue("grid episode cards must split their spacing between start and end so outer margins stay balanced",
-                body.contains("int gridSpacing = dp(holder.itemView, isNativeEnhanced() ? 12 : 8);")
+                body.contains("int gridSpacing = dp(holder.itemView, standardGridItem ? 8 : isNativeEnhanced() ? 12 : 8);")
                         && body.contains("int marginStart = mode == Mode.GRID ? gridSpacing / 2 : 0;")
                         && body.contains("marginParams.setMarginStart(marginStart);")
                         && body.contains("marginParams.getMarginStart() != marginStart"));

@@ -104,6 +104,115 @@ public class NodePortSelectionTest {
     }
 
     @Test
+    public void runtimeStartHasBoundedFailureHandling() throws IOException {
+        String runtime = read("com/fongmi/android/tv/node/NodeRuntime.java");
+        String source = read("com/fongmi/android/tv/api/CatSource.java");
+
+        assertTrue("NodeRuntime 启动必须有超时", runtime.contains("START_TIMEOUT_MS"));
+        assertTrue("启动超时必须停止 NodeService", runtime.contains("NodeService.stop(context)"));
+        assertTrue("启动超时必须复位 STARTING", runtime.contains("STARTING.compareAndSet(true, false)"));
+        assertTrue("CatSource 等待必须有时间上限", source.contains("latch.await(60, TimeUnit.SECONDS)"));
+    }
+
+    @Test
+    public void timeoutInvalidatesLateRepliesAndKeepsTheStoppingServiceVisible() throws IOException {
+        String runtime = read("com/fongmi/android/tv/node/NodeRuntime.java");
+        int timeout = runtime.indexOf("private static synchronized void timeout(");
+        int stop = runtime.indexOf("NodeService.stop(context);", timeout);
+        int invalidate = runtime.indexOf("START_GENERATION.incrementAndGet();", timeout);
+        int clearUrl = runtime.indexOf("servingUrl = \"\";", timeout);
+        int nextMethod = runtime.indexOf("private static boolean same(", timeout);
+
+        assertTrue("timeout must invalidate the old generation before stopping its service",
+                timeout >= 0 && invalidate > timeout && invalidate < stop);
+        assertTrue("timeout must keep the stopping service visible until the next start waits for process death",
+                clearUrl < timeout || clearUrl > nextMethod);
+        assertTrue("start and timeout must serialize the state transition so a retry cannot race the generation invalidation",
+                runtime.contains("public static synchronized void start(")
+                        && runtime.contains("private static synchronized void timeout("));
+    }
+
+    @Test
+    public void nodeServiceStopsAfterReportingStartupError() throws IOException {
+        String service = read("com/fongmi/android/tv/node/NodeService.java");
+        int method = service.indexOf("private void sendError(");
+        int send = service.indexOf("reply.send(msg)", method);
+        int stop = service.indexOf("stopSelf();", method);
+
+        assertTrue("报告启动错误后必须停止前台 Service，不能让失败的 :node 常驻",
+                method >= 0 && send > method && stop > send);
+    }
+
+    @Test
+    public void staleSuppressionCreditsAccumulateAcrossReaderClosures() throws IOException {
+        String router = read("com/fongmi/android/tv/ui/novel/NovelRouter.java");
+        assertTrue("多次关闭时不能覆盖尚未消费的迟到结果额度",
+                router.contains("staleChapterResults.addAndGet(pending);")
+                        && router.contains("Math.max(staleUntil, readerClosedAt + PENDING_CHAPTER_TTL)"));
+    }
+
+    /**
+     * 复用运行中的 Node 必须过 {@code servesCurrentSource}（比完整来源身份），
+     * 而不是自己拼一个只看地址的条件——后者在服务端原地更新 bundle 后会继续跑旧 JS。
+     * {@code servingSourceKey} 只能在 READY 时从磁盘读实际安装值，不能提前写请求值。
+     */
+    @Test
+    public void runtimeReuseGoesThroughFullSourceIdentityCheck() throws IOException {
+        String runtime = read("com/fongmi/android/tv/node/NodeRuntime.java");
+        int reuse = runtime.indexOf("NodeBundle.servesCurrentSource(url, servingSourceKey)");
+        int start = runtime.indexOf("if (!STARTING.compareAndSet(false, true))");
+
+        assertTrue("复用判定必须调用 servesCurrentSource", reuse >= 0);
+        assertTrue("复用判定必须在真正启动之前", start > reuse);
+
+        // 枚举所有赋值，而不是排除某一种拼写：右值只允许「清空」或「从磁盘读实际安装值」。
+        // 否则任何新写法（比如把请求侧算出的 key 直接塞进来）都能绕过检查。
+        java.util.List<String> assigned = new java.util.ArrayList<>();
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("servingSourceKey\\s*=\\s*([^;]+);").matcher(runtime);
+        while (matcher.find()) assigned.add(matcher.group(1).trim());
+
+        assertTrue("必须有 servingSourceKey 的赋值", !assigned.isEmpty());
+        assertTrue("已安装来源键只能在 READY 后从磁盘读取",
+                assigned.contains("NodeBundle.installedSourceKey(App.get())"));
+        for (String value : assigned) {
+            assertTrue("servingSourceKey 不能被赋成 " + value + "（只允许 \"\" 或 installedSourceKey）",
+                    value.equals("\"\"") || value.equals("NodeBundle.installedSourceKey(App.get())"));
+        }
+    }
+
+    @Test
+    public void bundleMetadataAndFirstDownloadsUseBoundedFailClosedValidation() throws IOException {
+        String bundle = read("com/fongmi/android/tv/node/NodeBundle.java");
+        int metadata = bundle.indexOf("private static String remoteMd5(String url)");
+        int download = bundle.indexOf("private static PreparedFile download(");
+
+        assertTrue("远端 md5 响应必须限长读取，避免错误响应造成无界内存占用",
+                metadata >= 0
+                        && bundle.indexOf("MAX_METADATA_BYTES", metadata) > metadata
+                        && bundle.indexOf("readLimited", metadata) > metadata
+                        && !bundle.contains("OkHttp.string(md5Url(url))"));
+        assertTrue("首次下载必须要求有效 md5，不能在元数据失败时接受任意响应",
+                download >= 0
+                        && bundle.indexOf("if (!isMd5(expected))", download) > download
+                        && bundle.indexOf("if (isMd5(expected) && !expected.equalsIgnoreCase(actual))", download) > download);
+    }
+
+    /**
+     * {@code ByteArrayOutputStream.toString(Charset)} 是 API 33 才有的重载，而 minSdk 是 24，
+     * {@code desugar_jdk_libs_nio} 也不覆盖 {@code java.io.ByteArrayOutputStream}。用了它，
+     * Android 13 以下一进 readLimited 就 NoSuchMethodError——而 source.key/stamp 的读取全走这里，
+     * 等于整个猫源功能在旧系统上必崩。单元测试跑在 JVM 上，测不出来，只能锁源码。
+     */
+    @Test
+    public void textDecodingStaysWithinMinSdkApiSurface() throws IOException {
+        String bundle = read("com/fongmi/android/tv/node/NodeBundle.java");
+        assertTrue("readLimited 必须用 API 24 就有的 toString(String)，不能用 API 33 的 toString(Charset)",
+                bundle.contains("output.toString(StandardCharsets.UTF_8.name())")
+                        && !bundle.contains("output.toString(StandardCharsets.UTF_8)"));
+    }
+
+    @Test
     public void readPortsParsesListAndTolueratesLegacySingleValue() throws Exception {
         assertEquals("多端口按逗号解析，顺序保持落盘顺序（猫源在前）",
                 Arrays.asList(9988, 9321), readPorts("9988,9321"));

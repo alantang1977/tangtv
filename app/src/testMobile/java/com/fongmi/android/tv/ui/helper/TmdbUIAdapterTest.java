@@ -350,16 +350,58 @@ public class TmdbUIAdapterTest {
     public void autoMatchTriesCleanedTitleCandidatesBeforeAiFallback() throws Exception {
         Path sourcePath = findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "helper", "TmdbUIAdapter.java"));
         String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
-        int helper = source.indexOf("private TmdbItem searchResolvedMatch");
+        int helper = source.indexOf("private TmdbItem searchResolvedMatch(String videoName, Vod vod, String searchKeyword)");
         int originalSearch = source.indexOf("tmdbMatcher.searchAndMatch(title, vod)", helper);
         int cleaned = source.indexOf("resolver.queryCleanedTitles(request, 4)", originalSearch);
-        int aiFallback = source.indexOf("resolver.resolveWithAiFallback(request)", originalSearch);
+        int aiFallback = source.indexOf("resolver.resolveWithAiFallback(aiRequest)", originalSearch);
 
         assertTrue(sourcePath + " is missing searchResolvedMatch", helper >= 0);
         assertTrue("TMDB auto match must try code-cleaned title candidates after original candidates",
                 cleaned > originalSearch);
         assertTrue("TMDB auto match must try code-cleaned title candidates before AI fallback",
                 aiFallback > cleaned);
+    }
+
+    @Test
+    public void autoMatchUsesSearchKeywordAfterCardNameBeforeCleaningAndAi() throws Exception {
+        Path sourcePath = findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "helper", "TmdbUIAdapter.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+        int helper = source.indexOf("private TmdbItem searchResolvedMatch(String videoName, Vod vod, String searchKeyword)");
+        int cardName = source.indexOf("for (String title : resolution.queryTitles())", helper);
+        int keyword = source.indexOf("searchKeywordMatch(searchKeyword, vod, attempted)", cardName);
+        int cleaned = source.indexOf("resolver.queryCleanedTitles(request, 4)", keyword);
+        int aiFallback = source.indexOf("resolver.resolveWithAiFallback(aiRequest)", cleaned);
+
+        assertTrue("TMDB auto match must expose a search-keyword-aware card matching path", helper >= 0);
+        assertTrue("TMDB auto match must try the card name candidates first", cardName > helper);
+        assertTrue("TMDB auto match must try the original search keyword after card name failure",
+                keyword > cardName);
+        assertTrue("TMDB auto match must clean titles only after the search keyword fails",
+                cleaned > keyword);
+        assertTrue("TMDB AI fallback must remain the last matching stage",
+                aiFallback > cleaned);
+        assertTrue("the title request must carry the user search keyword",
+                source.indexOf(".searchKeyword(searchKeyword)", helper) > helper);
+    }
+
+    @Test
+    public void autoMatchDoesNotInvokeAiBeforeSearchKeywordAndCleaningStages() throws Exception {
+        Path sourcePath = findMainJavaPath().resolve(Path.of("com", "fongmi", "android", "tv", "ui", "helper", "TmdbUIAdapter.java"));
+        String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
+        int helper = source.indexOf("private TmdbItem searchResolvedMatch(String videoName, Vod vod, String searchKeyword)");
+        int initialRequest = source.indexOf("buildTitleRequest(videoName, vod, searchKeyword, false)", helper);
+        int initialResolve = source.indexOf("MediaTitleResolution resolution = resolver.resolve(request);", initialRequest);
+        int cleaned = source.indexOf("resolver.queryCleanedTitles(request, 4)", initialResolve);
+        int aiRequest = source.indexOf("buildTitleRequest(videoName, vod, searchKeyword, true)", cleaned);
+        int aiResolve = source.indexOf("resolver.resolveWithAiFallback(aiRequest)", initialResolve);
+        int requestBuilder = source.indexOf("private MediaTitleRequest buildTitleRequest", helper);
+        int allowAi = source.indexOf(".allowAi(allowAi)", requestBuilder);
+
+        assertTrue("the initial title request must disable AI while card/search/cleaned matching runs",
+                initialRequest > helper && initialResolve > initialRequest
+                        && requestBuilder > initialRequest && allowAi > requestBuilder);
+        assertTrue("AI may only be enabled for the final fallback request",
+                cleaned > initialResolve && aiRequest > cleaned && aiResolve > aiRequest);
     }
 
     @Test
@@ -582,7 +624,7 @@ public class TmdbUIAdapterTest {
         int firstPrepare = source.indexOf("prepareFastTmdbPlaybackHistory(item, flag, episode);", fastMethod);
         int prepare = source.indexOf("prepareFastTmdbPlaybackHistory(item, flag, episode);", startPending);
         int firstHistoryLookup = source.indexOf("History.findPlayback", fastMethod);
-        int player = source.indexOf("mViewModel.playerContent(getKey(), flag.getFlag(), episode.getUrl());", prepare);
+        int player = source.indexOf("mViewModel.playerContent(getKey(), flag.getFlag(), episode.getUrl(), applyHistoryPlayerKernel());", prepare);
         int fullBind = source.indexOf("applyFastTmdbPlaybackFullDetailNextFrame(item);", player);
         int canApply = source.indexOf("private boolean canApplyPlayerResult()");
         int fastCanApply = source.indexOf("mFastPlaybackFlag != null && mFastPlaybackEpisode != null && mHistory != null", canApply);
@@ -670,7 +712,7 @@ public class TmdbUIAdapterTest {
         String source = new String(Files.readAllBytes(sourcePath), StandardCharsets.UTF_8);
         int startPending = source.indexOf("private void startPendingFastTmdbPlayback()");
         int prepareItem = source.indexOf("prepareFastTmdbPlaybackItem(item);", startPending);
-        int player = source.indexOf("mViewModel.playerContent(getKey(), flag.getFlag(), episode.getUrl());", prepareItem);
+        int player = source.indexOf("mViewModel.playerContent(getKey(), flag.getFlag(), episode.getUrl(), applyHistoryPlayerKernel());", prepareItem);
         int postHydrate = source.indexOf("mBinding.getRoot().post(() -> hydrateFastTmdbPlaybackDetail(item));", player);
         int initialHydrate = source.indexOf("hydrateFastTmdbPlaybackDetail(item);", source.indexOf("private boolean tryStartFastTmdbPlayback(Vod item)"));
         int hydrate = source.indexOf("private void hydrateFastTmdbPlaybackDetail(Vod item)");
@@ -863,7 +905,7 @@ public class TmdbUIAdapterTest {
         int activePlayer = source.indexOf("&& !player().isEmpty()", activeOwner);
         int updateResult = source.indexOf("currentInlineResult = result;", staleGuard);
         int updateParse = source.indexOf("useParse = result.shouldUseParse();", updateResult);
-        int switchResult = source.indexOf("player().switchPlayer(playerType, result, getHistoryKey(), metadata, useParse, position, speed, repeat);", updateParse);
+        int switchResult = source.indexOf("player().switchPlayer(playerType, result, activePlaybackKey(), metadata, useParse, position, speed, repeat);", updateParse);
         int oldFallback = source.indexOf("player().switchPlayerManually(playerType);", switchMethod);
 
         assertTrue(sourcePath + " is missing refreshed inline player-kernel switching", switchMethod >= 0 && refreshCall > switchMethod && refreshMethod > refreshCall);

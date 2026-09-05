@@ -28,7 +28,7 @@ public class HistoryAdapter extends BaseDiffAdapter<History, HistoryAdapter.View
 
         void onItemClick(History item);
 
-        void onItemDelete(History item);
+        void onItemDelete(History item, int position);
 
         boolean onLongClick();
     }
@@ -56,10 +56,11 @@ public class HistoryAdapter extends BaseDiffAdapter<History, HistoryAdapter.View
         History.deleteForDisplay();
     }
 
-    private void setClickListener(View root, History item) {
+    private void setClickListener(ViewHolder holder, History item) {
+        View root = holder.itemView;
         root.setOnLongClickListener(view -> listener.onLongClick());
         root.setOnClickListener(view -> {
-            if (isDelete()) listener.onItemDelete(item);
+            if (isDelete()) listener.onItemDelete(item, holder.getBindingAdapterPosition());
             else listener.onItemClick(item);
         });
     }
@@ -78,7 +79,7 @@ public class HistoryAdapter extends BaseDiffAdapter<History, HistoryAdapter.View
         History item = getItem(position);
         String remark = item.getVodRemarks();
         boolean same = item.getVodName().equals(remark);
-        setClickListener(holder.itemView, item);
+        setClickListener(holder, item);
         holder.binding.name.setText(item.getVodName());
         holder.binding.site.setText(item.getSiteName());
         holder.binding.remark.setText(remark);

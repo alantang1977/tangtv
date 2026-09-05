@@ -23,4 +23,25 @@ public class MediaTitleCacheTest {
 
         assertNotEquals(cache.key(request, first), cache.key(request, second));
     }
+
+    @Test
+    public void key_changesWhenSearchKeywordChanges() {
+        MediaTitleRequest firstRequest = MediaTitleRequest.builder()
+                .siteKey("site")
+                .vodId("vod")
+                .rawTitle("同一卡片标题 4K")
+                .searchKeyword("第一个搜索词")
+                .build();
+        MediaTitleRequest secondRequest = MediaTitleRequest.builder()
+                .siteKey("site")
+                .vodId("vod")
+                .rawTitle("同一卡片标题 4K")
+                .searchKeyword("第二个搜索词")
+                .build();
+        AiConfig config = AiConfig.objectFrom("{}");
+
+        MediaTitleCache cache = new MediaTitleCache();
+
+        assertNotEquals(cache.key(firstRequest, config), cache.key(secondRequest, config));
+    }
 }

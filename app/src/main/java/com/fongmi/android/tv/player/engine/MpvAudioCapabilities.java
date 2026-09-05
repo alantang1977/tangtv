@@ -92,24 +92,36 @@ final class MpvAudioCapabilities {
 
     private static boolean supportsMpvCarrier(String codec) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return true;
-        int sampleRate = "ac3".equals(codec) || "dts".equals(codec) ? 48000 : 192000;
-        int channelMask = "truehd".equals(codec)
-                ? AudioFormat.CHANNEL_OUT_7POINT1_SURROUND
-                : AudioFormat.CHANNEL_OUT_STEREO;
-        try {
-            AudioFormat format = new AudioFormat.Builder()
-                    .setEncoding(AudioFormat.ENCODING_IEC61937)
-                    .setSampleRate(sampleRate)
-                    .setChannelMask(channelMask)
-                    .build();
-            AudioAttributes attributes = new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
-                    .build();
-            return AudioTrack.isDirectPlaybackSupported(format, attributes);
-        } catch (Throwable ignored) {
-            return false;
+        for (CarrierFormat carrier : getCarrierFormats(codec, Build.VERSION.SDK_INT)) {
+            try {
+                AudioFormat format = new AudioFormat.Builder()
+                        .setEncoding(AudioFormat.ENCODING_IEC61937)
+                        .setSampleRate(carrier.sampleRate())
+                        .setChannelMask(carrier.channelMask())
+                        .build();
+                AudioAttributes attributes = new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
+                        .build();
+                if (!AudioTrack.isDirectPlaybackSupported(format, attributes)) return false;
+            } catch (Throwable ignored) {
+                return false;
+            }
         }
+        return true;
+    }
+
+    static List<CarrierFormat> getCarrierFormats(String codec, int sdkInt) {
+        int sampleRate = "ac3".equals(codec) || "dts".equals(codec) ? 48000 : 192000;
+        if ("truehd".equals(codec)) {
+            return List.of(new CarrierFormat(sampleRate, AudioFormat.CHANNEL_OUT_7POINT1_SURROUND));
+        }
+        if ("dts-hd".equals(codec) && sdkInt >= Build.VERSION_CODES.S) {
+            return List.of(
+                    new CarrierFormat(sampleRate, AudioFormat.CHANNEL_OUT_STEREO),
+                    new CarrierFormat(sampleRate, AudioFormat.CHANNEL_OUT_7POINT1_SURROUND));
+        }
+        return List.of(new CarrierFormat(sampleRate, AudioFormat.CHANNEL_OUT_STEREO));
     }
 
     private static boolean hasPassthroughOutputDevice(AudioManager manager) {
@@ -179,5 +191,8 @@ final class MpvAudioCapabilities {
             case AudioDeviceInfo.TYPE_USB_HEADSET -> "usb_headset";
             default -> "type_" + type;
         };
+    }
+
+    record CarrierFormat(int sampleRate, int channelMask) {
     }
 }

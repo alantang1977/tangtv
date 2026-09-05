@@ -438,9 +438,9 @@ public class PlayerOsdController {
         String audioText = summarizeAudio(audio, audioTrack, snapshot.audioDecoderName());
         String render = PlayerSetting.getRender() == PlayerSetting.RENDER_SURFACE ? "Surface" : "Texture";
         String tunnel = switchText(PlayerSetting.isTunnelingEnabled());
-        String performance = PlaybackPerformanceSetting.getProfileName();
+        String performance = PlaybackPerformanceSetting.getProfileName(player.getPlayerType());
         String passThrough = player.getAudioPassThroughText();
-        String preload = "预载" + switchText(PreloadSetting.isPreload());
+        String preload = "预载" + switchText(PreloadSetting.isPreload(player.getPlayerType()));
         String frameRateMatch = player.isExo() ? "帧率匹配 开" : "";
         String softTune = getSoftDecodeTuneText(player);
         String playerText = join(" / ", player.getPlayerText(), player.getDecodeText(), render, "隧道" + tunnel, "性能" + performance, frameRateMatch, preload, "直通" + passThrough, softTune, player.isExo() ? "兜底开" : "");

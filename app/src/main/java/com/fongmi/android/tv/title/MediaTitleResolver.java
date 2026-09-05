@@ -98,6 +98,7 @@ public final class MediaTitleResolver {
                 .vodId(safe.getVodId())
                 .rawTitle(safe.getRawTitle())
                 .rawRemarks(safe.getRawRemarks())
+                .searchKeyword(safe.getSearchKeyword())
                 .vodYear(safe.getVodYear())
                 .episodeName(safe.getEpisodeName())
                 .flag(safe.getFlag())

@@ -4,6 +4,8 @@ import com.github.catvod.utils.Json;
 
 import org.junit.Test;
 
+import java.util.Locale;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -51,6 +53,18 @@ public class CatSourceConfigTest {
                 CatSource.isConfig("[{\"key\":\"nodejs_muou\",\"api\":\"/spider/muou/3\"}]"));
         assertTrue("标准 TVBox 配置也要认得",
                 CatSource.isConfig("{\"sites\":[{\"key\":\"csp_Demo\"}]}"));
+    }
+
+    @Test
+    public void bundleSuffixDetectionIsLocaleIndependent() {
+        Locale previous = Locale.getDefault();
+        try {
+            Locale.setDefault(new Locale("tr", "TR"));
+            assertTrue("bundle 地址判定不能受默认 Locale 影响",
+                    CatSource.isBundle("HTTPS://HOST/INDEX.JS"));
+        } finally {
+            Locale.setDefault(previous);
+        }
     }
 
     @Test

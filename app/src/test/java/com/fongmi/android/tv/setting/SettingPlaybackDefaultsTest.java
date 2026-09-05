@@ -68,7 +68,7 @@ public class SettingPlaybackDefaultsTest {
 
         assertTrue(mobileHome.contains("@+id/ai"));
         assertTrue(leanbackHome.contains("@+id/ai"));
-        for (String id : new String[]{"aiRecommendation", "personalRecommendation", "recommendationFeedback", "aiAdDetection", "subtitleRealtimeModel", "subtitleAiSettings"}) {
+        for (String id : new String[]{"aiRecommendation", "personalRecommendation", "recommendationFeedback", "subtitleRealtimeModel", "subtitleAiSettings"}) {
             assertTrue(mobileLayout.contains("@+id/" + id));
             assertTrue(leanbackLayout.contains("@+id/" + id));
             assertFalse(mobilePersonal.contains("@+id/" + id));
@@ -98,20 +98,6 @@ public class SettingPlaybackDefaultsTest {
         assertTrue(leanbackSetting.contains("SettingAiActivity.start(this)"));
         assertTrue(leanbackManifest.contains(".ui.activity.SettingTmdbActivity"));
         assertTrue(leanbackManifest.contains(".ui.activity.SettingAiActivity"));
-    }
-
-    @Test
-    public void adRuleManagementLivesUnderEnhanceSettings() throws Exception {
-        Path root = moduleRoot();
-        String mobileEnhance = read(root.resolve(Path.of("src", "mobile", "res", "layout", "fragment_setting_enhance.xml")));
-        String leanbackEnhance = read(root.resolve(Path.of("src", "leanback", "res", "layout", "activity_setting_enhance.xml")));
-        String mobileAi = read(root.resolve(Path.of("src", "mobile", "res", "layout", "fragment_setting_ai.xml")));
-        String leanbackAi = read(root.resolve(Path.of("src", "leanback", "res", "layout", "activity_setting_ai.xml")));
-
-        assertTrue(mobileEnhance.contains("@+id/adRuleManage"));
-        assertTrue(leanbackEnhance.contains("@+id/adRuleManage"));
-        assertFalse(mobileAi.contains("@+id/adRuleManage"));
-        assertFalse(leanbackAi.contains("@+id/adRuleManage"));
     }
 
     @Test
@@ -171,12 +157,56 @@ public class SettingPlaybackDefaultsTest {
         }
     }
 
+    @Test
+    public void adSettingsLiveUnderTheDedicatedAdPage() throws Exception {
+        Path root = moduleRoot();
+        String mobileAd = read(root.resolve(Path.of("src", "mobile", "res", "layout", "fragment_setting_ad.xml")));
+        String leanbackAd = read(root.resolve(Path.of("src", "leanback", "res", "layout", "activity_setting_ad.xml")));
+        String mobileEnhance = read(root.resolve(Path.of("src", "mobile", "res", "layout", "fragment_setting_enhance.xml")));
+        String leanbackEnhance = read(root.resolve(Path.of("src", "leanback", "res", "layout", "activity_setting_enhance.xml")));
+        String mobileAi = read(root.resolve(Path.of("src", "mobile", "res", "layout", "fragment_setting_ai.xml")));
+        String leanbackAi = read(root.resolve(Path.of("src", "leanback", "res", "layout", "activity_setting_ai.xml")));
+        String mobilePlayer = read(root.resolve(Path.of("src", "mobile", "res", "layout", "fragment_setting_player.xml")));
+        String leanbackPlayer = read(root.resolve(Path.of("src", "leanback", "res", "layout", "activity_setting_player.xml")));
+
+        for (String id : new String[]{"adblock", "aiAdDetection", "adRuleManage", "adBlockStats",
+                "adAudioFingerprint", "adAudioAutoSkip", "probeRuleSource", "probeRuleRefresh",
+                "speechAdEnabled", "speechAdKeywords", "speechAdSkipSeconds", "speechAdSkipMode",
+                "autoSkipIntroOutro"}) {
+            assertTrue(id, mobileAd.contains("@+id/" + id));
+            assertTrue(id, leanbackAd.contains("@+id/" + id));
+            assertFalse(id, mobileEnhance.contains("@+id/" + id));
+            assertFalse(id, leanbackEnhance.contains("@+id/" + id));
+            assertFalse(id, mobileAi.contains("@+id/" + id));
+            assertFalse(id, leanbackAi.contains("@+id/" + id));
+            assertFalse(id, mobilePlayer.contains("@+id/" + id));
+            assertFalse(id, leanbackPlayer.contains("@+id/" + id));
+        }
+    }
+
+    @Test
+    public void adSettingsNavigationIsWired() throws Exception {
+        Path root = moduleRoot();
+        String mobileHome = read(root.resolve(Path.of("src", "mobile", "java", "com", "fongmi", "android", "tv", "ui", "activity", "HomeActivity.java")));
+        String mobileSetting = read(root.resolve(Path.of("src", "mobile", "java", "com", "fongmi", "android", "tv", "ui", "fragment", "SettingFragment.java")));
+        String leanbackSetting = read(root.resolve(Path.of("src", "leanback", "java", "com", "fongmi", "android", "tv", "ui", "activity", "SettingActivity.java")));
+        String leanbackManifest = read(root.resolve(Path.of("src", "leanback", "AndroidManifest.xml")));
+
+        assertTrue(mobileHome.contains("case 9 -> SettingAdFragment.newInstance()"));
+        assertTrue(mobileHome.contains("mManager.isVisible(9)"));
+        assertTrue(mobileSetting.contains("getRoot().change(9)"));
+        assertTrue(leanbackSetting.contains("SettingAdActivity.start(this)"));
+        assertTrue(leanbackManifest.contains(".ui.activity.SettingAdActivity"));
+    }
+
     private static void assertPlayerOwnsAutoSkip(String flavor, String layoutPrefix, String classSuffix) throws Exception {
         Path root = moduleRoot();
-        assertTrue(read(root.resolve(Path.of("src", flavor, "res", "layout", layoutPrefix + "_setting_player.xml"))).contains("@+id/autoSkipIntroOutro"));
-        assertTrue(read(root.resolve(Path.of("src", flavor, "java", "com", "fongmi", "android", "tv", "ui", classSuffix.equals("Activity") ? "activity" : "fragment", "SettingPlayer" + classSuffix + ".java"))).contains("autoSkipIntroOutro"));
+        String packageName = classSuffix.equals("Activity") ? "activity" : "fragment";
+        assertTrue(read(root.resolve(Path.of("src", flavor, "res", "layout", layoutPrefix + "_setting_ad.xml"))).contains("@+id/autoSkipIntroOutro"));
+        assertTrue(read(root.resolve(Path.of("src", flavor, "java", "com", "fongmi", "android", "tv", "ui", packageName, "SettingAd" + classSuffix + ".java"))).contains("autoSkipIntroOutro"));
+        assertFalse(read(root.resolve(Path.of("src", flavor, "res", "layout", layoutPrefix + "_setting_player.xml"))).contains("@+id/autoSkipIntroOutro"));
         assertFalse(read(root.resolve(Path.of("src", flavor, "res", "layout", layoutPrefix + "_setting_personal.xml"))).contains("@+id/autoSkipIntroOutro"));
-        assertFalse(read(root.resolve(Path.of("src", flavor, "java", "com", "fongmi", "android", "tv", "ui", classSuffix.equals("Activity") ? "activity" : "fragment", "SettingPersonal" + classSuffix + ".java"))).contains("autoSkipIntroOutro"));
+        assertFalse(read(root.resolve(Path.of("src", flavor, "java", "com", "fongmi", "android", "tv", "ui", packageName, "SettingPersonal" + classSuffix + ".java"))).contains("autoSkipIntroOutro"));
     }
 
     private static void assertPersonalOwnsEpisodeHistory(String flavor, String layoutPrefix, String classSuffix) throws Exception {

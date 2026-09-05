@@ -10,8 +10,14 @@ import com.fongmi.android.tv.ui.web.CatWebActivity;
 import com.fongmi.android.tv.utils.Notify;
 import com.github.catvod.crawler.SpiderDebug;
 
-/** 猫源 {@code openInternalWebview} 的落地：内嵌 {@link CatWebActivity} 渲染，起不来才退回系统浏览器。 */
-final class CatWebview {
+/**
+ * 猫源 {@code openInternalWebview} 的落地：内嵌 {@link CatWebActivity} 渲染，起不来才退回系统浏览器。
+ *
+ * <p>两个调用方：bundle 通过 {@code /msg} 请求开页（{@link CatMessage}），
+ * 以及点击时的站点级分流（{@code CatAction.openWebsite}）——后者不经详情页，
+ * 所以播放页不会被创建。
+ */
+public final class CatWebview {
 
     private CatWebview() {
     }
@@ -27,7 +33,7 @@ final class CatWebview {
      * <p>用应用上下文加 {@code NEW_TASK}：taskAffinity 默认相同，系统会把它落到已有任务栈顶，
      * 所以返回仍回到点击来的那个列表，不会另起一个任务。
      */
-    static void open(String url) {
+    public static void open(String url) {
         try {
             App.get().startActivity(CatWebActivity.intent(App.get(), url).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             // 通知详情页立刻退场，别等那份可能被堵住好几秒的 detail 结果

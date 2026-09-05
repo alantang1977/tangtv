@@ -56,14 +56,15 @@ public final class HistoryDisplayPolicy {
         if (source != null) {
             for (History item : source) {
                 if (item == null) continue;
-                base.add(item);
-                routes.put(routeKey(item.getCid(), item.getTmdbId(), item.getKey()), item);
+                // 季号未知的路由行若已派生出季度快照，就由快照代表这部剧，否则同剧占两格
+                if (!supersededByOwnSeasonSnapshot(item, progress)) base.add(item);
+                routes.put(routeKey(item), item);
             }
         }
         for (TmdbSeasonProgress snapshot : progress) {
             if (snapshot == null || snapshot.episodeNumber <= 0 || snapshot.seasonNumber < 0
                     || snapshot.sourceHistoryKey.isEmpty()) continue;
-            History route = routes.get(routeKey(snapshot.cid, snapshot.tmdbId, snapshot.sourceHistoryKey));
+            History route = routes.get(routeKey(snapshot.cid, snapshot.mediaType, snapshot.tmdbId, snapshot.sourceHistoryKey));
             if (route == null) continue;
             History item = route.copy();
             TmdbSeasonProgressStore.apply(item, snapshot);
@@ -74,8 +75,13 @@ public final class HistoryDisplayPolicy {
         return project(base, true);
     }
 
-    private static String routeKey(int cid, int tmdbId, String historyKey) {
-        return cid + ":" + tmdbId + ":" + (historyKey == null ? "" : historyKey);
+    private static String routeKey(History item) {
+        return routeKey(item.getCid(), item.getMediaType(), item.getTmdbId(), item.getKey());
+    }
+
+    private static String routeKey(int cid, String mediaType, int tmdbId, String historyKey) {
+        return cid + ":" + (mediaType == null ? "" : mediaType.trim().toLowerCase(Locale.ROOT))
+                + ":" + tmdbId + ":" + (historyKey == null ? "" : historyKey);
     }
 
     private static String seasonDisplayName(String title, int season) {
@@ -113,6 +119,32 @@ public final class HistoryDisplayPolicy {
         if (knownSeason) return identity + ":season:" + season;
         String key = item.getKey();
         return key == null || key.isEmpty() ? "" : "source:" + key;
+    }
+
+    /**
+     * 季号未知的路由行（{@code tmdbSeasonNumber == -1}）是否应让位给它自己的季度快照。
+     *
+     * <p>源站条目解析不出季号时 History 存 -1，而它先前写出的 {@code TmdbSeasonProgress}
+     * 里存的是 TMDB 刮到的真实季号。{@link #tmdbIdentity} 对前者退化成 {@code source:key}、
+     * 对后者算出 {@code tv:<id>:season:<n>}，两个身份不相等，同一部剧就在列表里占了两格：
+     * 一格是季号未知的旧进度，一格是快照里的新进度。
+     *
+     * <p>这里让路由行让位：快照由它自己派生（{@code sourceHistoryKey} 指回该行），承载的是
+     * 更完整的季集身份与更新的进度，足以代表这部剧。仅在确有同源快照时让位，否则季号未知的
+     * 记录会整条从列表消失。
+     */
+    private static boolean supersededByOwnSeasonSnapshot(History item, List<TmdbSeasonProgress> progress) {
+        if (item == null || progress == null || progress.isEmpty()) return false;
+        if (!"tv".equalsIgnoreCase(item.getMediaType()) || item.getTmdbId() <= 0) return false;
+        if (item.getTmdbSeasonNumber() >= 0) return false;
+        for (TmdbSeasonProgress snapshot : progress) {
+            if (snapshot == null || snapshot.episodeNumber <= 0 || snapshot.seasonNumber < 0) continue;
+            if (snapshot.cid != item.getCid() || snapshot.tmdbId != item.getTmdbId()) continue;
+            if (!"tv".equals(TmdbSeasonProgress.normalizeMediaType(snapshot.mediaType))) continue;
+            if (snapshot.sourceHistoryKey.equals(item.getKey())
+                    && snapshot.updatedAt >= item.getCreateTime()) return true;
+        }
+        return false;
     }
 
     private static List<History> sort(List<History> items) {

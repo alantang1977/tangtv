@@ -54,6 +54,7 @@ public final class MediaTitleCache {
                 + Objects.toString(request.getSiteKey(), "") + "|"
                 + Objects.toString(request.getVodId(), "") + "|"
                 + Objects.toString(rawTitle, "") + "|"
+                + Objects.toString(request.getSearchKeyword(), "") + "|"
                 + Objects.toString(request.getEpisodeName(), "") + "|"
                 + Objects.toString(safe.getProtocol(), "") + "|"
                 + Objects.toString(safe.getEndpoint(), "") + "|"

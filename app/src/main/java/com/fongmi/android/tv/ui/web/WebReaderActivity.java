@@ -73,13 +73,14 @@ public class WebReaderActivity extends AppCompatActivity {
         String key = "reader_" + System.nanoTime();
         if (payload != null) PAYLOAD_CACHE.put(key, payload);
         if (chapters != null) CHAPTER_CACHE.put(key, new ArrayList<>(chapters));
-        CACHE_TIME.put(key, System.currentTimeMillis());
+        // 单调时钟：wall clock 往回跳会让 now-创建时刻 变成负数而永不过期，缓存留到进程结束
+        CACHE_TIME.put(key, android.os.SystemClock.elapsedRealtime());
         return key;
     }
 
     /** 清理超过 TTL 的缓存：阅读器未真正启动时没人来取，否则会留到进程结束。 */
     private static void evictStaleCache() {
-        long now = System.currentTimeMillis();
+        long now = android.os.SystemClock.elapsedRealtime();
         for (java.util.Map.Entry<String, Long> e : CACHE_TIME.entrySet()) {
             if (now - e.getValue() <= CACHE_TTL_MS) continue;
             String k = e.getKey();
@@ -164,6 +165,25 @@ public class WebReaderActivity extends AppCompatActivity {
             this.total = total;
         }
     }
+    /**
+     * 本页交给宿主解析、尚未收尾的切章请求数。
+     *
+     * 只数不认身份：结果送达那一刻拿不到「这是哪一章的」，按身份追踪必然删错条目。
+     * 抑制规则要的也只是「返回那一刻是否有请求在途」。
+     */
+    private final java.util.concurrent.atomic.AtomicInteger hostChapterRequests = new java.util.concurrent.atomic.AtomicInteger();
+
+    /** 收尾一次在途请求（结果送达或判失败）；本页没有在途请求时什么都不做。 */
+    private void endHostChapterRequest() {
+        if (hostChapterRequests.getAndUpdate(n -> n > 0 ? n - 1 : 0) > 0) {
+            NovelRouter.endChapterRequest();
+        }
+    }
+
+    public boolean hasPendingHostChapterRequest() {
+        return hostChapterRequests.get() > 0;
+    }
+
     /** 待恢复的章节内锚点与总数（用完置 0）。 */
     private long restoreAnchor = 0;
     private long restoreTotal = 0;
@@ -1127,10 +1147,11 @@ public class WebReaderActivity extends AppCompatActivity {
         // 否则「传入的是不是目标章」会拿目标章和自己比，永远相等。
         String incomingUrl = index >= 0 && index < chapters.size() ? chapters.get(index).getUrl() : null;
         index = at;
-        // position/duration 即锚点序号/总数；旧版小说记录存的是百分比×SCALE，
-        // HTML 侧按 total 是否等于 SCALE 兜底处理。
-        restoreAnchor = h.getPosition();
+        // position 是锚点序号（读完时记为 total），换回序号交给 HTML；
+        // 旧版小说记录存的是百分比×SCALE，HTML 侧按 total 是否等于 SCALE 兜底处理。
         restoreTotal = h.getDuration();
+        restoreAnchor = restoreTotal == ReaderHistory.SCALE
+                ? h.getPosition() : ReaderHistory.toAnchor(h.getPosition(), restoreTotal);
         String chapterName = h.getVodRemarks() == null ? "" : h.getVodRemarks();
         lastProgress = new Progress(url, chapterName, (int) restoreAnchor, (int) restoreTotal);
         // 传入 payload 已是该章内容时无需重新解析
@@ -1164,8 +1185,15 @@ public class WebReaderActivity extends AppCompatActivity {
     /** 换章：HTML 点目录时回调。本地模式读目录章节，在线模式自行解析（无播放器时也能切章）。 */
     @JavascriptInterface
     public void loadChapter(String chapterUrl) {
-        if (TextUtils.isEmpty(chapterUrl)) { chapterFailed(); return; }
+        // 空 URL 与任何宿主请求无关：不能让它收尾别人那一笔（会放行迟到结果、返回键失效）
+        if (TextUtils.isEmpty(chapterUrl)) { chapterFailed(false); return; }
         runOnUiThread(() -> {
+            // 本页已在交还前台：此刻再发宿主请求，它永远等不到下一次 markReaderClosed
+            // 把自己转成待拦额度，结果回来时就会把阅读器重新拉起（返回键失效）。
+            if (isFinishing() || isDestroyed() || NovelRouter.currentReader != this) {
+                chapterFailed(false);
+                return;
+            }
             if (!localPath.isEmpty() && isLocalDir(chapterUrl)) {
                 loadLocalChapter(chapterUrl);
                 return;
@@ -1177,8 +1205,14 @@ public class WebReaderActivity extends AppCompatActivity {
                 return;
             }
             NovelReaderHost h = NovelRouter.getHost();
-            if (h != null) h.labPlayEpisode(chapterUrl);
-            else chapterFailedWithToast();
+            // 记下本次切章所属的关闭代号：用户点了下一章又马上返回时，爬虫几秒后才回的结果
+            // 会落在 1500ms 静默期之外，靠代号比对才能认出它已过期，不该再拉起阅读器。
+            if (h == null) { chapterFailedWithToast(); return; }
+            NovelRouter.noteChapterRequest();
+            hostChapterRequests.incrementAndGet();
+            // 宿主只在当前线路里找章节，找不到会静默返回 —— 立刻收尾并报失败，
+            // 否则这一笔要等 45s 才过期，期间用户主动打开别的书会被误吞。
+            if (!h.labPlayEpisode(chapterUrl)) chapterFailedWithToast(true);
         });
     }
 
@@ -1187,6 +1221,20 @@ public class WebReaderActivity extends AppCompatActivity {
      * 少了这一步，HTML 会一直停在「切章中」，之后所有阅读进度都不再上报。
      */
     private void chapterFailed() {
+        chapterFailed(false);
+    }
+
+    /**
+     * 通知 HTML 本次切章失败，并按令牌撤销在途标记。
+     *
+     * @param ownHostRequest 这次失败是否对应本页发出的一笔宿主请求。空 URL、注入异常等
+     *                       与任何请求无关，传 false —— 否则会替别人收尾，让那一笔的迟到
+     *                       结果不再被拦，用户返回后又被重新拉起阅读器。
+     */
+    private void chapterFailed(boolean ownHostRequest) {
+        // 收尾放在 webView 判空之前：改的是 NovelRouter 的全局计数，
+        // 不该被本页的 view 引用是否还在决定（否则销毁中的页会让计数永久留着）。
+        if (ownHostRequest) endHostChapterRequest();
         if (webView == null) return;
         runOnUiThread(() -> {
             if (webView == null || isFinishing() || isDestroyed()) return;
@@ -1197,8 +1245,12 @@ public class WebReaderActivity extends AppCompatActivity {
     }
 
     private void chapterFailedWithToast() {
+        chapterFailedWithToast(false);
+    }
+
+    private void chapterFailedWithToast(boolean ownHostRequest) {
         Toast.makeText(this, R.string.reader_chapter_failed, Toast.LENGTH_SHORT).show();
-        chapterFailed();
+        chapterFailed(ownHostRequest);
     }
 
     /**
@@ -1231,14 +1283,25 @@ public class WebReaderActivity extends AppCompatActivity {
             final boolean fh = needHost;
             runOnUiThread(() -> {
                 if (isFinishing() || isDestroyed()) return;
+                boolean hostDispatched = false;
                 if (fk != 0 && fp != null && !fp.isEmpty()) {
                     if (at >= 0) index = at;
-                    onEpisodeResolved(fk, fp, at >= 0 ? chapters.get(at).getName() : "");
+                    // 自解析成功：没经过宿主，不能替宿主请求收尾
+                    onEpisodeResolved(fk, fp, at >= 0 ? chapters.get(at).getName() : "", false);
                     return;
                 }
                 NovelReaderHost h = NovelRouter.getHost();
-                if (fh && h != null) h.labPlayEpisode(chapterUrl);
-                else chapterFailedWithToast();
+                // 这条 parse=1 兜底才是实际会走到的宿主解析路径（loadChapter 里那条在
+                // siteKey 非空时不可达，而所有真实启动入口都会带 siteKey）。它要走二次解析、
+                // 耗时最长，最容易掉出关闭静默期，代号标记必须打在这里。
+                if (fh && h != null) {
+                    hostDispatched = true;
+                    NovelRouter.noteChapterRequest();
+                    hostChapterRequests.incrementAndGet();
+                    if (!h.labPlayEpisode(chapterUrl)) chapterFailedWithToast(true);
+                    return;
+                }
+                if (!hostDispatched) chapterFailedWithToast();
                 // 解析失败：放开占位层，并丢掉待恢复位置 —— 否则它会残留到用户下一次手动切章，
                 // 把上一本/上一章的锚点套用到新章上（章短时直接跳到章末）。
                 restoreAnchor = 0;
@@ -1303,6 +1366,18 @@ public class WebReaderActivity extends AppCompatActivity {
      * 把 novel:// / pics:// 解析成阅读数据注入 HTML。
      */
     public void onEpisodeResolved(int newKind, String payload, String title) {
+        onEpisodeResolved(newKind, payload, title, true);
+    }
+
+    /**
+     * @param fromHost 结果是否来自宿主解析。自解析（resolveChapterSelf 直接拿到内容）时传 false：
+     *                 那条路径没发过宿主请求，不能顺手把仍在途的宿主令牌丢掉 —— 丢了就再没有
+     *                 句柄去撤销它，只能等 45s TTL，期间用户主动打开别的书会被误吞。
+     */
+    private void onEpisodeResolved(int newKind, String payload, String title, boolean fromHost) {
+        // 宿主结果已到达，收尾一笔在途请求。只减计数、不认身份 —— 送达这一刻
+        // 拿不到「这是哪一章的结果」，按身份删必然删错，反而放行别人的迟到结果。
+        if (fromHost) endHostChapterRequest();
         if (webView == null) return;
         // 漫画分支要下载 PDF（网络），不能在主线程做
         RESOLVE_EXECUTOR.execute(() -> {
@@ -1391,10 +1466,40 @@ public class WebReaderActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        // 重新登记：onPause 里交还前台时会把注册清掉（见 markClosed 的注释），
+        // 只在 onCreate 注册的话，两个阅读器叠栈时下层那个再次回到前台就永久失去注册，
+        // 之后它自己的切章会另起一个阅读器实例压在自己上面。
+        NovelRouter.currentReader = this;
+    }
+
+    @Override
     protected void onPause() {
         // 切后台 / 返回都先落库，避免进程被回收后丢进度
         persistProgress();
+        // 先把关闭瞬间仍在途的请求转成全局待拦额度，再清理本页计数；否则
+        // markReaderClosed() 看不到这些请求，迟到结果可能在静默期后重新拉起阅读器。
+        if (isFinishing()) markClosed();
+        // 本页仍在途的宿主请求随本页一起作废：它们的结果不会再回到这里，
+        // 不收尾的话全局在途计数永久偏高，下一次关闭会凭虚高的数字多留待拦额度，
+        // 把用户之后主动打开的书误吞掉。
+        int inFlight = hostChapterRequests.getAndSet(0);
+        for (int i = 0; i < inFlight; i++) NovelRouter.endChapterRequest();
+        // 关闭时间戳必须在这里打，不能等 onDestroy：Android 的生命周期顺序是
+        // 本页 onPause -> 宿主 onResume -> 本页 onStop -> 本页 onDestroy。
+        // 宿主 onResume 会因 shouldReclaim() 重新派发上一次的 playerContent 结果，
+        // 那一刻若时间戳还没写，NovelRouter 的两道防线同时失效（currentReader
+        // 已 isFinishing() 判不出「在前台」，时间戳又还是 0），于是立刻又拉起阅读器，
+        // 表现为返回键完全无效、只能强杀 APP。
         super.onPause();
+    }
+
+    /** 交还前台：清掉阅读器注册并记下关闭时间/代号，拦截返回后残留的解析回调。 */
+    private void markClosed() {
+        if (NovelRouter.currentReader != this) return;
+        NovelRouter.currentReader = null;
+        NovelRouter.markReaderClosed();
     }
 
     @Override
@@ -1402,10 +1507,8 @@ public class WebReaderActivity extends AppCompatActivity {
         persistProgress();
         // 清理阅读器静态引用 + 标记关闭时间，避免残留的 playerContent 回调在返回后重新拉起阅读器。
         // 只在自己仍是「当前阅读器」时清：两个阅读器叠栈时，旧实例销毁不能把前台新实例的注册抹掉。
-        if (NovelRouter.currentReader == this) {
-            NovelRouter.currentReader = null;
-            NovelRouter.readerClosedAt = System.currentTimeMillis();
-        }
+        // onPause 已处理返回场景，这里兜住系统回收等不经过 finish() 的销毁。
+        markClosed();
         picTokens.clear();
         // 只在真正结束时清缓存：配置变更 / 系统回收导致的重建会再次用同一个 cacheKey
         // 读取正文与章节列表（Intent 里只带 key，不带数据），提前清掉会渲染成空章。

@@ -6,11 +6,14 @@ import android.net.Uri;
 import android.provider.OpenableColumns;
 
 import com.fongmi.android.tv.App;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
@@ -101,7 +104,7 @@ public final class AdAudioRuleStore implements AdAudioRuleSource {
     }
 
     private AdAudioRuleSnapshot persist(String json) {
-        AudioFingerprintRuleSet ruleSet = AudioFingerprintRuleCodec.fromJson(json);
+        AudioFingerprintRuleSet ruleSet = decodeImport(json);
         String canonicalJson = AudioFingerprintRuleCodec.toJson(ruleSet);
         byte[] data = canonicalJson.getBytes(StandardCharsets.UTF_8);
         if (data.length > MAX_IMPORT_BYTES) throw new IllegalArgumentException("rule JSON is too large");
@@ -122,6 +125,39 @@ public final class AdAudioRuleStore implements AdAudioRuleSource {
             } catch (IOException ignored) {
             }
             throw new IllegalStateException("failed to persist ad audio rules", e);
+        }
+    }
+
+    /**
+     * 导入同时接受本项目 SDK v2 规则和社区 Probe Rules v1 规则；两种格式都会被规范化成 v2 后落盘，
+     * 因此 {@link #parse(String)} 只需处理 v2。
+     *
+     * <p>只有 v1 有 {@code format} 根字段，v2 会拒绝它，所以按这个根字段分流。不能用
+     * {@code json.contains("ad-audio-probe-rules")}：v2 的规则 id 是自由字符串，
+     * 一个 id 恰好等于该值的合法 v2 文件会被误判成 v1 而整包拒绝。
+     */
+    private static AudioFingerprintRuleSet decodeImport(String json) {
+        if (hasProbeFormatField(json)) return ProbeRuleCodec.fromJson(json).ruleSet();
+        return AudioFingerprintRuleCodec.fromJson(json);
+    }
+
+    /** 判断顶层对象是否有 {@code "format"} 键，只扫根层级，不看嵌套对象里的同名键。 */
+    private static boolean hasProbeFormatField(String json) {
+        try (JsonReader reader = new JsonReader(new StringReader(json))) {
+            reader.setLenient(false);
+            if (reader.peek() != JsonToken.BEGIN_OBJECT) return false;
+            reader.beginObject();
+            while (reader.hasNext()) {
+                if ("format".equals(reader.nextName())) {
+                    return reader.peek() == JsonToken.STRING
+                            && ProbeRuleCodec.FORMAT.equals(reader.nextString());
+                }
+                reader.skipValue();
+            }
+            return false;
+        } catch (IOException | RuntimeException e) {
+            // 结构本身有问题，交给 v2 codec 报出具体错误。
+            return false;
         }
     }
 

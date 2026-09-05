@@ -20,6 +20,7 @@ import com.fongmi.android.tv.history.HistorySourceResolver;
 import com.fongmi.android.tv.playback.HistoryResumePayload;
 import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.ui.dialog.LightDialog;
+import com.fongmi.android.tv.ui.novel.NovelRouter;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.Task;
@@ -39,6 +40,8 @@ public final class HistoryResumeCoordinator {
         if (activity == null || history == null) return;
         REQUESTS.incrementAndGet();
         if (!Setting.isGlobalHistoryEnabled() || history.isCurrentSourceAvailable()) {
+            if (NovelRouter.openHistory(activity, history, VodConfig.getCid(),
+                    () -> VideoActivity.startFromHistory(activity, history))) return;
             VideoActivity.startFromHistory(activity, history);
             return;
         }
@@ -84,6 +87,9 @@ public final class HistoryResumeCoordinator {
                     Notify.show(R.string.history_source_episode_missing);
                     return;
                 }
+                if (NovelRouter.openHistory(activity, current, resolved.vod(), resolved.flag(), resolved.episode(), targetCid,
+                        () -> VideoActivity.startFromResolvedHistory(activity, current,
+                                resolved.vod(), resolved.flag(), resolved.episode()))) return;
                 VideoActivity.startFromResolvedHistory(activity, current, resolved.vod(), resolved.flag(), resolved.episode());
             });
         });
@@ -131,6 +137,9 @@ public final class HistoryResumeCoordinator {
                     showSearchFallback(activity, current, targetCid);
                     return;
                 }
+                if (NovelRouter.openHistory(activity, current, resolved.vod(), resolved.flag(), resolved.episode(), targetCid,
+                        () -> VideoActivity.startFromResolvedHistory(activity, current,
+                                resolved.vod(), resolved.flag(), resolved.episode()))) return;
                 VideoActivity.startFromResolvedHistory(activity, current, resolved.vod(), resolved.flag(), resolved.episode());
             });
         });

@@ -54,7 +54,6 @@ public class SettingAiFragment extends BaseFragment {
         mBinding.aiRecommendation.setOnClickListener(this::setAiRecommendation);
         mBinding.personalRecommendation.setOnClickListener(this::setPersonalRecommendation);
         mBinding.recommendationFeedback.setOnClickListener(this::manageRecommendationFeedback);
-        mBinding.aiAdDetection.setOnClickListener(this::setAiAdDetection);
         mBinding.subtitleRealtimeModel.setOnClickListener(this::onRealtimeModel);
         mBinding.subtitleAiMaxConcurrency.setOnClickListener(this::onSubtitleAiMaxConcurrency);
         mBinding.subtitleAiChunkCount.setOnClickListener(this::onSubtitleAiChunkCount);
@@ -68,8 +67,6 @@ public class SettingAiFragment extends BaseFragment {
         mBinding.recommendationFeedbackText.setText(feedbackCount == 0
                 ? getString(R.string.setting_recommendation_feedback_empty)
                 : getString(R.string.setting_recommendation_feedback_count, feedbackCount));
-        mBinding.aiAdDetection.setVisibility(Setting.isAiConfigReady() ? View.VISIBLE : View.GONE);
-        mBinding.aiAdDetectionText.setText(getSwitch(Setting.isAiAdDetection()));
         setRealtimeModelStatus();
         setAiSubtitleSettings();
     }
@@ -103,11 +100,6 @@ public class SettingAiFragment extends BaseFragment {
 
     private void manageRecommendationFeedback(View view) {
         RecommendationFeedbackDialog.create(requireActivity()).onChanged(this::setText).show();
-    }
-
-    private void setAiAdDetection(View view) {
-        Setting.putAiAdDetection(!Setting.isAiAdDetection());
-        setText();
     }
 
     private void onRealtimeModel(View view) {

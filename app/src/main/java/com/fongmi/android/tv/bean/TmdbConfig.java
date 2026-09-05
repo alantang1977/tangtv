@@ -19,12 +19,17 @@ public class TmdbConfig {
     private static final String DEFAULT_BACKDROP_BASE = "https://images.tmdb.org/t/p/w780";
     private static final String DEFAULT_LANGUAGE = "zh-CN";
     /**
-     * 默认不富集 TMDB 的站点：非影视内容（音频/有声/小说/漫画/短剧）加上猫源的配置站点。
+     * 默认不富集 TMDB 的站点：非影视内容（音频/有声/小说/漫画/短剧/画）加上配置类站点。
      *
      * <p>统一写半角括号即可——{@link #normalizeBrackets} 会让同一条规则一并命中
      * {@code 「设」配置}、{@code 【设】配置} 这些写法，猫源用的正是全角角括号。
+     *
+     * <p>注意 {@code [书]} 与 {@code [小说]}、{@code [漫]} 与 {@code [漫画]} 不可互替：
+     * 匹配是子串包含，{@code [书]} 命中 {@code [书]xxx} 但不命中 {@code [小说]xxx}，
+     * 因为 {@code [小说]} 里 {@code [书} 后面跟的是 {@code 说} 而非 {@code ]}。
+     * {@code 配置} 不带括号，纯文本子串匹配，能命中 {@code 「设」配置}、{@code [配置]xxx}。
      */
-    private static final List<String> DEFAULT_DISABLED_RULES = List.of("[音]", "[听]", "[书]", "[漫]", "[短]", "[设]");
+    private static final List<String> DEFAULT_DISABLED_RULES = List.of("[音]", "[听]", "[书]", "[漫]", "[短]", "[设]", "[画]", "[漫画]", "[小说]", "配置", "[配]");
     private static final Pattern TMDB_SIZE = Pattern.compile("/(?:w\\d+|h\\d+|original)$");
 
     @SerializedName("apiBase")

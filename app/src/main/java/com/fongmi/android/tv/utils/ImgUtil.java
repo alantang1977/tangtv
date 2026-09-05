@@ -40,8 +40,12 @@ public class ImgUtil {
     private static final Set<String> failed = Collections.synchronizedSet(new HashSet<>());
 
     public static void logo(ImageView view) {
+        logo(view, VodConfig.get().getConfig().getLogo());
+    }
+
+    public static void logo(ImageView view, String logo) {
         try {
-            Glide.with(view).load(UrlUtil.convert(VodConfig.get().getConfig().getLogo())).circleCrop().override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL).error(R.drawable.ic_logo).into(view);
+            Glide.with(view).load(UrlUtil.convert(logo)).circleCrop().override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL).error(R.drawable.ic_logo).into(view);
         } catch (Throwable e) {
             e.printStackTrace();
         }

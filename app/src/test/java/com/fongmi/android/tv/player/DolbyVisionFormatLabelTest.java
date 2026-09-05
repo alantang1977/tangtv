@@ -31,7 +31,7 @@ public class DolbyVisionFormatLabelTest {
     @Test
     public void p81ConversionMarksUpgradeBesideTheSourceCodec() {
         PlayerEngine.VideoPlaybackDetails details = new PlayerEngine.VideoPlaybackDetails(
-                "dvhe.07.06", 7, 6, "dvhe.08.06",
+                "dvhe.07.06", 8, 6, "dvhe.08.06",
                 "c2.qti.hevc.decoder", "", null, false, true);
 
         assertEquals("Dolby Vision DV.07",

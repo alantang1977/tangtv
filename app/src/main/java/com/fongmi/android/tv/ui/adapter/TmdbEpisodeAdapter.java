@@ -58,6 +58,7 @@ public class TmdbEpisodeAdapter extends RecyclerView.Adapter<TmdbEpisodeAdapter.
     private boolean light;
     private boolean compactPlain;
     private boolean nativeEnhanced;
+    private boolean pageHasTmdbEpisodeData;
     private boolean showScrapedName = Setting.getTmdbEpisodeShowScrapedName();
     private boolean showFileSize = Setting.isTmdbEpisodeFileSize();
     private int activeStrokeColor = 0xFF2CC56F;
@@ -91,6 +92,7 @@ public class TmdbEpisodeAdapter extends RecyclerView.Adapter<TmdbEpisodeAdapter.
         tmdbItems.putAll(tmdbEpisodes);
         episodeNumbers.clear();
         episodeNumbers.putAll(numbers);
+        pageHasTmdbEpisodeData = hasPageTmdbEpisodeData();
         compactPlain = items.size() == 1 && tmdbItems.isEmpty() && TextUtils.isEmpty(items.get(0).getDesc());
         this.selected = selected;
         notifyDataSetChanged();
@@ -231,7 +233,7 @@ public class TmdbEpisodeAdapter extends RecyclerView.Adapter<TmdbEpisodeAdapter.
         boolean showVisual = hasImage;
         boolean darkSurface = showVisual || !light || isNativeEnhanced();
 
-        applyCardSize(holder, compact);
+        applyCardSize(holder, compact, pageHasTmdbEpisodeData);
         holder.binding.textPanel.setGravity(showVisual ? Gravity.NO_GRAVITY : Gravity.CENTER_VERTICAL);
         if (isNativeEnhanced()) {
             boolean phoneWidth = isPhoneWidth(holder.itemView);
@@ -305,14 +307,17 @@ public class TmdbEpisodeAdapter extends RecyclerView.Adapter<TmdbEpisodeAdapter.
         });
     }
 
-    private void applyCardSize(ViewHolder holder, boolean compact) {
+    private void applyCardSize(ViewHolder holder, boolean compact, boolean hasTmdbEpisodeData) {
         View root = holder.binding.getRoot();
         ViewGroup.LayoutParams params = root.getLayoutParams();
         int width;
         int height;
+        boolean standardGridItem = mode == Mode.GRID && !hasTmdbEpisodeData;
         if (isNativeEnhanced()) {
             width = mode == Mode.GRID ? ViewGroup.LayoutParams.MATCH_PARENT : dp(holder.itemView, 280);
-            height = dp(holder.itemView, mode == Mode.GRID ? nativeEnhancedGridCardHeight(holder.itemView) : 160);
+            height = dp(holder.itemView, mode == Mode.GRID
+                    ? nativeEnhancedGridCardHeightDp(isPhoneWidth(holder.itemView), hasTmdbEpisodeData)
+                    : 160);
         } else if (mode == Mode.GRID) {
             width = ViewGroup.LayoutParams.MATCH_PARENT;
             height = dp(holder.itemView, 118);
@@ -324,10 +329,10 @@ public class TmdbEpisodeAdapter extends RecyclerView.Adapter<TmdbEpisodeAdapter.
         params.width = width;
         params.height = height;
         if (params instanceof ViewGroup.MarginLayoutParams marginParams) {
-            int gridSpacing = dp(holder.itemView, isNativeEnhanced() ? 12 : 8);
+            int gridSpacing = dp(holder.itemView, standardGridItem ? 8 : isNativeEnhanced() ? 12 : 8);
             int marginStart = mode == Mode.GRID ? gridSpacing / 2 : 0;
             int marginEnd = mode == Mode.GRID ? gridSpacing - marginStart : dp(holder.itemView, 12);
-            int bottomMargin = dp(holder.itemView, isNativeEnhanced() && mode == Mode.GRID ? 16 : mode == Mode.GRID ? 10 : 0);
+            int bottomMargin = dp(holder.itemView, isNativeEnhanced() && mode == Mode.GRID && hasTmdbEpisodeData ? 16 : mode == Mode.GRID ? 10 : 0);
             layoutChanged |= marginParams.getMarginStart() != marginStart
                     || marginParams.getMarginEnd() != marginEnd
                     || marginParams.bottomMargin != bottomMargin;
@@ -337,14 +342,16 @@ public class TmdbEpisodeAdapter extends RecyclerView.Adapter<TmdbEpisodeAdapter.
         }
         if (layoutChanged) root.setLayoutParams(params);
         ViewGroup.LayoutParams scrimParams = holder.binding.scrim.getLayoutParams();
-        int scrimHeight = dp(holder.itemView, isNativeEnhanced() ? mode == Mode.GRID ? nativeEnhancedGridScrimHeight(holder.itemView) : 104 : 96);
+        int scrimHeight = dp(holder.itemView, isNativeEnhanced() && mode == Mode.GRID && !hasTmdbEpisodeData
+                ? 96
+                : isNativeEnhanced() ? mode == Mode.GRID ? nativeEnhancedGridScrimHeight(holder.itemView) : 104 : 96);
         if (scrimParams.height != scrimHeight) {
             scrimParams.height = scrimHeight;
             holder.binding.scrim.setLayoutParams(scrimParams);
         }
-        int horizontal = nativeEnhancedMobileGrid(holder.itemView) ? 10 : isNativeEnhanced() ? 12 : 10;
-        int top = nativeEnhancedMobileGrid(holder.itemView) ? 18 : isNativeEnhanced() ? 0 : 18;
-        int bottom = nativeEnhancedMobileGrid(holder.itemView) ? 10 : isNativeEnhanced() ? mode == Mode.GRID ? 14 : 12 : 10;
+        int horizontal = standardGridItem || nativeEnhancedMobileGrid(holder.itemView) ? 10 : isNativeEnhanced() ? 12 : 10;
+        int top = standardGridItem || nativeEnhancedMobileGrid(holder.itemView) ? 18 : isNativeEnhanced() ? 0 : 18;
+        int bottom = standardGridItem || nativeEnhancedMobileGrid(holder.itemView) ? 10 : isNativeEnhanced() ? mode == Mode.GRID ? 14 : 12 : 10;
         int horizontalPx = dp(holder.itemView, horizontal);
         int topPx = dp(holder.itemView, top);
         int bottomPx = dp(holder.itemView, bottom);
@@ -362,6 +369,12 @@ public class TmdbEpisodeAdapter extends RecyclerView.Adapter<TmdbEpisodeAdapter.
 
     private int nativeEnhancedGridCardHeight(View view) {
         return TmdbEpisodeGridPolicy.nativeGridCardHeightDp(isPhoneWidth(view));
+    }
+
+    static int nativeEnhancedGridCardHeightDp(boolean phoneWidth, boolean hasTmdbEpisodeData) {
+        return hasTmdbEpisodeData
+                ? phoneWidth ? TmdbEpisodeGridPolicy.NATIVE_MOBILE_GRID_CARD_HEIGHT_DP : TmdbEpisodeGridPolicy.NATIVE_GRID_CARD_HEIGHT_DP
+                : TmdbEpisodeGridPolicy.GRID_CARD_HEIGHT_DP;
     }
 
     private int nativeEnhancedGridScrimHeight(View view) {
@@ -397,8 +410,24 @@ public class TmdbEpisodeAdapter extends RecyclerView.Adapter<TmdbEpisodeAdapter.
         if (height > 0) return height;
         ViewGroup.LayoutParams params = holder.binding.getRoot().getLayoutParams();
         if (params != null && params.height > 0) return params.height;
-        if (isNativeEnhanced()) return ResUtil.dp2px(mode == Mode.GRID ? nativeEnhancedGridCardHeight(holder.itemView) : 160);
+        if (isNativeEnhanced()) {
+            int gridHeight = pageHasTmdbEpisodeData
+                    ? nativeEnhancedGridCardHeight(holder.itemView)
+                    : TmdbEpisodeGridPolicy.GRID_CARD_HEIGHT_DP;
+            return ResUtil.dp2px(mode == Mode.GRID ? gridHeight : 160);
+        }
         return ResUtil.dp2px(mode == Mode.GRID ? TmdbEpisodeGridPolicy.GRID_CARD_HEIGHT_DP : (isPhoneWidth(holder.itemView) ? 172 : 190));
+    }
+
+    private boolean hasPageTmdbEpisodeData() {
+        for (int position = 0; position < items.size(); position++) {
+            Episode episode = items.get(position);
+            if (episode == null) continue;
+            int number = episodeNumber(episode, position);
+            TmdbEpisode tmdbEpisode = tmdbItems.get(number);
+            if (TmdbEpisodeMatcher.shouldApply(episode, tmdbEpisode, number)) return true;
+        }
+        return false;
     }
 
     private boolean shouldSuppressSharedFallbackVisuals() {

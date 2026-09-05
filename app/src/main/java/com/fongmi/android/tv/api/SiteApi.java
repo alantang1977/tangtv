@@ -178,7 +178,7 @@ public class SiteApi {
 
     @NonNull
     public static Result playerContent(@NonNull String key, @NonNull String flag, @NonNull String id) throws Exception {
-        return playerContent(key, flag, id, PlayerSetting.getPlayer());
+        return playerContent(key, flag, id, PlayerSetting.getActivePlayer());
     }
 
     @NonNull
@@ -188,7 +188,7 @@ public class SiteApi {
 
     @NonNull
     public static Result playerContentIsolated(@NonNull String key, @NonNull String flag, @NonNull String id) throws Exception {
-        return playerContentIsolated(key, flag, id, PlayerSetting.getPlayer());
+        return playerContentIsolated(key, flag, id, PlayerSetting.getActivePlayer());
     }
 
     @NonNull

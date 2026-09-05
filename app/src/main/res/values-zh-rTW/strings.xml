@@ -2,6 +2,10 @@
 
     <!-- App -->
     <string name="app_name">湯影視</string>
+   <string name="setting_app_branding">APP 圖示</string>
+    <string name="app_branding_icon_current">預設圖示</string>
+    <string name="app_branding_icon_history">原始圖示</string>
+    <string name="app_branding_icon_select">選擇圖示</string>
     <string name="app_exit_confirm">再按一次退出應用</string>
 
     <!-- Live -->
@@ -239,6 +243,19 @@
     <string name="intro_skip_confirm_intro">跳過片頭</string>
     <string name="intro_skip_confirm_recap">跳過前情提要</string>
     <string name="intro_skip_confirm_outro">跳過片尾</string>
+    <string name="intro_skip_confirm_preview">跳過下集預告</string>
+    <!-- 控制列上顯示的自動偵測值（非使用者手動設定），%1$s 為時間 -->
+    <string name="intro_skip_detected_value">~%1$s</string>
+    <string name="intro_skip_kind_recap">前情回顧</string>
+    <string name="intro_skip_kind_intro">片頭</string>
+    <string name="intro_skip_kind_outro">片尾</string>
+    <string name="intro_skip_kind_preview">下集預告</string>
+    <string name="setting_intro_skip_kinds">跳過的片段類型</string>
+    <string name="intro_skip_kinds_none">未選擇</string>
+    <string name="intro_skip_kinds_all">全部</string>
+    <!-- 自動跳過後的提示，%1$s 為片段類型 -->
+    <string name="intro_skip_notice_seeked">已跳過%1$s</string>
+    <string name="intro_skip_notice_ended">%1$s已跳過，進入下一集</string>
     <string name="personal_recommendation_confirm_title">啟用個性推薦</string>
     <string name="personal_recommendation_confirm_message">個性推薦會讀取本機觀看歷史中的影片名稱，並可能將當前影片名和歷史影片名作為搜尋關鍵詞發送到 TMDB 或豆瓣，用於生成相關作品列表。\n\n不會發送播放地址、帳號資訊、站源配置或播放進度。你可以隨時關閉此功能。</string>
     <string name="setting_search_ui">搜尋佈局</string>
@@ -838,6 +855,7 @@
     <string name="setting_about">關於</string>
     <string name="setting_version">版本</string>
     <string name="setting_choose">選擇</string>
+    <string name="setting_choose_dir">資料夾</string>
     <string name="setting_reset">重置</string>
     <string name="setting_delete">刪除</string>
     <string name="setting_disable">禁用</string>
@@ -1169,7 +1187,7 @@
     <string name="player_aac_track">AAC優先</string>
     <string name="player_music_notification">音樂背景通知</string>
     <string name="player_audio_book_notification">有聲書背景通知</string>
-    <string name="player_adblock">智慧去廣</string>
+    <string name="player_adblock">去廣告</string>
     <string name="player_tunnel">隧道模式</string>
     <string name="player_buffer">前向緩衝目標</string>
     <string name="player_buffer_bytes">記憶體緩衝上限</string>
@@ -1189,6 +1207,7 @@
     <string name="player_preload_pause_always">始終</string>
     <string name="player_auto_play">自動播放</string>
     <string name="player_auto_change">自動換源</string>
+    <string name="player_remember_brightness">記住播放亮度</string>
     <string name="player_failure_fallback">播放失敗回退</string>
     <string name="player_speed">長按倍速</string>
     <string name="player_ua">User-Agent</string>
@@ -1214,6 +1233,7 @@
     <string name="subtitle_manual_apply_failed">已找到字幕但無法套用</string>
     <string name="subtitle_manual_inactive">請先開始播放再搜尋字幕</string>
     <string name="player_subtitle_realtime_model">即時識別語言</string>
+    <string name="subtitle_realtime_source_language">原聲識別語言</string>
     <string name="subtitle_realtime_model_status">%1$s · %2$s</string>
     <string name="subtitle_realtime_model_select_title">選擇音訊原語言</string>
     <string name="subtitle_realtime_model_delete_action">刪除模型</string>
@@ -1353,6 +1373,8 @@
     <string name="setting_hide">隱藏</string>
     <string name="dialog_select_title">選擇章節</string>
     <string name="dialog_config_hint">請輸入配置…</string>
+    <string name="dialog_config_choose_dir">選擇資料夾（貓源本地包）</string>
+    <string name="dialog_config_choose_failed">讀不到所選內容，請重新選擇包目錄或 zip</string>
     <string name="dialog_config_name">請輸入名稱…</string>
     <string name="dialog_config_url">請輸入網址…</string>
 
@@ -1378,6 +1400,8 @@
     <string name="error_play_stage_network">網路讀取失敗，請檢查網路、請求標頭或更換線路</string>
     <string name="error_play_stage_media">媒體解析失敗或沒有有效音視訊軌道，請更換線路或播放器</string>
     <string name="error_play_stage_decoder">音視訊解碼失敗，請嘗試切換軟硬解或播放器</string>
+    <string name="error_play_stage_audio_output">音訊輸出失敗，請重新進入播放或切換解碼方式</string>
+    <string name="error_play_stage_video_output">視訊輸出失敗，請重新進入播放或切換解碼方式</string>
     <string name="error_play_stage_output">音視訊輸出失敗，請重新進入播放或切換解碼方式</string>
     <string name="error_play_stage_drm">DRM 驗證或受保護媒體處理失敗，請更換線路或播放器</string>
     <string name="error_play_stage_unknown">播放失敗，請重試或切換播放器</string>
@@ -1427,6 +1451,38 @@
     <string name="update_backup_done">備份完成，開始更新</string>
     <string name="update_backup_failed">備份失敗，仍將繼續更新</string>
     <string name="update_backup_permission_denied">未授予儲存權限，無法備份，仍將繼續更新</string>
+    <string name="update_settings">更新設定</string>
+    <string name="update_settings_title">更新設定</string>
+    <string name="update_settings_source">更新方式</string>
+    <string name="update_source_github">GitHub</string>
+    <string name="update_source_oci">OCI</string>
+    <string name="update_github_proxy">GitHub 代理</string>
+    <string name="update_github_proxy_value">GitHub 代理 · %1$s</string>
+    <string name="update_oci_mirror">OCI 映像代理</string>
+    <string name="update_oci_mirror_value">OCI 映像 · %1$s</string>
+    <string name="update_custom_url">自訂 HTTPS 位址</string>
+    <string name="update_proxy_mode_full">完整 URL 前綴</string>
+    <string name="update_proxy_mode_strip">移除 https://</string>
+    <string name="update_proxy_direct">直接連線</string>
+    <string name="update_proxy_custom">自訂</string>
+    <string name="update_proxy_invalid">請輸入不含帳號、密碼和路徑的有效 HTTPS 位址。</string>
+    <string name="update_settings_save">儲存</string>
+    <string name="update_settings_saved">更新設定已儲存</string>
+    <string name="apk_push_url_busy">已有 APK 連結下載工作正在進行</string>
+    <string name="apk_push_url_schedule_failed">無法啟動 APK 連結下載</string>
+    <string name="apk_push_url_downloading">已收到 APK 連結，正在本機下載…</string>
+    <string name="apk_push_url_install_ready">APK 已下載，請確認安裝</string>
+    <string name="apk_push_url_download_failed">APK 連結下載失敗：%1$s</string>
+    <string name="apk_push_url_progress_title">正在接收 APK</string>
+    <string name="apk_push_url_progress_hint">正在下載區域網路裝置推送的 APK，完成後仍需在 Android 系統介面確認安裝。</string>
+    <string name="apk_push_url_progress_known">正在接收 %1$d%% · %2$s / %3$s</string>
+    <string name="apk_push_url_progress_unknown">已接收 %1$s</string>
+    <string name="apk_push_url_progress_detail_remaining">%1$s/s · 剩餘 %2$s · 已用 %3$s</string>
+    <string name="apk_push_url_progress_detail">%1$s/s · 已用 %2$s</string>
+    <string name="apk_push_url_cancel">取消下載</string>
+    <string name="apk_push_url_canceled">已取消 APK 下載</string>
+    <string name="update_download_identity">更新套件身份或簽章與目前應用程式不相符。</string>
+    <string name="update_download_source_unavailable">此版本沒有可用的更新來源。</string>
 
     <!-- Crash -->
     <string name="crash_info">發生意外錯誤\n抱歉給您帶來不便</string>
@@ -1587,6 +1643,16 @@
         <item>es</item>
         <item>ja</item>
         <item>zh-en</item>
+    </string-array>
+    <string-array name="select_realtime_subtitle_language">
+        <item>普通話</item>
+        <item>粵語</item>
+        <item>英語</item>
+        <item>德語</item>
+        <item>法語</item>
+        <item>西班牙語</item>
+        <item>日語</item>
+        <item>中英混合</item>
     </string-array>
     <string-array name="select_subtitle_language">
         <item>中文優先</item>
@@ -2326,6 +2392,8 @@
     <string name="cat_web_opening">正在開啟設定中心</string>
     <string name="cat_web_failed">頁面載入失敗：%1$s</string>
     <string name="cat_web_external">已用瀏覽器開啟</string>
+    <string name="cat_web_download">正在下載 %1$s 到「下載」目錄</string>
+    <string name="cat_web_download_failed">下載失敗</string>
     <string name="dialog_short_drama_site_disabled">已排除：%1$s</string>
     <string name="dialog_short_drama_enabled_label">啓用規則</string>
     <string name="dialog_short_drama_disabled_label">已排除</string>
@@ -2351,11 +2419,11 @@
     <string name="setting_ai_ad_detection">AI 智能去廣</string>
     <string name="setting_ad_rule_manage">廣告規則管理</string>
     <string name="ad_rule_add_manual">手動添加規則</string>
-    <string name="ad_rule_import_candidates">待審覈接口規則（%d）</string>
+    <string name="ad_rule_import_candidates">待審核接口規則（%d）</string>
     <string name="ad_rule_import_title">導入接口去廣規則</string>
     <string name="ad_rule_import_action">導入（默認停用）</string>
     <string name="ad_rule_ignore_all">忽略全部</string>
-    <string name="ad_rule_import_empty">暫無待審覈接口規則</string>
+    <string name="ad_rule_import_empty">暫無待審核接口規則</string>
     <string name="ad_rule_section_custom">自定義規則</string>
     <string name="ad_rule_section_server">接口配置規則</string>
     <string name="ad_rule_empty">暫無規則</string>
@@ -2372,11 +2440,11 @@
     <string name="ad_rule_empty_input">至少填寫一項</string>
     <string name="ad_rule_invalid_regex">正則表達式無效：%s</string>
     <string name="ad_rule_count">%d 條規則</string>
-    <string name="ad_rule_count_with_pending">%1$d 條規則 · %2$d 條待審覈</string>
+    <string name="ad_rule_count_with_pending">%1$d 條規則 · %2$d 條待審核</string>
     <string name="play_ad_feedback">有廣告</string>
     <string name="ad_feedback_analyzing">AI 正在分析廣告特徵…</string>
     <string name="ad_feedback_no_url">當前沒有可分析的播放地址</string>
-    <string name="ad_feedback_ai_disabled">請先在增強設置中開啓 AI 與智能去廣</string>
+    <string name="ad_feedback_ai_disabled">請先在去廣告設定中開啟 AI 與 AI 智慧去廣</string>
     <string name="ad_feedback_failed">分析失敗：%s</string>
     <string name="ad_feedback_empty_result">AI 未識別到明顯的廣告特徵</string>
     <string name="ad_feedback_preview_title">AI 廣告分析結果</string>
@@ -2384,12 +2452,12 @@
     <string name="ad_feedback_reasoning">分析說明</string>
     <string name="ad_feedback_apply">應用並屏蔽</string>
     <string name="ad_feedback_applied">已添加去廣規則</string>
-    <string name="ad_feedback_low_confidence">置信度較低，建議人工覈對後再應用</string>
+    <string name="ad_feedback_low_confidence">置信度較低，建議人工核對後再應用</string>
     <string name="ad_feedback_no_ad">AI 未識別到明顯的廣告特徵</string>
     <string name="ad_feedback_saved">已添加去廣規則</string>
     <string name="ad_rule_preview_title">AI 廣告分析結果</string>
     <string name="ad_rule_confidence_value">置信度：%d%%</string>
-    <string name="ad_rule_low_confidence_warning">置信度較低，證據不足，建議人工覈對後再應用</string>
+    <string name="ad_rule_low_confidence_warning">置信度較低，證據不足，建議人工核對後再應用</string>
     <string name="ad_rule_preview_hosts">屏蔽域名</string>
     <string name="ad_rule_preview_regex">廣告規則（正則）</string>
     <string name="ad_block_stats">廣告攔截統計</string>
@@ -2429,7 +2497,7 @@
     <string name="ad_rule_detail_id">規則 ID：%1$s</string>
     <string name="ad_rule_detail_source">來源：%1$s</string>
     <string name="ad_rule_default_disable_confirm">臨時停用此接口配置規則？\n可能導致部分廣告無法過濾，可隨時重新啓用。</string>
-    <string name="ad_rule_imported_disable_confirm">臨時停用此接口導入規則？\n可隨時重新啓用，刪除後也可從待審覈規則重新導入。</string>
+    <string name="ad_rule_imported_disable_confirm">臨時停用此接口導入規則？\n可隨時重新啓用，刪除後也可從待審核規則重新導入。</string>
     <string name="ad_rule_ai_disable_confirm">臨時停用此 AI 識別規則？\n可隨時重新啓用。</string>
     <string name="ad_rule_manual_disable_confirm">臨時停用此手動規則？\n可隨時重新啓用。</string>
     <string name="ad_rule_default_enable_confirm">重新啓用此默認規則？</string>
@@ -2496,4 +2564,25 @@
     <string name="node_switch_restart">正在切換貓源…</string>
     <string name="node_background">背景繼續</string>
     <string name="node_speed">%1$s/s</string>
-    <string name="node_size_pair">%1$s / %2$s</string></resources>
+    <string name="node_size_pair">%1$s / %2$s</string>
+    <string name="setting_ad">去廣告</string>
+    <string name="setting_ad_summary">總開關、規則、音訊識別、片頭片尾</string>
+    <string name="setting_ad_group_basic">基礎</string>
+    <string name="setting_ad_group_rule">規則與統計</string>
+    <string name="setting_ad_group_audio">音訊識別</string>
+    <string name="setting_ad_group_segment">片段跳過</string>
+    <string name="setting_ad_master">去廣告總開關</string>
+    <string name="setting_ad_audio_auto_skip">自動跳過</string>
+    <string name="setting_ad_probe_source">社群規則源</string>
+    <string name="setting_ad_probe_source_hint">必須是 https 位址。規則未簽名，只填你信任的來源。</string>
+    <string name="setting_ad_probe_source_default">預設源</string>
+    <string name="setting_ad_probe_source_off">未啟用</string>
+    <string name="setting_ad_probe_refresh">立即重新整理規則</string>
+    <string name="setting_ad_probe_refreshing">正在重新整理…</string>
+    <string name="setting_ad_probe_refreshed">已更新：%1$s · 共 %2$d 條規則</string>
+    <string name="setting_ad_probe_unchanged">已是最新，共 %1$d 條規則</string>
+    <string name="setting_ad_probe_failed">重新整理失敗：%1$s</string>
+    <string name="setting_ad_probe_revision">revision %1$d · %2$d 條規則</string>
+    <string name="setting_ad_probe_never">尚未拉取</string>
+    <string name="setting_ad_probe_url_invalid">規則源必須以 https:// 開頭</string>
+    <string name="setting_ad_probe_source_disabled">請先填寫社群規則源位址</string></resources>

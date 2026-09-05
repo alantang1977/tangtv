@@ -78,14 +78,16 @@ public class AdRuleManageDialogLayoutTest {
     }
 
     @Test
-    public void enhanceSettingsCountsUserAndConfiguredRules() throws Exception {
-        String tv = read(projectRoot().resolve("app/src/leanback/java/com/fongmi/android/tv/ui/activity/SettingEnhanceActivity.java"));
-        String mobile = read(projectRoot().resolve("app/src/mobile/java/com/fongmi/android/tv/ui/fragment/SettingEnhanceFragment.java"));
-        String tvLayout = read(projectRoot().resolve("app/src/leanback/res/layout/activity_setting_enhance.xml"));
+    public void adSettingsCountUserAndConfiguredRules() throws Exception {
+        String tv = read(projectRoot().resolve("app/src/leanback/java/com/fongmi/android/tv/ui/activity/SettingAdActivity.java"));
+        String mobile = read(projectRoot().resolve("app/src/mobile/java/com/fongmi/android/tv/ui/fragment/SettingAdFragment.java"));
+        String tvLayout = read(projectRoot().resolve("app/src/leanback/res/layout/activity_setting_ad.xml"));
 
         assertTrue(tv.contains("UserAdRuleStore.load().size() + RuleConfig.get().getDefaultRules().size()"));
         assertTrue(mobile.contains("UserAdRuleStore.load().size() + RuleConfig.get().getDefaultRules().size()"));
-        assertFalse("rule manager must remain visible even when AI detection is unavailable",
+        assertTrue("rule manager must live on the dedicated ad page",
+                tvLayout.contains("@+id/adRuleManage"));
+        assertFalse("rule manager must never be hidden on the dedicated ad page",
                 tvLayout.contains("android:id=\"@+id/adRuleManage\"\r\n"
                         + "            android:layout_width=\"match_parent\"\r\n"
                         + "            android:layout_height=\"wrap_content\"\r\n"

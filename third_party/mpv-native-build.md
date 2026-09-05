@@ -44,11 +44,11 @@ third_party/mpv-native-lock.json
 | MPV | `FongMi/mpv@cca559b41ceb0bb7731cf6ef2e1f33276cd30c42`（`0.41.0-940-gcca559b41`） |
 | MediaCodec/Vulkan | FongMi 分支内建 AImageReader/AHardwareBuffer OpenGL/Vulkan 后端、sync-fd、HDR/Dolby Vision 和双 Surface OSD；不再叠加旧 `fd679c81` 或 transient patch |
 | Dolby Vision双层硬解 | `third_party/patches/mpv-android-dovi-el-surface.patch`：把 GPU 杜比元数据处理与独立增强层解码拆成两项能力；Android AImageReader 只提供单路生产者 Surface，因此 `gpu-next` 保留 DV5 映射、DV 来源识别与 HDR10 基础层回退，但不启动第二个无 Surface 的 `mediacodec-copy`；非 Android 输出仍可显式声明 EL 合成能力 |
-| AudioTrack音频直通 | 保留 FongMi MPV 的 passthrough carrier rate 修复：PCM 可跟随设备原生采样率，SPDIF/IEC61937 必须保留编码器声明的载波采样率；E-AC3、TrueHD、DTS-HD 使用 192 kHz，不能改写为常见的 48 kHz，否则 MPV 会判定格式不一致并回退 PCM。`mpv-audiotrack-truehd-channel-mask.patch` 参考 VLC 的成熟 Android AudioTrack 实现，为 TrueHD 的 8-channel carrier 使用 7.1 mask，其他 IEC61937 格式继续使用 stereo carrier mask。App 侧取 Media3、HDMI/ARC/eARC/USB 路由编码和 MPV 实际 IEC61937 载波探测的交集，载波不被系统接受时不启用该格式直通，由 MPV 回退 PCM 解码。 |
+| AudioTrack音频直通 | 保留 FongMi MPV 的 passthrough carrier rate 修复：PCM 可跟随设备原生采样率，SPDIF/IEC61937 必须保留编码器声明的载波采样率；E-AC3、TrueHD、DTS-HD 使用 192 kHz，不能改写为常见的 48 kHz，否则 MPV 会判定格式不一致并回退 PCM。`mpv-audiotrack-truehd-channel-mask.patch` 保留 TrueHD 全 API 7.1 兼容规则，并在 Android 12+ 仅对实际 8-channel carrier 使用 7.1 mask；DTS-HD HRA/其它 2-channel carrier 仍使用 stereo。App 侧对 DTS-HD 同时验证 stereo/7.1，取 Media3、HDMI/ARC/eARC/USB 路由编码和 MPV IEC61937 载波探测的交集；任一所需载波不被系统接受时不启用该格式直通，由 MPV 回退 PCM 解码。 |
 | MediaCodec直出 | `mpv-mediacodec-embed-optional-osd.patch` 允许关闭字幕时不创建额外 OSD Surface；`mpv-mediacodec-embed-timed-release.patch` 按播放 PTS 将缓冲帧提交给 MediaCodec，避免立即释放导致持续掉帧；`mpv-mediacodec-output-timing-diagnostics.patch` 只增加有界的提交/迟到/掉帧时序诊断。 |
 | Vulkan硬解稳定性与功耗 | `auto` 通过 `mpv-android-vulkan-smart-backend.patch` 恢复优先 direct AHardwareBuffer 采样，避免 HDR 默认执行全分辨率转换；direct 不支持时回退 queue-safe stable pool，再回退通用 conversion。显式 `stable` 保留给问题驱动，App 在自动模式发生视频输出错误或已识别首帧超时时会重建为 stable，并按设备环境记忆。stable 额外尝试两种 packed RGB10 storage 格式，最后才扩大到 RGBA16F。 |
 | Matroska代理Seek | `third_party/patches/mpv-matroska-segment-end.patch`，可Seek但HTTP总长度未知时使用MKV自身声明的Segment边界读取SeekHead/Cues |
-| FFmpeg | `FongMi/FFmpeg@04482c8d13ac27b2a9fe93f5d388929eef8af5f4`（9.0 fongmi） |
+| FFmpeg | `FongMi/FFmpeg@177f090e0503b7e013922ca903bde14b1c375f18`（9.0.1 fongmi） |
 | 本地代理Range兼容 | `third_party/patches/ffmpeg-webhtv-proxy-range.patch`，识别App内部代理验证后的206起点标记，不把第三方未知长度伪装成完整文件长度 |
 | libplacebo | `FongMi/libplacebo@b694a21bf2dc176c1e98b8a13c6421a0de5f3da5`（7.375.0） |
 | curl | 8.21.0，MbedTLS，HTTP/HTTPS、HTTP/2 |
@@ -169,9 +169,10 @@ scripts/build_mpv_native.sh --abi arm64-v8a --jobs 8 --work-dir /tmp/webhtv-mpv-
    - `mpv-android-vulkan-smart-backend.patch`
    - `mpv-android-vulkan-legacy-backend.patch`
    - `mpv-aimagereader-stable-flow.patch`
+   - `mpv-p2-generic-uv.patch`
    - `mpv-matroska-segment-end.patch`
 
-   Profile 7 HDR10 回退使用 FFmpeg 官方 `dovi_split` 的 `mode=bl` 在 demux 层移除 EL/RPU，GPU 与电视直出都只接收可独立解码的 HDR10 基础层。MediaCodec 直出允许无 OSD Surface，并按 PTS 调度缓冲帧释放。Vulkan `auto` 优先 direct，然后回退 stable 和通用 conversion；`legacy` 保留早期 compute 路径供兼容性验证。AImageReader 按回调序列领取图像，并在 conversion fence 完成前保持 AImage 生命周期。
+   Profile 7 HDR10 回退使用 FFmpeg 官方 `dovi_split` 的 `mode=bl` 在 demux 层移除 EL/RPU，GPU 与电视直出都只接收可独立解码的 HDR10 基础层。MediaCodec 直出允许无 OSD Surface，并按 PTS 调度缓冲帧释放。Vulkan `auto` 优先 direct，然后回退 stable 和通用 conversion；`legacy` 保留早期 compute 路径供兼容性验证。AImageReader 按回调序列领取图像，并在 conversion fence 完成前保持 AImage 生命周期。P2 generic compute/fragment shader 的 crop 与归一化除法由 CPU 每帧预计算，两个 SPIR-V header 必须由锁定 NDK r29 `glslc` 从补丁后的 shader source 重新生成并通过 `spirv-val`，不能手工修改数组。
 7. 按依赖顺序构建字符集/压缩库、MbedTLS、dav1d、libxml2、FreeType、libaribcaption、FFmpeg、字体栈、shaderc、libplacebo、curl+nghttp2、libbluray、libarchive、DVD 库、rubberband 和 MPV。
 8. 把 FFmpeg 的文件名、ELF `SONAME` 和 `DT_NEEDED` 从 `libav*`/`libsw*` 等长修改为 `libmv*`/`libmw*`。
 9. 使用 NDK `llvm-strip --strip-unneeded` 处理最终库。
@@ -229,6 +230,12 @@ scripts/build_mpv_player_jni.sh
 
 以后若只重编完全相同 client API/JNI 源码的 MPV/FFmpeg，才可以复用 `libplayer.so`。
 
+## P2-2 DV7 metadata/codecpar 窄适配（2026-08-29）
+
+P2-2 在现有 `mpv-dovi-profile7-hdr10-base-layer.patch` 内完成 Profile 7 HDR10 fallback 的 metadata/codecpar/error 完整性修复：缺少 `dv_el_present` 时仍仅对显式 HDR10 fallback 创建 `dovi_split=mode=bl`，检查 codec parameter 转换、BSF option/init 返回值，将成功过滤后的 `par_out` 原子同步回 decoder 参数并清除 EL 标记，同时在 packet 长度转换前拒绝超过 `INT_MAX` 的输入。现有三态 packet ownership、精确零拷贝、Surface Direct、单 Surface EL gate、DV7 设置和 FFmpeg `libmv*` 命名空间均保留；未升级 lock、FFmpeg、libplacebo、JNI 或启用 Android EL。
+
+本阶段使用 NDK r29 对 `arm64-v8a` 与 `armeabi-v7a` 完整重建并安装 native assets；一次 `scripts/verify_mpv_native_assets.sh --require-elf` 通过，APK `app-mobile-arm64_v8a-debug.apk` 内十个 arm64 MPV 资产与工作区完全一致，两个 `libplayer.so` 保持字节不变。用户在 USB 连接的 vivo V2453A 上确认安装后的 DV7 及邻接播放验证通过。实现提交为 `ba47756d7e463abeb9377088b819a2520e150935`，恢复 tag 为 `recovery/P2-2-MPV-DV7-METADATA-CODECPAR/20260829065811-ba47756d7e46`。完整来源、哈希、验证和回滚记录见 [P2-2-mpv-dv7-metadata-codecpar.md](../docs/P2-2-mpv-dv7-metadata-codecpar.md)。
+
 ## 提交前验证
 
 至少构建一个快速 Release：
@@ -246,7 +253,7 @@ bash gradlew :app:assembleMobileArm64_v8aRelease -PfastRelease=true
 - Dolby Vision Profile 7 REMUX 在 HDR10 回退下确认日志包含 `stripping EL/RPU before decoder`，OpenGL/Vulkan/电视直出均只有基础层进入 MediaCodec、`hwdec-current=mediacodec` 且能持续出帧；系统日志不得出现端口饥饿、`connect: already connected` 或 MediaCodec `-22`。
 - 电视直出/Dolby Vision 使用独立视频 Surface；启用字幕/OSD 时透明 OSD Surface 可见，关闭字幕时允许不创建额外 OSD Surface，退出或换集不死锁。
 - MediaCodec 直出需检查 timestamped release 统计、输出迟到和掉帧时间；不得因立即释放缓冲帧持续提前显示，也不得把有界调度等待扩大为主线程长时间阻塞。
-- MPV 音频直通在 HDMI 功放链路分别验证 AC3、E-AC3 与 TrueHD/Atmos，确认功放能锁定格式并亮灯；E-AC3、DTS-HD、TrueHD 日志应保持 IEC61937 的 192 kHz 载波采样率，不得改写为设备常见的 48 kHz，也不得回退为 PCM。
+- MPV 音频直通在 HDMI 功放链路分别验证 AC3、E-AC3、DTS-HD HRA/MA 与 TrueHD/Atmos，确认功放能锁定格式并亮灯；E-AC3、DTS-HD、TrueHD 日志应保持 IEC61937 的 192 kHz 载波采样率。DTS-HD HRA 保持 stereo carrier，Android 12+ 的 8-channel DTS-HD MA 使用 7.1 carrier；能力探测失败时允许明确回退 PCM，但不得循环重建 AudioTrack。
 - MMT/TLV、TTML/ARIB 字幕、AV3A、Blu-ray/DVD ISO、压缩包播放入口分别做功能回归。
 - 文本字幕、图形字幕以及播放中切换。
 - 使用缺少部分中文字形的 SSA/ASS 字幕确认可逐字回退，不出现 `□`；同时确认媒体内嵌字体仍生效。

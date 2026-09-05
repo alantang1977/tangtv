@@ -194,6 +194,10 @@ public class TmdbMatcher {
         return null;
     }
 
+    public void sortSearchResults(List<TmdbItem> items, String keyword) {
+        sortSearchResults(items, keyword, sourceYear(keyword, null));
+    }
+
     private void sortSearchResults(List<TmdbItem> items, String keyword, int sourceYear) {
         if (items == null || items.size() < 2) return;
         items.sort((a, b) -> {

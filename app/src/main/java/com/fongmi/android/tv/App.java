@@ -20,6 +20,7 @@ import com.fongmi.android.tv.playback.PlaybackRemoteSyncer;
 import com.fongmi.android.tv.player.PlaybackMemoryMonitor;
 import com.fongmi.android.tv.player.PlaybackSystemConditionMonitor;
 import com.fongmi.android.tv.remote.RemoteAgent;
+import com.fongmi.android.tv.setting.AppBranding;
 import com.fongmi.android.tv.setting.ProxySetting;
 import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.utils.DanmakuSearchListFocusFixer;
@@ -106,6 +107,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
         PlaybackMemoryMonitor.process().initialize(this);
         PlaybackSystemConditionMonitor.process().initialize(this);
         Setting.applyLanguage();
+        AppBranding.applyLauncherIcon(this);
         DebugLogStore.restoreEnabled();
         if (DebugLogStore.isEnabled()) {
             Setting.logDebugEnvironment("restore");
@@ -119,6 +121,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
     }
 
     private void registerContentHandlers() {
+        // 猫源动作项排最前：它的判定最便宜（只比字符串），且命中就该直接开网页，
+        // 不该让音频/阅读器 handler 先按站点规则把它认走
+        com.fongmi.android.tv.content.ContentDispatcher.registerHandler(new com.fongmi.android.tv.content.CatActionContentHandler());
         com.fongmi.android.tv.content.ContentDispatcher.registerHandler(new com.fongmi.android.tv.content.AudioContentHandler());
         com.fongmi.android.tv.content.ContentDispatcher.registerHandler(new com.fongmi.android.tv.content.ReaderContentHandler());
         registerReaderFallback();

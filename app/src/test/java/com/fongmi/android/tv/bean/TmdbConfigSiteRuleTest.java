@@ -21,9 +21,14 @@ public class TmdbConfigSiteRuleTest {
 
     @Test
     public void defaultsCoverNonVideoCategoriesAndSettings() {
-        assertEquals("默认排除项：音/听/书/漫/短 加配置站点",
-                6, TmdbConfig.getDefaultDisabledRules().size());
+        assertEquals("默认排除项：音/听/书/漫/短/画/小说/漫画/配置 加配置站点",
+                11, TmdbConfig.getDefaultDisabledRules().size());
         assertTrue("配置站点必须默认排除", TmdbConfig.getDefaultDisabledRules().contains("[设]"));
+        assertTrue("配置纯文本规则", TmdbConfig.getDefaultDisabledRules().contains("配置"));
+        assertTrue("小说规则", TmdbConfig.getDefaultDisabledRules().contains("[小说]"));
+        assertTrue("漫画规则", TmdbConfig.getDefaultDisabledRules().contains("[漫画]"));
+        assertTrue("画规则", TmdbConfig.getDefaultDisabledRules().contains("[画]"));
+        assertTrue("配规则", TmdbConfig.getDefaultDisabledRules().contains("[配]"));
     }
 
     @Test
@@ -72,5 +77,22 @@ public class TmdbConfigSiteRuleTest {
     public void unrelatedSiteIsUnaffected() {
         assertTrue("不含任何排除标记的站点照常启用",
                 fresh().isSiteEnabled("csp_Bilibili", "哔哩哔哩"));
+    }
+
+    @Test
+    public void newDefaultRulesExcludeCorrespondingSites() {
+        TmdbConfig config = fresh();
+        assertFalse("[小说] 应命中 「小说」xxx", config.isSiteEnabled("nodejs_novel_full", "「小说」阅读站"));
+        assertFalse("[漫画] 应命中 【漫画】xxx", config.isSiteEnabled("nodejs_comic_full", "【漫画】动漫站"));
+        assertFalse("[画] 应命中 ［画］xxx", config.isSiteEnabled("nodejs_paint", "［画］图库"));
+        assertFalse("配置 应命中 含配置的站点名", config.isSiteEnabled("nodejs_cfg", "「设」配置中心"));
+        assertFalse("[配] 应命中 [配]xxx", config.isSiteEnabled("nodejs_cfg2", "[配]设置站"));
+    }
+
+    @Test
+    public void bookRuleDoesNotMatchNovel() {
+        // [书] 是 [书]xxx 的精确边界，不应被 [小说]xxx 命中（子串不含 [书]）
+        TmdbConfig config = TmdbConfig.objectFrom("{\"apiKey\":\"k\",\"exclude\":[\"[书]\"]}");
+        assertTrue("[书] 不该命中 [小说]xxx", config.isSiteEnabled("nodejs_novel_full", "[小说]阅读站"));
     }
 }

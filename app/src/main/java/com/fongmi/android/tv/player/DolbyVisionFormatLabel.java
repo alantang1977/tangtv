@@ -12,7 +12,7 @@ public final class DolbyVisionFormatLabel {
 
     public static String formatName(PlayerEngine.VideoPlaybackDetails details) {
         if (details == null || !details.hasDolbyVisionSource()) return "";
-        return "Dolby Vision DV." + profile(details.dolbyVisionProfile());
+        return "Dolby Vision DV." + profile(sourceProfile(details));
     }
 
     public static String codecText(PlayerEngine.VideoPlaybackDetails details) {
@@ -35,6 +35,20 @@ public final class DolbyVisionFormatLabel {
         String value = codecs.trim();
         int comma = value.indexOf(',');
         return (comma < 0 ? value : value.substring(0, comma)).trim();
+    }
+
+    private static int sourceProfile(PlayerEngine.VideoPlaybackDetails details) {
+        String codec = firstCodec(details.sourceCodecs()).toLowerCase(Locale.US);
+        if (codec.startsWith("dvhe.") || codec.startsWith("dvh1.")) {
+            int end = codec.indexOf('.', 5);
+            String value = end < 0 ? codec.substring(5) : codec.substring(5, end);
+            try {
+                int profile = Integer.parseInt(value);
+                if (profile > 0) return profile;
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return details.dolbyVisionProfile();
     }
 
     private static String profile(int value) {

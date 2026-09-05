@@ -131,9 +131,9 @@ final class AutoLoadControl implements LoadControl {
                         mediaDurationMs(parameters.targetLiveOffsetUs),
                         parameters.rebuffering,
                         now);
-        ExoPlaybackThresholdCoordinator.Episode episode = parameters.rebuffering
-                ? ExoPlaybackThresholdCoordinator.Episode.REBUFFER
-                : ExoPlaybackThresholdCoordinator.Episode.STARTUP;
+        ExoPlaybackThresholdCoordinator.Episode episode = playbackEpisode(
+                parameters.rebuffering,
+                thresholdCoordinator.isSeekPending(inputs.session(), now));
         ExoPlaybackThresholdCoordinator.Selection selection =
                 thresholdCoordinator.lockEpisode(episode, inputs);
         if (!selection.session().active()) {
@@ -195,6 +195,14 @@ final class AutoLoadControl implements LoadControl {
         if (targetLiveOffsetUs != C.TIME_UNSET) requiredUs = Math.min(requiredUs, targetLiveOffsetUs / 2);
         long playoutBufferedUs = Util.getPlayoutDurationForMediaDuration(bufferedDurationUs, playbackSpeed);
         return playoutBufferedUs >= requiredUs;
+    }
+
+    static ExoPlaybackThresholdCoordinator.Episode playbackEpisode(
+            boolean rebuffering,
+            boolean seekPending) {
+        if (rebuffering) return ExoPlaybackThresholdCoordinator.Episode.REBUFFER;
+        if (seekPending) return ExoPlaybackThresholdCoordinator.Episode.SEEK;
+        return ExoPlaybackThresholdCoordinator.Episode.STARTUP;
     }
 
     static int controlledTimeThresholdMs(int configuredThresholdMs) {
@@ -310,6 +318,8 @@ final class AutoLoadControl implements LoadControl {
                         PlaybackTelemetry.DecisionOutcome.APPLIED,
                         selection.episode() == ExoPlaybackThresholdCoordinator.Episode.REBUFFER
                                 ? Integer.toString(inputs.configuredRebufferMs())
+                                : selection.episode() == ExoPlaybackThresholdCoordinator.Episode.SEEK
+                                ? Integer.toString(ExoPlaybackThresholdCoordinator.SEEK_START_BUFFER_MS)
                                 : Integer.toString(inputs.configuredStartBufferMs()),
                         Integer.toString(selection.thresholdMs()),
                         Integer.toString(selection.thresholdMs()),

@@ -118,12 +118,27 @@ public final class CodecCapabilityInspector {
         if (context == null || details == null || details.dolbyVisionProfile() <= 0) {
             return MpvAutoOutputPolicy.DolbyVisionSupport.UNKNOWN;
         }
-        String codecs = details.sourceCodecs();
-        if (TextUtils.isEmpty(codecs)) {
-            codecs = details.dolbyVisionLevel() > 0
-                    ? String.format(Locale.US, "dvhe.%02d.%02d",
-                    details.dolbyVisionProfile(), details.dolbyVisionLevel())
-                    : String.format(Locale.US, "dvhe.%02d", details.dolbyVisionProfile());
+        return dolbyVisionProfileSupport(context, details.dolbyVisionProfile(),
+                details.dolbyVisionLevel(), details.sourceCodecs(), current,
+                width, height);
+    }
+
+    public static MpvAutoOutputPolicy.DolbyVisionSupport dolbyVisionProfileSupport(
+            Context context,
+            int profile,
+            int level,
+            String sourceCodecs,
+            Format current,
+            int width,
+            int height) {
+        if (context == null || profile <= 0) {
+            return MpvAutoOutputPolicy.DolbyVisionSupport.UNKNOWN;
+        }
+        String codecs = sourceCodecs;
+        if (TextUtils.isEmpty(codecs) || !codecMatchesProfile(codecs, profile)) {
+            codecs = level > 0
+                    ? String.format(Locale.US, "dvhe.%02d.%02d", profile, level)
+                    : String.format(Locale.US, "dvhe.%02d", profile);
         }
         Format.Builder builder = new Format.Builder()
                 .setSampleMimeType(MimeTypes.VIDEO_DOLBY_VISION)
@@ -149,6 +164,14 @@ public final class CodecCapabilityInspector {
         } catch (Throwable ignored) {
             return MpvAutoOutputPolicy.DolbyVisionSupport.UNKNOWN;
         }
+    }
+
+    private static boolean codecMatchesProfile(String codecs, int profile) {
+        if (TextUtils.isEmpty(codecs)) return false;
+        String expected = String.format(Locale.US, ".%02d.", profile);
+        String first = codecs.split(",", 2)[0].trim().toLowerCase(Locale.US);
+        return (first.startsWith("dvhe.") || first.startsWith("dvh1."))
+                && first.contains(expected);
     }
 
     public static List<CodecEntry> getHardwareDecoders() {

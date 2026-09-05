@@ -55,6 +55,7 @@ public class PlaybackPerformanceSetting {
     private static final String KEY_DECODER_FALLBACK = "perf_decoder_fallback";
     private static final String KEY_DV7_HDR10_FALLBACK_LEGACY =
             "perf_dv7_hdr10_fallback";
+    private static final String KEY_MPV_DV7_HANDLING = "perf_mpv_dv7_handling";
     private static final String KEY_DV7_HANDLING = "perf_dv7_handling";
     private static final String KEY_DEFERRED_CUES = "perf_deferred_cues";
     private static final String KEY_SOFT_VIDEO_TUNE = "perf_soft_video_tune";
@@ -118,6 +119,7 @@ public class PlaybackPerformanceSetting {
             Prefers.put("exo_4k_compat", true);
         } else if (kernel == PlayerSetting.MPV) {
             MpvPerformanceSetting.applyRecommended();
+            put(KEY_MPV_DV7_HANDLING, DV7_HANDLING_P81);
         } else {
             IjkPerformanceSetting.applyRecommended();
         }
@@ -133,6 +135,7 @@ public class PlaybackPerformanceSetting {
             Prefers.put("exo_4k_compat", true);
         } else if (kernel == PlayerSetting.MPV) {
             MpvPerformanceSetting.applyAuto();
+            put(KEY_MPV_DV7_HANDLING, DV7_HANDLING_P81);
         } else {
             IjkPerformanceSetting.applyRecommended();
         }
@@ -167,6 +170,7 @@ public class PlaybackPerformanceSetting {
             Prefers.put("exo_4k_compat", true);
         } else if (kernel == PlayerSetting.MPV) {
             MpvPerformanceSetting.applyLightweight();
+            put(KEY_MPV_DV7_HANDLING, DV7_HANDLING_P81);
         } else {
             IjkPerformanceSetting.applyLightweight();
         }
@@ -206,10 +210,14 @@ public class PlaybackPerformanceSetting {
     }
 
     public static String getProfileName() {
-        int profile = getProfile();
+        return getProfileName(PlayerSetting.getPlayer());
+    }
+
+    public static String getProfileName(int kernel) {
+        int profile = getProfile(kernel);
         return switch (profile) {
             case PROFILE_AUTO -> {
-                int count = getOverrideCount(PlayerSetting.getPlayer());
+                int count = getOverrideCount(kernel);
                 yield count == 0 ? "自动" : "自动（已覆盖" + count + "项）";
             }
             case PROFILE_COMPATIBLE,
@@ -386,15 +394,14 @@ public class PlaybackPerformanceSetting {
     public static boolean isDv7Hdr10FallbackEnabled() {
         ensureInitialized();
         if (PlayerSetting.getPlayer() == PlayerSetting.MPV) {
-            return Prefers.getBoolean(KEY_DV7_HDR10_FALLBACK_LEGACY, true);
+            return getMpvDv7HandlingMode() == DV7_HANDLING_HDR10;
         }
         return getDv7HandlingMode() == DV7_HANDLING_HDR10;
     }
 
     public static void putDv7Hdr10FallbackEnabled(boolean value) {
         if (PlayerSetting.getPlayer() == PlayerSetting.MPV) {
-            putCustom(KEY_DV7_HDR10_FALLBACK_LEGACY, value,
-                    PlaybackPerformanceCatalog.DV7_HDR10_FALLBACK);
+            putMpvDv7HandlingMode(value ? DV7_HANDLING_HDR10 : DV7_HANDLING_P81);
         } else {
             putDv7HandlingMode(value ? DV7_HANDLING_HDR10 : DV7_HANDLING_P81);
         }
@@ -432,6 +439,32 @@ public class PlaybackPerformanceSetting {
 
     public static void putDv7HandlingMode(int mode) {
         putCustom(KEY_DV7_HANDLING, clampDv7Handling(mode), PlaybackPerformanceCatalog.DV7_HDR10_FALLBACK);
+    }
+
+    public static int getMpvDv7HandlingMode() {
+        ensureInitialized();
+        if (Prefers.getPrefers().contains(KEY_MPV_DV7_HANDLING))
+            return clampDv7Handling(Prefers.getInt(KEY_MPV_DV7_HANDLING, DV7_HANDLING_P81));
+        if (Prefers.getPrefers().contains(KEY_DV7_HDR10_FALLBACK_LEGACY)) {
+            return Prefers.getBoolean(KEY_DV7_HDR10_FALLBACK_LEGACY, true)
+                    ? DV7_HANDLING_HDR10 : DV7_HANDLING_P81;
+        }
+        return DV7_HANDLING_P81;
+    }
+
+    public static void putMpvDv7HandlingMode(int mode) {
+        putCustom(KEY_MPV_DV7_HANDLING, clampDv7Handling(mode),
+                PlaybackPerformanceCatalog.DV7_HDR10_FALLBACK);
+    }
+
+    public static String getMpvDv7HandlingText() {
+        return getMpvDv7HandlingMode() == DV7_HANDLING_P81
+                ? "升级P8.1" : "降级HDR10";
+    }
+
+    public static String getMpvDv7HandlingOption() {
+        return getMpvDv7HandlingMode() == DV7_HANDLING_P81
+                ? "p81" : "hdr10";
     }
 
     public static boolean isSoftVideoTuneEnabled() {

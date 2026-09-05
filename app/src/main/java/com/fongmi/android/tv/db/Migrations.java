@@ -130,6 +130,18 @@ public class Migrations {
         }
     };
 
+    /**
+     * 播放内核回到「按剧集记住」：History 新增 player 列。
+     * -1 表示这条记录没有自己的内核偏好，播放时沿用设置页的全局默认。
+     */
+    public static final Migration MIGRATION_43_44 = new Migration(43, 44) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            addColumnIfMissing(database, "History", "player",
+                    "ALTER TABLE History ADD COLUMN `player` INTEGER NOT NULL DEFAULT -1");
+        }
+    };
+
     private static void addColumnIfMissing(
             SupportSQLiteDatabase database,
             String table,

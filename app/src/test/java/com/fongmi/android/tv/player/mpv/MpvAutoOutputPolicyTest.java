@@ -66,6 +66,26 @@ public class MpvAutoOutputPolicyTest {
     }
 
     @Test
+    public void revealsSuccessfulDirectFrameBeforeTrackMetadataCompletes() {
+        assertTrue(MpvAutoOutputPolicy.canRevealDirectFrame(
+                true, false, true, true, 3840, 2160));
+    }
+
+    @Test
+    public void keepsShutterForUnprovenOrNonDirectOutput() {
+        assertFalse(MpvAutoOutputPolicy.canRevealDirectFrame(
+                true, false, false, true, 3840, 2160));
+        assertFalse(MpvAutoOutputPolicy.canRevealDirectFrame(
+                true, false, true, false, 3840, 2160));
+        assertFalse(MpvAutoOutputPolicy.canRevealDirectFrame(
+                true, false, true, true, 0, 2160));
+        assertFalse(MpvAutoOutputPolicy.canRevealDirectFrame(
+                true, true, true, true, 3840, 2160));
+        assertFalse(MpvAutoOutputPolicy.canRevealDirectFrame(
+                false, false, true, true, 3840, 2160));
+    }
+
+    @Test
     public void subtitlesUseDirectOutputOverlay() {
         assertTrue(MpvAutoOutputPolicy.evaluate(3840, 2160, true, true, false, false).eligible());
     }

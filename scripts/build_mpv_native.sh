@@ -7,6 +7,7 @@ OVERRIDE_DIR="$ROOT/third_party/mpv-native-overrides"
 MPV_DISC_PATCH="$ROOT/third_party/patches/mpv-stream-cb-disc-controls.patch"
 MPV_DOVI_SURFACE_PATCH="$ROOT/third_party/patches/mpv-android-dovi-el-surface.patch"
 MPV_DOVI_HDR10_BL_PATCH="$ROOT/third_party/patches/mpv-dovi-profile7-hdr10-base-layer.patch"
+MPV_DOVI_P81_PATCH="$ROOT/third_party/patches/mpv-dovi-profile7-p81.patch"
 MPV_AUDIO_TRUEHD_PATCH="$ROOT/third_party/patches/mpv-audiotrack-truehd-channel-mask.patch"
 MPV_OPTIONAL_OSD_PATCH="$ROOT/third_party/patches/mpv-mediacodec-embed-optional-osd.patch"
 MPV_MEDIACODEC_TIMED_RELEASE_PATCH="$ROOT/third_party/patches/mpv-mediacodec-embed-timed-release.patch"
@@ -15,9 +16,14 @@ MPV_VULKAN_CONVERSION_PATCH="$ROOT/third_party/patches/mpv-android-vulkan-conver
 MPV_VULKAN_SMART_PATCH="$ROOT/third_party/patches/mpv-android-vulkan-smart-backend.patch"
 MPV_VULKAN_LEGACY_PATCH="$ROOT/third_party/patches/mpv-android-vulkan-legacy-backend.patch"
 MPV_AIMAGEREADER_STABLE_PATCH="$ROOT/third_party/patches/mpv-aimagereader-stable-flow.patch"
+MPV_P2_GENERIC_UV_PATCH="$ROOT/third_party/patches/mpv-p2-generic-uv.patch"
 MPV_AIMAGEREADER_STABLE_SOURCE="$OVERRIDE_DIR/aimagereader-stable/video/out/hwdec/hwdec_aimagereader_vk_stable.c"
 MPV_AIMAGEREADER_STABLE_SHADER="$OVERRIDE_DIR/aimagereader-stable/video/out/hwdec/hwdec_aimagereader_vk_stable.comp"
 MPV_MATROSKA_PATCH="$ROOT/third_party/patches/mpv-matroska-segment-end.patch"
+MPV_P1_PACKED_RGB10_PATCH="$ROOT/third_party/patches/mpv-p1-packed-rgb10.patch"
+MPV_P1_EBML_DEFAULTS_PATCH="$ROOT/third_party/patches/mpv-p1-ebml-defaults.patch"
+MPV_P1_HLS_EDITION_PATCH="$ROOT/third_party/patches/mpv-p1-hls-edition.patch"
+LIBPLACEBO_P1_ALPHA_PATCH="$ROOT/third_party/patches/libplacebo-p1-alpha.patch"
 FFMPEG_PROXY_RANGE_PATCH="$ROOT/third_party/patches/ffmpeg-webhtv-proxy-range.patch"
 FFMPEG_MEDIACODEC_STARVATION_PATCH="$ROOT/third_party/patches/ffmpeg-mediacodec-port-starvation.patch"
 WORK_DIR="${MPV_NATIVE_WORK_DIR:-$ROOT/build/mpv-native}"
@@ -389,6 +395,32 @@ cmake_path.write_text(cmake_text, encoding="utf-8")
 PY
 }
 
+generate_mpv_shader_header() {
+  local stage="$1"
+  local source="$2"
+  local header="$3"
+  local symbol="$4"
+  local generated_dir="$WORK_DIR/generated-shaders"
+  local stem="${header##*/}"
+  local spv="$generated_dir/$stem.spv"
+  local initializer="$generated_dir/$stem.inc"
+
+  mkdir -p "$generated_dir"
+  "$GLSLC" -fshader-stage="$stage" --target-env=vulkan1.2 -O \
+    -o "$spv" "$source"
+  "$SPIRV_VAL" --target-env vulkan1.2 "$spv"
+  "$GLSLC" -fshader-stage="$stage" --target-env=vulkan1.2 -O -mfmt=c \
+    -o "$initializer" "$source"
+  {
+    printf '// Generated from %s with:\n' "${source##*/}"
+    printf '// glslc -fshader-stage=%s --target-env=vulkan1.2 -O -mfmt=c\n' \
+      "$stage"
+    printf 'static const uint32_t %s[] = ' "$symbol"
+    cat "$initializer"
+    printf ';\n'
+  } >"$header"
+}
+
 prepare_sources() {
   local deps="$BUILDSCRIPTS/deps"
   mkdir -p "$deps"
@@ -429,6 +461,9 @@ prepare_sources() {
     printf '%s\n' "$NDK_VERSION" >"$shaderc_marker"
   fi
   checkout_repo libplacebo "$LIBPLACEBO_REPO" "$LIBPLACEBO_COMMIT" "$deps/libplacebo" "$LIBPLACEBO_SUBMODULES"
+  [ -f "$LIBPLACEBO_P1_ALPHA_PATCH" ] || die "missing libplacebo alpha correctness patch: $LIBPLACEBO_P1_ALPHA_PATCH"
+  git -C "$deps/libplacebo" apply --check "$LIBPLACEBO_P1_ALPHA_PATCH"
+  git -C "$deps/libplacebo" apply "$LIBPLACEBO_P1_ALPHA_PATCH"
   if [ "$ENABLE_LIBCURL" -eq 1 ]; then
     extract_archive nghttp2 "$NGHTTP2_URL" "$NGHTTP2_SHA256" "$deps/nghttp2"
     extract_archive curl "$CURL_URL" "$CURL_SHA256" "$deps/curl"
@@ -483,12 +518,37 @@ prepare_sources() {
   [ -f "$MPV_DOVI_HDR10_BL_PATCH" ] || die "missing MPV Dolby Vision Profile 7 HDR10 base-layer patch: $MPV_DOVI_HDR10_BL_PATCH"
   git -C "$deps/mpv" apply --check --recount "$MPV_DOVI_HDR10_BL_PATCH"
   git -C "$deps/mpv" apply --recount "$MPV_DOVI_HDR10_BL_PATCH"
-  [ -f "$MPV_AUDIO_TRUEHD_PATCH" ] || die "missing MPV AudioTrack TrueHD channel-mask patch: $MPV_AUDIO_TRUEHD_PATCH"
+  [ -f "$MPV_DOVI_P81_PATCH" ] || die "missing MPV Dolby Vision Profile 7 P8.1 patch: $MPV_DOVI_P81_PATCH"
+  git -C "$deps/mpv" apply --check --recount "$MPV_DOVI_P81_PATCH"
+  git -C "$deps/mpv" apply --recount "$MPV_DOVI_P81_PATCH"
+  grep -Fq 'av_bsf_get_by_name(filter_name)' "$deps/mpv/demux/dovi_split.c" || \
+    die "MPV Dolby Vision Profile 7 P8.1 BSF selection is absent"
+  grep -Fq 'DV7 P8.1 conversion: using FFmpeg dovi_rpu BSF.' "$deps/mpv/demux/dovi_split.c" || \
+    die "MPV Dolby Vision Profile 7 P8.1 conversion marker is absent"
+  grep -Fq 'DV7 P8.1 conversion: removed stale enhancement-layer configuration.' "$deps/mpv/demux/dovi_split.c" || \
+    die "MPV Dolby Vision Profile 7 P8.1 stale enhancement-layer configuration guard is absent"
+  grep -Fq '(!s->base_only && !s->convert_p81)' "$deps/mpv/demux/dovi_split.c" || \
+    die "MPV Dolby Vision Profile 7 P8.1 base-packet filter guard is absent"
+  grep -Fq '(!bl->codec->dv_el_present && !base_only && !convert_p81)' "$deps/mpv/demux/dovi_split.c" || \
+    die "MPV Dolby Vision Profile 7 metadata-missing splitter guard is absent"
+  grep -Fq 'MPSWAP(AVCodecParameters, *bl->codec->lav_codecpar, *filtered)' "$deps/mpv/demux/dovi_split.c" || \
+    die "MPV Dolby Vision Profile 7 filtered codec parameters are not synchronized"
+  grep -Fq 'bl->codec->dv_el_present = false' "$deps/mpv/demux/dovi_split.c" || \
+    die "MPV Dolby Vision Profile 7 enhancement-layer metadata is not cleared"
+  grep -Fq 'bl_dp->len > INT_MAX' "$deps/mpv/demux/dovi_split.c" || \
+    die "MPV Dolby Vision Profile 7 packet-size guard is absent"
+  [ -f "$MPV_AUDIO_TRUEHD_PATCH" ] || die "missing MPV AudioTrack codec-aware channel-mask patch: $MPV_AUDIO_TRUEHD_PATCH"
   git -C "$deps/mpv" apply --check "$MPV_AUDIO_TRUEHD_PATCH"
   git -C "$deps/mpv" apply "$MPV_AUDIO_TRUEHD_PATCH"
+  grep -Fq 'ENTRY(BuildVersion)' "$deps/mpv/audio/out/ao_audiotrack.c" || \
+    die "MPV AudioTrack Android API mapping is absent"
+  grep -Fq 'BuildVersion.SDK_INT >= ANDROID_API_LEVEL_S &&' "$deps/mpv/audio/out/ao_audiotrack.c" || \
+    die "MPV AudioTrack Android 12 carrier gate is absent"
+  grep -Fq 'ao->channels.num == 8' "$deps/mpv/audio/out/ao_audiotrack.c" || \
+    die "MPV AudioTrack 8-channel carrier gate is absent"
   [ -f "$MPV_MEDIACODEC_TIMED_RELEASE_PATCH" ] || die "missing MPV MediaCodec timed-release patch: $MPV_MEDIACODEC_TIMED_RELEASE_PATCH"
-  git -C "$deps/mpv" apply --check "$MPV_MEDIACODEC_TIMED_RELEASE_PATCH"
-  git -C "$deps/mpv" apply "$MPV_MEDIACODEC_TIMED_RELEASE_PATCH"
+  git -C "$deps/mpv" apply --check --recount "$MPV_MEDIACODEC_TIMED_RELEASE_PATCH"
+  git -C "$deps/mpv" apply --recount "$MPV_MEDIACODEC_TIMED_RELEASE_PATCH"
   [ -f "$MPV_OPTIONAL_OSD_PATCH" ] || die "missing MPV optional direct-output OSD patch: $MPV_OPTIONAL_OSD_PATCH"
   git -C "$deps/mpv" apply --check "$MPV_OPTIONAL_OSD_PATCH"
   git -C "$deps/mpv" apply "$MPV_OPTIONAL_OSD_PATCH"
@@ -507,9 +567,31 @@ prepare_sources() {
   [ -f "$MPV_AIMAGEREADER_STABLE_PATCH" ] || die "missing MPV stable AImageReader flow patch: $MPV_AIMAGEREADER_STABLE_PATCH"
   git -C "$deps/mpv" apply --check "$MPV_AIMAGEREADER_STABLE_PATCH"
   git -C "$deps/mpv" apply "$MPV_AIMAGEREADER_STABLE_PATCH"
+  [ -f "$MPV_P2_GENERIC_UV_PATCH" ] || die "missing MPV P2 generic UV patch: $MPV_P2_GENERIC_UV_PATCH"
+  git -C "$deps/mpv" apply --check "$MPV_P2_GENERIC_UV_PATCH"
+  git -C "$deps/mpv" apply "$MPV_P2_GENERIC_UV_PATCH"
+  generate_mpv_shader_header compute \
+    "$deps/mpv/video/out/hwdec/hwdec_aimagereader.comp" \
+    "$deps/mpv/video/out/hwdec/hwdec_aimagereader_comp.h" \
+    aimagereader_comp_spv
+  generate_mpv_shader_header fragment \
+    "$deps/mpv/video/out/hwdec/hwdec_aimagereader.frag" \
+    "$deps/mpv/video/out/hwdec/hwdec_aimagereader_frag.h" \
+    aimagereader_frag_spv
+  python3 "$ROOT/scripts/verify_mpv_vulkan_shader_contract.py" \
+    --mpv-source "$deps/mpv"
   [ -f "$MPV_MATROSKA_PATCH" ] || die "missing MPV Matroska segment patch: $MPV_MATROSKA_PATCH"
   git -C "$deps/mpv" apply --check "$MPV_MATROSKA_PATCH"
   git -C "$deps/mpv" apply "$MPV_MATROSKA_PATCH"
+  [ -f "$MPV_P1_PACKED_RGB10_PATCH" ] || die "missing MPV packed RGB10 patch: $MPV_P1_PACKED_RGB10_PATCH"
+  git -C "$deps/mpv" apply --check "$MPV_P1_PACKED_RGB10_PATCH"
+  git -C "$deps/mpv" apply "$MPV_P1_PACKED_RGB10_PATCH"
+  [ -f "$MPV_P1_EBML_DEFAULTS_PATCH" ] || die "missing MPV EBML defaults patch: $MPV_P1_EBML_DEFAULTS_PATCH"
+  git -C "$deps/mpv" apply --check "$MPV_P1_EBML_DEFAULTS_PATCH"
+  git -C "$deps/mpv" apply "$MPV_P1_EBML_DEFAULTS_PATCH"
+  [ -f "$MPV_P1_HLS_EDITION_PATCH" ] || die "missing MPV HLS edition patch: $MPV_P1_HLS_EDITION_PATCH"
+  git -C "$deps/mpv" apply --check "$MPV_P1_HLS_EDITION_PATCH"
+  git -C "$deps/mpv" apply "$MPV_P1_HLS_EDITION_PATCH"
 }
 
 patch_dynamic_names() {
@@ -589,17 +671,22 @@ verify_directory() {
   grep -Fq "video output has no queue-safe EL decoder" <<<"$version_strings" || die "MPV Android Dolby Vision EL capability guard missing from $directory/libmpv.so"
   grep -Fq "DV7 HDR10 fallback: using MediaCodec base-layer decoder" <<<"$version_strings" || die "MPV Dolby Vision Profile 7 HDR10 direct base-layer fallback missing from $directory/libmpv.so"
   grep -Fq "DV7 HDR10 fallback: stripping EL/RPU before decoder." <<<"$version_strings" || die "MPV Dolby Vision Profile 7 demux base-layer filter missing from $directory/libmpv.so"
+  grep -Fq "DV7 HDR10 fallback: synchronized decoder parameters to the HDR10 base layer." <<<"$version_strings" || die "MPV Dolby Vision Profile 7 filtered codec-parameter sync missing from $directory/libmpv.so"
   grep -Fq "DV7 HDR10 fallback: failed to produce base-layer packet." <<<"$version_strings" || die "MPV Dolby Vision Profile 7 filter failure guard missing from $directory/libmpv.so"
+  grep -Fq "DV7 P8.1 conversion: using FFmpeg dovi_rpu BSF." <<<"$version_strings" || die "MPV Dolby Vision Profile 7 P8.1 conversion missing from $directory/libmpv.so"
+  grep -Fq "DV7 P8.1 conversion: removed stale enhancement-layer configuration." <<<"$version_strings" || die "MPV Dolby Vision Profile 7 P8.1 stale enhancement-layer configuration guard missing from $directory/libmpv.so"
   if grep -Fq "Using device native output sample rate for passthrough compatibility" <<<"$version_strings"; then
     die "obsolete MPV AudioTrack passthrough native-rate patch present in $directory/libmpv.so"
   fi
   grep -Fq "Using 7.1 IEC61937 carrier mask for TrueHD" <<<"$version_strings" || die "MPV AudioTrack TrueHD channel-mask patch missing from $directory/libmpv.so"
+  grep -Fq "Using 7.1 IEC61937 carrier mask for Android 12+ 8-channel stream" <<<"$version_strings" || die "MPV AudioTrack DTS-HD MA channel-mask path missing from $directory/libmpv.so"
   grep -Fq "WebHTV direct output accepts an optional Android OSD Surface" <<<"$version_strings" || die "MPV optional direct-output OSD patch missing from $directory/libmpv.so"
   grep -Fq "WebHTV timestamped MediaCodec output enabled" <<<"$version_strings" || die "MPV MediaCodec timestamped-release patch missing from $directory/libmpv.so"
   grep -Fq "MediaCodec VO drop timing" <<<"$version_strings" || die "MPV MediaCodec output timing diagnostics missing from $directory/libmpv.so"
   grep -Fq "WebHTV Vulkan auto backend prefers direct AHardwareBuffer sampling" <<<"$version_strings" || die "MPV Android Vulkan smart backend patch missing from $directory/libmpv.so"
   grep -Fq "WebHTV Vulkan auto uses a queue-safe four-output bounded-fence pool" <<<"$version_strings" || die "MPV Android Vulkan queue-safe conversion pool missing from $directory/libmpv.so"
   grep -Fq "CPU-precomputed UV transform" <<<"$version_strings" || die "MPV Android Vulkan low-power coordinate transform missing from $directory/libmpv.so"
+  grep -Fq "Generic Vulkan conversion uses CPU-precomputed UV transform" <<<"$version_strings" || die "MPV Android Vulkan generic coordinate transform missing from $directory/libmpv.so"
   grep -Fq "Stable Vulkan conversion preserves Dolby Vision raw YUV component mapping" <<<"$version_strings" || die "MPV Android Vulkan stable Dolby Vision mapping missing from $directory/libmpv.so"
   grep -Fq "WebHTV Vulkan keeps AImage until the conversion fence completes" <<<"$version_strings" || die "MPV Android Vulkan stable AImage lifetime patch missing from $directory/libmpv.so"
   grep -Fq "WebHTV AImageReader uses stable release/acquire flow" <<<"$version_strings" || die "MPV Android stable AImageReader release/acquire patch missing from $directory/libmpv.so"

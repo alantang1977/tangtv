@@ -94,16 +94,16 @@ public class ExoUtilTest {
     }
 
     @Test
-    public void videoLimits_startFromTheHighestTrackInsideTheConstraints() throws Exception {
+    public void videoLimits_keepAdaptiveSelectionInsideTheConstraints() throws Exception {
         String source = readMainSource("player/exo/ExoUtil.java");
         int start = source.indexOf("private static void applyVideoLimit(");
         int end = source.indexOf("public static EnhancedVideoProfile getEnhancedVideoProfile()", start);
         assertTrue(start >= 0 && end > start);
         String limit = source.substring(start, end);
 
-        assertTrue("起播必须选约束内画质最高的轨道，否则 HLS 多码率直链会停在最低档",
-                limit.contains("builder.setForceHighestSupportedBitrate(true)"));
-        assertFalse(limit.contains("builder.setForceHighestSupportedBitrate(false)"));
+        assertTrue("受约束轨道必须保留 Media3 自适应选轨，否则低码率 H.264 可能固定到过高分辨率",
+                limit.contains("builder.setForceHighestSupportedBitrate(false)"));
+        assertFalse(limit.contains("builder.setForceHighestSupportedBitrate(true)"));
     }
 
     @Test

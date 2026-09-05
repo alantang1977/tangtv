@@ -1,7 +1,6 @@
 package com.fongmi.android.tv.ui.fragment;
 
 import android.net.Uri;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -41,6 +40,7 @@ import com.fongmi.android.tv.impl.FilterListener;
 import com.fongmi.android.tv.impl.SiteListener;
 import com.fongmi.android.tv.model.SiteViewModel;
 import com.fongmi.android.tv.setting.Setting;
+import com.fongmi.android.tv.setting.AppBranding;
 import com.fongmi.android.tv.ui.activity.HomeActivity;
 import com.fongmi.android.tv.ui.activity.HistoryActivity;
 import com.fongmi.android.tv.ui.activity.KeepActivity;
@@ -48,6 +48,8 @@ import com.fongmi.android.tv.ui.activity.SearchActivity;
 import com.fongmi.android.tv.ui.adapter.TypeAdapter;
 import com.fongmi.android.tv.ui.base.BaseFragment;
 import com.fongmi.android.tv.ui.dialog.ApkPushDialog;
+import com.fongmi.android.tv.ui.dialog.ApkPushMethodDialog;
+import com.fongmi.android.tv.ui.dialog.ApkPushUrlDialog;
 import com.fongmi.android.tv.ui.dialog.FilterDialog;
 import com.fongmi.android.tv.ui.dialog.HistoryDialog;
 import com.fongmi.android.tv.ui.dialog.LinkDialog;
@@ -70,9 +72,7 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 public class VodFragment extends BaseFragment implements ConfigListener, SiteListener, FilterListener, TypeAdapter.OnClickListener, HomeWebController.Listener {
 
@@ -217,9 +217,7 @@ public class VodFragment extends BaseFragment implements ConfigListener, SiteLis
     }
 
     private void setTitle() {
-        List<String> items = Arrays.asList(getHome().getDisplayName(), getConfig().getName(), getString(R.string.app_name));
-        Optional<String> optional = items.stream().filter(s -> !TextUtils.isEmpty(s)).findFirst();
-        optional.ifPresent(s -> mBinding.title.setText(s));
+        mBinding.title.setText(AppBranding.getDisplayName(requireContext(), getHome().getDisplayName(), getConfig().getName()));
     }
 
     private void onTop(View view) {
@@ -309,6 +307,23 @@ public class VodFragment extends BaseFragment implements ConfigListener, SiteLis
     }
 
     private void onApkDeviceSelected(Device device) {
+        App.post(() -> {
+            if (!isAdded()) return;
+            ApkPushMethodDialog.create(device).listener(new ApkPushMethodDialog.Listener() {
+                @Override
+                public void onLocal(Device device) {
+                    selectLocalApk(device);
+                }
+
+                @Override
+                public void onLink(Device device) {
+                    ApkPushUrlDialog.create(device).show(requireActivity());
+                }
+            }).show(requireActivity());
+        });
+    }
+
+    private void selectLocalApk(Device device) {
         pendingApkDevice = device;
         App.post(() -> {
             if (isAdded()) apkLauncher.launch(new String[]{"application/vnd.android.package-archive", "application/octet-stream"});
@@ -405,7 +420,7 @@ public class VodFragment extends BaseFragment implements ConfigListener, SiteLis
     }
 
     private void setLogo() {
-        ImgUtil.logo(mBinding.logo);
+        AppBranding.applyLogo(mBinding.logo);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
