@@ -1,29 +1,30 @@
-<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
+<?xml version='1.0' encoding='utf-8'?>
+<resources xmlns:ns0="http://schemas.android.com/apk/res-auto">
 
-    <!-- App -->
-   <string name="app_name">默影视</string>
+    
+   <string name="app_name">TANG TV</string>
    <string name="setting_app_branding">App icon</string>
     <string name="app_branding_icon_current">Default icon</string>
     <string name="app_branding_icon_history">Original icon</string>
    <string name="app_branding_icon_select">Select icon</string>
     <string name="app_exit_confirm">Press back again to exit</string>
 
-    <!-- Live -->
+    
     <string name="live_pass">Pass</string>
     <string name="live_refresh">Refresh</string>
-    <string name="live_line">Line <xliff:g name="name">%s</xliff:g></string>
+    <string name="live_line">Line <ns0:g name="name">%s</ns0:g></string>
     <string name="live_control_source">Live source</string>
     <string name="live_no_epg">00:00 - 23:59 No program info</string>
 
-    <!-- Detail -->
-    <string name="detail_title"><xliff:g name="name">%s</xliff:g> : <xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_site">Site: <xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_year">Year: <xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_area">Area: <xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_type">Type: <xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_director">Director: <xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_actor">Actor: <xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_content">Summary: <xliff:g name="name">%s</xliff:g></string>
+    
+    <string name="detail_title"><ns0:g name="name">%s</ns0:g> : <ns0:g name="name">%s</ns0:g></string>
+    <string name="detail_site">Site: <ns0:g name="name">%s</ns0:g></string>
+    <string name="detail_year">Year: <ns0:g name="name">%s</ns0:g></string>
+    <string name="detail_area">Area: <ns0:g name="name">%s</ns0:g></string>
+    <string name="detail_type">Type: <ns0:g name="name">%s</ns0:g></string>
+    <string name="detail_director">Director: <ns0:g name="name">%s</ns0:g></string>
+    <string name="detail_actor">Actor: <ns0:g name="name">%s</ns0:g></string>
+    <string name="detail_content">Summary: <ns0:g name="name">%s</ns0:g></string>
     <string name="detail_desc">Summary</string>
     <string name="detail_episode">Episode</string>
     <string name="detail_episode_season_context">Episode · Season %1$d</string>
@@ -38,7 +39,7 @@
     <string name="detail_episode_file_name_original_action">Switch to original filename</string>
     <string name="detail_episode_file_name_scraped_action">Switch to scraped filename</string>
 
-    <!-- Keep -->
+    
     <string name="keep">Keep</string>
     <string name="keep_add">Added</string>
     <string name="keep_del">Removed</string>
@@ -48,7 +49,7 @@
     <string name="exit_confirm_background">Background playback</string>
     <string name="exit_confirm_positive">Exit completely</string>
 
-    <!-- Play -->
+    
     <string name="play">Play</string>
     <string name="pause">Pause</string>
     <string name="play_op">OP</string>
@@ -98,17 +99,17 @@
     <string name="offset_setting">Offset settings</string>
     <string name="play_forward_hint">Normal play switched</string>
     <string name="play_backward_hint">Reverse play switched</string>
-    <string name="play_ready">Ready to play: <xliff:g name="name">%s</xliff:g></string>
-    <string name="play_switch_flag">Switching flag to <xliff:g name="name">%s</xliff:g></string>
-    <string name="play_switch_site">Switching site to <xliff:g name="name">%s</xliff:g></string>
-    <string name="play_switch_parse">Switching parse to <xliff:g name="name">%s</xliff:g></string>
+    <string name="play_ready">Ready to play: <ns0:g name="name">%s</ns0:g></string>
+    <string name="play_switch_flag">Switching flag to <ns0:g name="name">%s</ns0:g></string>
+    <string name="play_switch_site">Switching site to <ns0:g name="name">%s</ns0:g></string>
+    <string name="play_switch_parse">Switching parse to <ns0:g name="name">%s</ns0:g></string>
     <string name="play_night_mode">Night mode</string>
     <string name="night_mode_off">Night mode off</string>
     <string name="night_mode_low">Night mode: Low</string>
     <string name="night_mode_medium">Night mode: Medium</string>
     <string name="night_mode_high">Night mode: High</string>
 
-    <!-- Danmaku Setting -->
+    
     <string name="danmaku">Danmaku</string>
     <string name="danmaku_show_on">Danmaku enabled</string>
     <string name="danmaku_show_off">Danmaku disabled</string>
@@ -164,16 +165,16 @@
     <string name="danmaku_section_density">Density</string>
     <string name="danmaku_reset">Reset</string>
 
-    <!-- Parse -->
+    
     <string name="parse">Parse</string>
     <string name="parse_god">Super</string>
-    <string name="parse_from">Parse from: <xliff:g name="name">%s</xliff:g></string>
+    <string name="parse_from">Parse from: <ns0:g name="name">%s</ns0:g></string>
 
-    <!-- Push -->
+    
     <string name="push">Push</string>
     <string name="push_image" translatable="false">data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCADwAPADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9U6KKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACvN7bxhffFCaRPB+oWZ8KSQX1h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g74M+K1mbfxR4fs9UYLtS5ZNlxH/ALkq4dfoDitbp7mFmtjGvNNudPbbcQtH6NjIP41518fo5NY8G+FfAFsxS88da3DaTbSQy2ULCWdwRzwFX8GNTyfBX4nfCdd/w38bf8JHoqf8yx4w/ertzkrFcDkdwAQoHcml+F9n4v8AiP8AHCLxZ4w8H3Xg6Hwxop020sZ3WSF7yaQmWWGQcOvlhVyOOcZOKaVtbkt30seofFbVo/C/gCS2s9Y07w3dXTRabp9xqUBmt/NcgLEYwDuDKGXFdhptmun6fa2qrGiwRLEFhQRoAoAwqjhRxwB0p11ZW98ipcwRXCK6yKsqBgGByGGe4PQ1PUFhRRRSGFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAVhePP+RH8Rf9g64/9FNW7WD483HwN4i2RvK/9nXOI413Mx8puAO5NNbgfB/jX4kWV58A/hN8NZdQaw0u40+PVvEl1Dy0NjHI2yMdi7sPlU9XEQ/ir6Q+DPw1vPGOt6f8RfGGljTBZ262/hTwww/d6LZgAK7L/wA92ULk/wAIAHYBfFf2N/2XJtelsfiN47tWeKIRjR9LuoyN4jUIk8in+EBRsB643dMZ+6K1m0tEYwTerCiiisTYKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/Z</string>
 
-    <!-- Setting -->
+    
     <string name="setting_vod">Vod</string>
     <string name="setting_live">Live</string>
     <string name="setting_wall">Wallpaper</string>
@@ -270,7 +271,7 @@
     <string name="intro_skip_confirm_recap">Skip recap</string>
     <string name="intro_skip_confirm_outro">Skip outro</string>
     <string name="intro_skip_confirm_preview">Skip next-episode preview</string>
-    <!-- Detected (not user-set) intro/outro time shown on the control bar; %1$s is the timestamp -->
+    
     <string name="intro_skip_detected_value">~%1$s</string>
     <string name="intro_skip_kind_recap">Recap</string>
     <string name="intro_skip_kind_intro">Intro</string>
@@ -279,7 +280,7 @@
     <string name="setting_intro_skip_kinds">Segments to skip</string>
     <string name="intro_skip_kinds_none">None</string>
     <string name="intro_skip_kinds_all">All</string>
-    <!-- Shown after an automatic skip; %1$s is the segment type -->
+    
     <string name="intro_skip_notice_seeked">Skipped %1$s</string>
     <string name="intro_skip_notice_ended">Skipped %1$s, going to the next episode</string>
     <string name="personal_recommendation_confirm_title">Enable personal recommendations</string>
@@ -838,7 +839,7 @@
     <string name="setting_proxy_hosts">Matched hosts</string>
     <string name="setting_proxy_rules">Proxy rules</string>
     <string name="setting_proxy_rules_raw">Raw rules</string>
-    <string name="setting_proxy_rules_hint">Raw JSON: {&quot;proxy&quot;:[{&quot;hosts&quot;:[&quot;example.com&quot;],&quot;urls&quot;:[&quot;socks5://127.0.0.1:1080&quot;]}]}</string>
+    <string name="setting_proxy_rules_hint">Raw JSON: {"proxy":[{"hosts":["example.com"],"urls":["socks5://127.0.0.1:1080"]}]}</string>
     <string name="setting_proxy_default_url">Default proxy URL</string>
     <string name="setting_proxy_rule_url">Proxy URL</string>
     <string name="setting_proxy_edit_rule">Edit rule %1$d</string>
@@ -909,7 +910,7 @@
     <string name="setting_off">Off</string>
     <string name="setting_on">On</string>
 
-    <!-- About -->
+    
     <string name="about_title">About WebHomeTV</string>
     <string name="about_free_badge">Free</string>
     <string name="about_version">Version %1$s · %2$s/%3$s</string>
@@ -926,7 +927,7 @@
     <string name="setting_github_proxy_reset">Reset to default</string>
     <string name="setting_github_proxy_invalid">Please enter a valid http/https URL</string>
 
-    <!-- Backup & Restore -->
+    
     <string name="restore_select">Select backup</string>
     <string name="restore_success">Restore successful</string>
     <string name="restore_fail">Restore failed</string>
@@ -934,15 +935,15 @@
     <string name="backup_fail">Backup failed</string>
     <string name="backup_permission_denied">Storage permission is required to back up or restore data</string>
 
-    <!-- Device Sync -->
+    
     <string name="device_select">Select devices</string>
     <string name="device_offline">Device is offline</string>
     <string name="cast_not_ready">Playback information is not ready. Try again shortly.</string>
     <string name="sync_success">Sync completed</string>
     <string name="sync_progress">Syncing...</string>
     <string name="sync_failed">Sync failed</string>
-    <string name="sync_mode_to_remote">This device -> selected device</string>
-    <string name="sync_mode_from_remote">Selected device -> this device</string>
+    <string name="sync_mode_to_remote">This device -&gt; selected device</string>
+    <string name="sync_mode_from_remote">Selected device -&gt; this device</string>
     <string name="sync_local_device">This device</string>
     <string name="sync_remote_device">Selected device</string>
     <string name="sync_sender">Sender</string>
@@ -982,7 +983,9 @@
     <string name="sync_paths_title">Sync folders</string>
     <string name="sync_paths_edit">Edit</string>
     <string name="sync_paths_desc">One external-storage relative path per line. TV, TVBox and TVData are synced by default. You can add local package folders; folder contents are synced with Jar/script saved data.</string>
-    <string name="sync_paths_hint">TV&#10;TVBox&#10;TVData</string>
+    <string name="sync_paths_hint">TV
+TVBox
+TVData</string>
     <string name="sync_paths_up">Collapse</string>
     <string name="sync_paths_refresh">Refresh</string>
     <string name="sync_paths_enter">Open folder</string>
@@ -1034,7 +1037,7 @@
     <string name="login_state_state_partial">Partial</string>
     <string name="login_state_state_missing">Missing</string>
 
-    <!-- Player -->
+    
     <string name="player">Player</string>
     <string name="player_default">Default player</string>
     <string name="player_render">Render</string>
@@ -1362,7 +1365,7 @@
     <string name="lut_unavailable_hdr">HDR/Dolby Vision content does not support LUT color yet</string>
     <string name="lut_unavailable_no_video">Current content has no video track</string>
 
-    <!-- Danmaku -->
+    
     <string name="danmaku_load">Danmaku load</string>
     <string name="danmaku_api">Search API</string>
     <string name="danmaku_api_invalid">Invalid danmaku API URL</string>
@@ -1373,7 +1376,7 @@
     <string name="danmaku_source_default">Danmaku</string>
     <string name="danmaku_source_count">%1$d items</string>
 
-    <!-- Search -->
+    
     <string name="search_keyword">Keywords…</string>
     <string name="search_column">Search layout</string>
     <string name="site_search_hint">Search sites…</string>
@@ -1395,7 +1398,7 @@
     <string name="search_progress">(%1$d/%2$d)</string>
     <string name="search_no_result">No results</string>
 
-    <!-- Dialog -->
+    
     <string name="dialog_edit">Edit</string>
     <string name="dialog_positive">OK</string>
     <string name="dialog_negative">Cancel</string>
@@ -1450,7 +1453,7 @@
     <string name="dialog_config_name">Please enter the name…</string>
     <string name="dialog_config_url">Please enter the url…</string>
 
-    <!-- Error -->
+    
     <string name="error_config_get">Configuration get failed</string>
     <string name="error_play_next">It\'s the last episode!</string>
     <string name="error_play_prev">It\'s the first episode!</string>
@@ -1482,12 +1485,12 @@
     <string name="error_play_fallback">%1$s playback failed, switched to %2$s</string>
     <string name="error_play_ijk_unavailable">IJK is unavailable on this device</string>
     <string name="error_play_ijk_unavailable_switch">IJK is unavailable on this device, switched to %1$s</string>
-    <string name="error_play_tvbus">Error code: <xliff:g name="name">%s</xliff:g></string>
+    <string name="error_play_tvbus">Error code: <ns0:g name="name">%s</ns0:g></string>
     <string name="error_detail">No play data</string>
     <string name="error_empty">Nothing here 👀</string>
 
-    <!-- Update -->
-    <string name="update_version">New version <xliff:g name="name">%s</xliff:g></string>
+    
+    <string name="update_version">New version <ns0:g name="name">%s</ns0:g></string>
     <string name="update_title">Version update</string>
     <string name="update_hint">Choose a version to view release notes and update.</string>
     <string name="update_check">Checking for updates…</string>
@@ -1556,7 +1559,7 @@
     <string name="update_download_identity">The update package identity or signature does not match this app.</string>
     <string name="update_download_source_unavailable">The selected update source is not available for this release.</string>
 
-    <!-- Crash -->
+    
     <string name="crash_info">An unexpected error occurred.\nSorry for the inconvenience.</string>
     <string name="crash_restart">Restart app</string>
     <string name="crash_details">Error details</string>
@@ -1564,7 +1567,7 @@
     <string name="crash_details_message">App version: %1$s\n\n%2$s</string>
     <string name="crash_details_close">Close</string>
 
-    <!-- Hint -->
+    
     <string name="copied">Copied</string>
     <string name="debug_log_dialog_message">Debug log service is running.\n\nLAN URL:\n%1$s\n\nLocal URL:\n%2$s\n\nIf this TV has no browser, open the LAN URL from a computer or phone on the same network.</string>
     <string name="debug_log_open_browser">Open browser</string>
@@ -1584,22 +1587,22 @@
     <string name="manage_page_battery_allow">Open settings</string>
     <string name="manage_page_open_anyway">Open anyway</string>
     <string name="manage_page_battery_open_failed">No direct background settings page was found. Use the manual path shown in the dialog.</string>
-    <string name="manage_page_battery_guide_vivo">vivo/iQOO: Settings > Battery > Background power consumption management / High background power consumption > find this app > set it to allow high background power usage. If the direct page fails, search system Settings for Background power consumption management.</string>
-    <string name="manage_page_battery_guide_xiaomi">Xiaomi/Redmi/POCO: Settings > Apps > Permissions > Autostart > allow this app. Then set this app battery usage to unrestricted.</string>
-    <string name="manage_page_battery_guide_oppo">OPPO/realme/OnePlus: Settings > Apps > Autostart or associated launch > allow this app. Then allow background running in Battery > App battery management.</string>
-    <string name="manage_page_battery_guide_huawei">Huawei/Honor: Phone Manager or Settings > App launch > this app > disable automatic management, then allow autostart, secondary launch, and background running.</string>
-    <string name="manage_page_battery_guide_samsung">Samsung: Settings > Apps > this app > Battery > Unrestricted. Also make sure this app is not in sleeping/deep sleeping apps.</string>
-    <string name="manage_page_battery_guide_meizu">Meizu: Phone Manager > Permission/background management > this app > allow background running. Then set this app to unrestricted in power management.</string>
-    <string name="manage_page_battery_guide_default">Settings > Apps > this app > Battery > choose unrestricted or not optimized. If autostart/background running options exist, allow them for this app.</string>
+    <string name="manage_page_battery_guide_vivo">vivo/iQOO: Settings &gt; Battery &gt; Background power consumption management / High background power consumption &gt; find this app &gt; set it to allow high background power usage. If the direct page fails, search system Settings for Background power consumption management.</string>
+    <string name="manage_page_battery_guide_xiaomi">Xiaomi/Redmi/POCO: Settings &gt; Apps &gt; Permissions &gt; Autostart &gt; allow this app. Then set this app battery usage to unrestricted.</string>
+    <string name="manage_page_battery_guide_oppo">OPPO/realme/OnePlus: Settings &gt; Apps &gt; Autostart or associated launch &gt; allow this app. Then allow background running in Battery &gt; App battery management.</string>
+    <string name="manage_page_battery_guide_huawei">Huawei/Honor: Phone Manager or Settings &gt; App launch &gt; this app &gt; disable automatic management, then allow autostart, secondary launch, and background running.</string>
+    <string name="manage_page_battery_guide_samsung">Samsung: Settings &gt; Apps &gt; this app &gt; Battery &gt; Unrestricted. Also make sure this app is not in sleeping/deep sleeping apps.</string>
+    <string name="manage_page_battery_guide_meizu">Meizu: Phone Manager &gt; Permission/background management &gt; this app &gt; allow background running. Then set this app to unrestricted in power management.</string>
+    <string name="manage_page_battery_guide_default">Settings &gt; Apps &gt; this app &gt; Battery &gt; choose unrestricted or not optimized. If autostart/background running options exist, allow them for this app.</string>
 
-    <!-- UNIT -->
+    
     <string name="all">All</string>
     <string name="yes">Yes</string>
     <string name="none">None</string>
     <string name="times">times</string>
     <string name="lines">lines</string>
 
-    <!-- SEARCH -->
+    
     <string name="search_scope_all">All</string>
     <string name="search_scope_current">Current site</string>
     <string name="search_scope_current_hint">Current site: %1$s</string>
@@ -2095,7 +2098,7 @@
     <string name="detail_image_next">Next</string>
     <string name="detail_image_close">Close</string>
 
-    <!-- Viewing Report -->
+    
     <string name="menu_viewing_report">Viewing Report</string>
     <string name="viewing_report_title">🎬 Your Viewing Report</string>
     <string name="viewing_report_select_range">Select Report Range</string>
@@ -2127,7 +2130,7 @@
     <string name="viewing_report_ai_persona">✨ Your Viewing Persona</string>
     <string name="viewing_report_badges">🏆 Achievements</string>
 
-    <!-- AI 智能去广 -->
+    
     <string name="setting_ai_ad_detection">AI ad detection</string>
     <string name="setting_ad_rule_manage">Ad rule manager</string>
     <string name="ad_rule_add_manual">Add rule manually</string>

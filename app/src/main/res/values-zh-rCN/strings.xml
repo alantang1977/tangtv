@@ -1,28 +1,29 @@
-<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
+<?xml version='1.0' encoding='utf-8'?>
+<resources xmlns:ns0="http://schemas.android.com/apk/res-auto">
 
-    <!-- App -->
-    <string name="app_name">默影视</string>
+    
+    <string name="app_name">湯影视</string>
    <string name="setting_app_branding">APP 图标</string>
     <string name="app_branding_icon_current">默认图标</string>
     <string name="app_branding_icon_history">原版图标</string>
     <string name="app_branding_icon_select">选择图标</string>
     <string name="app_exit_confirm">再按一次退出应用</string>
 
-    <!-- Live -->
+    
     <string name="live_pass">密码</string>
     <string name="live_refresh">刷新</string>
-    <string name="live_line">线路 <xliff:g name="name">%s</xliff:g></string>
+    <string name="live_line">线路 <ns0:g name="name">%s</ns0:g></string>
     <string name="live_control_source">直播源</string>
 
-    <!-- Detail -->
-    <string name="detail_title"><xliff:g name="name">%s</xliff:g>：<xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_site">站源：<xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_year">年份：<xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_area">地区：<xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_type">类型：<xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_director">导演：<xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_actor">演员：<xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_content">简介：<xliff:g name="name">%s</xliff:g></string>
+    
+    <string name="detail_title"><ns0:g name="name">%s</ns0:g>：<ns0:g name="name">%s</ns0:g></string>
+    <string name="detail_site">站源：<ns0:g name="name">%s</ns0:g></string>
+    <string name="detail_year">年份：<ns0:g name="name">%s</ns0:g></string>
+    <string name="detail_area">地区：<ns0:g name="name">%s</ns0:g></string>
+    <string name="detail_type">类型：<ns0:g name="name">%s</ns0:g></string>
+    <string name="detail_director">导演：<ns0:g name="name">%s</ns0:g></string>
+    <string name="detail_actor">演员：<ns0:g name="name">%s</ns0:g></string>
+    <string name="detail_content">简介：<ns0:g name="name">%s</ns0:g></string>
     <string name="detail_desc">简介</string>
     <string name="detail_episode">选集</string>
     <string name="detail_episode_season_context">选集 · 第 %1$d 季</string>
@@ -37,7 +38,7 @@
     <string name="detail_episode_file_name_original_action">切换到原文件名</string>
     <string name="detail_episode_file_name_scraped_action">切换到刮削文件名</string>
 
-    <!-- Keep -->
+    
     <string name="keep">收藏</string>
     <string name="keep_add">已收藏</string>
     <string name="keep_del">已取消收藏</string>
@@ -47,7 +48,7 @@
     <string name="exit_confirm_background">后台播放</string>
     <string name="exit_confirm_positive">完全退出</string>
 
-    <!-- Play -->
+    
     <string name="play">播放</string>
     <string name="pause">暂停</string>
     <string name="play_op">片头</string>
@@ -97,17 +98,17 @@
     <string name="offset_setting">偏移设置</string>
     <string name="play_forward_hint">已切换正序播放</string>
     <string name="play_backward_hint">已切换倒序播放</string>
-    <string name="play_ready">准备播放：<xliff:g name="name">%s</xliff:g></string>
-    <string name="play_switch_flag">正在切换线路至「<xliff:g name="name">%s</xliff:g>」</string>
-    <string name="play_switch_site">正在切换站源至「<xliff:g name="name">%s</xliff:g>」</string>
-    <string name="play_switch_parse">正在切换解析至「<xliff:g name="name">%s</xliff:g>」</string>
+    <string name="play_ready">准备播放：<ns0:g name="name">%s</ns0:g></string>
+    <string name="play_switch_flag">正在切换线路至「<ns0:g name="name">%s</ns0:g>」</string>
+    <string name="play_switch_site">正在切换站源至「<ns0:g name="name">%s</ns0:g>」</string>
+    <string name="play_switch_parse">正在切换解析至「<ns0:g name="name">%s</ns0:g>」</string>
     <string name="play_night_mode">夜间护眼</string>
     <string name="night_mode_off">护眼关闭</string>
     <string name="night_mode_low">轻度护眼</string>
     <string name="night_mode_medium">中度护眼</string>
     <string name="night_mode_high">重度护眼</string>
 
-    <!-- Danmaku Setting -->
+    
     <string name="danmaku">弹幕</string>
     <string name="danmaku_show_on">弹幕已开启</string>
     <string name="danmaku_show_off">弹幕已关闭</string>
@@ -163,15 +164,15 @@
     <string name="danmaku_section_density">密度</string>
     <string name="danmaku_reset">重置</string>
 
-    <!-- Parse -->
+    
     <string name="parse">解析</string>
     <string name="parse_god">超级解析</string>
-    <string name="parse_from">解析来自：<xliff:g name="name">%s</xliff:g></string>
+    <string name="parse_from">解析来自：<ns0:g name="name">%s</ns0:g></string>
 
-    <!-- Push -->
+    
     <string name="push">推送</string>
 
-    <!-- Setting -->
+    
     <string name="setting_vod">点播</string>
     <string name="setting_live">直播</string>
     <string name="setting_wall">壁纸</string>
@@ -268,7 +269,7 @@
     <string name="intro_skip_confirm_recap">跳过前情提要</string>
     <string name="intro_skip_confirm_outro">跳过片尾</string>
     <string name="intro_skip_confirm_preview">跳过下集预告</string>
-    <!-- 控制栏上显示的自动探测值（非用户手设），%1$s 为时间 -->
+    
     <string name="intro_skip_detected_value">~%1$s</string>
     <string name="intro_skip_kind_recap">前情回顾</string>
     <string name="intro_skip_kind_intro">片头</string>
@@ -277,7 +278,7 @@
     <string name="setting_intro_skip_kinds">跳过的片段类型</string>
     <string name="intro_skip_kinds_none">未选择</string>
     <string name="intro_skip_kinds_all">全部</string>
-    <!-- 自动跳过后的提示，%1$s 为片段类型 -->
+    
     <string name="intro_skip_notice_seeked">已跳过%1$s</string>
     <string name="intro_skip_notice_ended">%1$s已跳过，进入下一集</string>
     <string name="personal_recommendation_confirm_title">启用个性推荐</string>
@@ -835,7 +836,7 @@
     <string name="setting_proxy_hosts">匹配域名</string>
     <string name="setting_proxy_rules">Proxy 规则</string>
     <string name="setting_proxy_rules_raw">Raw 规则</string>
-    <string name="setting_proxy_rules_hint">Raw JSON：{&quot;proxy&quot;:[{&quot;hosts&quot;:[&quot;example.com&quot;],&quot;urls&quot;:[&quot;socks5://127.0.0.1:1080&quot;]}]}</string>
+    <string name="setting_proxy_rules_hint">Raw JSON：{"proxy":[{"hosts":["example.com"],"urls":["socks5://127.0.0.1:1080"]}]}</string>
     <string name="setting_proxy_default_url">默认代理地址</string>
     <string name="setting_proxy_rule_url">代理地址</string>
     <string name="setting_proxy_edit_rule">编辑规则 %1$d</string>
@@ -906,7 +907,7 @@
     <string name="setting_off">关</string>
     <string name="setting_on">开</string>
 
-    <!-- About -->
+    
     <string name="about_title">关于 WebHomeTV</string>
     <string name="about_free_badge">完全免费</string>
     <string name="about_version">版本 %1$s · %2$s/%3$s</string>
@@ -923,7 +924,7 @@
     <string name="setting_github_proxy_reset">重置默认</string>
     <string name="setting_github_proxy_invalid">请输入有效的 http/https 地址</string>
 
-    <!-- Backup & Restore -->
+    
     <string name="restore_select">选择备份</string>
     <string name="restore_success">恢复成功</string>
     <string name="restore_fail">恢复失败</string>
@@ -931,15 +932,15 @@
     <string name="backup_fail">备份失败</string>
     <string name="backup_permission_denied">需要存储权限才能备份或恢复数据</string>
 
-    <!-- Device Sync -->
+    
     <string name="device_select">选择设备</string>
     <string name="device_offline">设备已离线</string>
     <string name="cast_not_ready">播放信息尚未就绪，请稍后重试</string>
     <string name="sync_success">同步完成</string>
     <string name="sync_progress">正在同步...</string>
     <string name="sync_failed">同步失败</string>
-    <string name="sync_mode_to_remote">本机 -> 选中设备</string>
-    <string name="sync_mode_from_remote">选中设备 -> 本机</string>
+    <string name="sync_mode_to_remote">本机 -&gt; 选中设备</string>
+    <string name="sync_mode_from_remote">选中设备 -&gt; 本机</string>
     <string name="sync_local_device">本机</string>
     <string name="sync_remote_device">选中设备</string>
     <string name="sync_sender">发送</string>
@@ -963,7 +964,9 @@
     <string name="sync_paths_title">同步目录</string>
     <string name="sync_paths_edit">编辑</string>
     <string name="sync_paths_desc">每行一个外置存储相对路径，默认同步 TV、TVBox、TVData。可加入本地包目录；目录内容会随 Jar/脚本保存数据一起同步。</string>
-    <string name="sync_paths_hint">TV&#10;TVBox&#10;TVData</string>
+    <string name="sync_paths_hint">TV
+TVBox
+TVData</string>
     <string name="sync_paths_up">收起</string>
     <string name="sync_paths_refresh">刷新</string>
     <string name="sync_paths_enter">打开目录</string>
@@ -1031,7 +1034,7 @@
     <string name="sync_failed_with_reason">同步失败：%1$s</string>
     <string name="sync_receive_success">已接收同步数据</string>
 
-    <!-- Player -->
+    
     <string name="player">播放核心</string>
     <string name="player_default">默认播放核心</string>
     <string name="player_render">渲染方式</string>
@@ -1359,7 +1362,7 @@
     <string name="lut_unavailable_hdr">HDR/Dolby Vision 内容暂不支持 LUT 调色</string>
     <string name="lut_unavailable_no_video">当前内容没有视频画面</string>
 
-    <!-- Danmaku -->
+    
     <string name="danmaku_load">弹幕加载</string>
     <string name="danmaku_api">搜索接口</string>
     <string name="danmaku_api_invalid">弹幕接口地址无效</string>
@@ -1370,7 +1373,7 @@
     <string name="danmaku_source_default">弹幕</string>
     <string name="danmaku_source_count">%1$d 条</string>
 
-    <!-- Search -->
+    
     <string name="search_keyword">关键字…</string>
     <string name="site_search_hint">搜索站点…</string>
     <string name="site_group_all">全部</string>
@@ -1391,7 +1394,7 @@
     <string name="search_progress">(%1$d/%2$d)</string>
     <string name="search_no_result">没有搜到</string>
 
-    <!-- Dialog -->
+    
     <string name="dialog_edit">修改</string>
     <string name="dialog_positive">确定</string>
     <string name="dialog_negative">取消</string>
@@ -1419,7 +1422,7 @@
     <string name="dialog_config_name">请输入名称…</string>
     <string name="dialog_config_url">请输入地址…</string>
 
-    <!-- Error -->
+    
     <string name="error_config_get">配置取得失败</string>
     <string name="error_play_next">已经是最后一集了！</string>
     <string name="error_play_prev">已经是第一集了！</string>
@@ -1451,12 +1454,12 @@
     <string name="error_play_fallback">%1$s 播放失败，已切换到 %2$s</string>
     <string name="error_play_ijk_unavailable">当前设备不可用 IJK 内核</string>
     <string name="error_play_ijk_unavailable_switch">当前设备不可用 IJK 内核，已切换到 %1$s</string>
-    <string name="error_play_tvbus">错误代码：<xliff:g name="name">%s</xliff:g></string>
+    <string name="error_play_tvbus">错误代码：<ns0:g name="name">%s</ns0:g></string>
     <string name="error_detail">暂无播放数据</string>
     <string name="error_empty">这里什麽都没有 👀</string>
 
-    <!-- Update -->
-    <string name="update_version">发现新版本 <xliff:g name="name">%s</xliff:g></string>
+    
+    <string name="update_version">发现新版本 <ns0:g name="name">%s</ns0:g></string>
     <string name="update_title">版本更新</string>
     <string name="update_hint">选择版本查看更新内容并安装。</string>
     <string name="update_check">正在检测更新…</string>
@@ -1525,7 +1528,7 @@
     <string name="update_download_identity">更新包身份或签名与当前应用不匹配。</string>
     <string name="update_download_source_unavailable">此版本没有可用的更新来源。</string>
 
-    <!-- Crash -->
+    
     <string name="crash_info">发生意外错误\n抱歉给您带来不便</string>
     <string name="crash_restart">重新启动</string>
     <string name="crash_details">错误信息</string>
@@ -1533,7 +1536,7 @@
     <string name="crash_details_message">应用版本：%1$s\n\n%2$s</string>
     <string name="crash_details_close">关闭</string>
 
-    <!-- Hint -->
+    
     <string name="copied">已复制</string>
     <string name="debug_log_dialog_message">调试日志服务已启动。\n\n局域网地址：\n%1$s\n\n本机地址：\n%2$s\n\n电视端没有浏览器也没关系，请在同一局域网的电脑或手机浏览器中打开局域网地址。</string>
     <string name="debug_log_open_browser">打开浏览器</string>
@@ -1561,14 +1564,14 @@
     <string name="manage_page_battery_guide_meizu">魅族：手机管家 → 权限管理/后台管理 → 找到本应用 → 允许后台运行；再到电量管理中把本应用设为不限制。</string>
     <string name="manage_page_battery_guide_default">设置 → 应用 → 本应用 → 电池 → 选择不受限制/不优化；如果有自启动或后台运行选项，也请允许本应用。</string>
 
-    <!-- UNIT -->
+    
     <string name="all">全部</string>
     <string name="yes">有</string>
     <string name="none">无</string>
     <string name="times">倍</string>
     <string name="lines">行</string>
 
-    <!-- SEARCH -->
+    
     <string name="search_scope_all">全部</string>
     <string name="search_scope_current">当前站</string>
     <string name="search_scope_current_hint">当前站：%1$s</string>
@@ -2432,7 +2435,7 @@
 <string name="player_audio_repeat">循环</string>
 
 
-    <!-- Auto-generated missing translations -->
+    
     <string name="live_no_epg">00:00 - 23:59 暂无节目信息</string>
     <string name="site_health_report_ad_blocked">广告拦截 · %1$d 次</string>
     <string name="search_column">搜索布局</string>
