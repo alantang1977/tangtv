@@ -1,0 +1,71 @@
+name: Sync Latest Upstream Release
+on:
+  schedule:
+    - cron: '30 */6 * * *'   # 每 6 小时自动检查一次
+  workflow_dispatch:
+    inputs:
+      include_beta:
+        description: '勾选=最新beta也同步；默认只同步最新稳定版'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+env:
+  UPSTREAM_REPO: Silent1566/webhtv
+
+jobs:
+  sync-latest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 确定要同步的最新版本 tag
+        id: meta
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INCLUDE_BETA: ${{ inputs.include_beta == true && '1' || '0' }}
+        run: |
+          set -euo pipefail
+          UPSTREAM="${{ env.UPSTREAM_REPO }}"
+          if [ "$INCLUDE_BETA" = "1" ]; then
+            TAG="$(gh release list -R "$UPSTREAM" --limit 1 --json tagName,isDraft --jq '[.[] | select(.isDraft == false)][0].tagName')"
+          else
+            TAG="$(gh release list -R "$UPSTREAM" --limit 100 --json tagName,isDraft,isPrerelease --jq '[.[] | select(.isDraft == false and .isPrerelease == false)][0].tagName')"
+          fi
+          test -n "$TAG"
+          echo "target=$TAG" >> "$GITHUB_OUTPUT"
+          echo "目标版本: $TAG"
+
+      - name: 下载上游该版本全部资产
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.meta.outputs.target }}"
+          rm -rf /tmp/assets && mkdir -p /tmp/assets
+          gh release download "$TAG" -R "${{ env.UPSTREAM_REPO }}" -p '*' -D /tmp/assets
+          ls -lh /tmp/assets
+
+      - name: 在本仓库创建同名 Release（已存在则跳过）
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.meta.outputs.target }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "本仓库已存在 $TAG，无需重复同步"
+            exit 0
+          fi
+          NOTES="$(gh release view "$TAG" -R "${{ env.UPSTREAM_REPO }}" --json body --jq .body)"
+          PRE="$(gh release view "$TAG" -R "${{ env.UPSTREAM_REPO }}" --json isPrerelease --jq .isPrerelease)"
+          FLAG=""
+          [ "$PRE" = "true" ] && FLAG="--prerelease"
+          gh release create "$TAG" --target main \
+            --title "$TAG" --notes "$NOTES" $FLAG /tmp/assets/*
+          echo "已同步最新版本 $TAG"
