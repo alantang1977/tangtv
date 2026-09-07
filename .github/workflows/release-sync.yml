@@ -1,0 +1,308 @@
+name: 基于上游Release同步
+# ============================================
+# 基于上游最新 Release Tag 的同步工作流
+# 功能：
+#   1. 每小时自动检查上游 Silent1566/webhtv 的最新 release
+#   2. 发现新 release 时，基于该 release tag 创建分支
+#   3. 自动应用所有自定义修改（app名称、包名、图标、CNB配置、工作流文件等）
+#   4. 推送到 webhtv 仓库的 release/<tag> 分支
+#   5. 推送到 tangtv 仓库的 main 分支
+#   6. 记录已处理的 release tag，避免重复处理
+# 触发方式：
+#   - 定时：每小时检查一次（cron: 0 * * * *）
+#   - 手动：Actions 页面点 "Run workflow"，可输入指定 release tag
+# ============================================
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # 每小时整点检查一次
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: '指定上游 release tag（留空自动使用最新 release）'
+        required: false
+        type: string
+      force:
+        description: '强制重新处理（即使该 release 已处理过）'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+permissions:
+  contents: write
+
+jobs:
+  release-sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ====== 第 1 步：检出代码 ======
+      - name: 检出 main 分支代码
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ====== 第 2 步：配置 Git ======
+      - name: 配置 Git 用户信息
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config pull.rebase false
+
+      # ====== 第 3 步：备份自定义文件 ======
+      - name: 备份自定义脚本和配置
+        run: |
+          mkdir -p /tmp/release-backup
+          if [ -d "custom" ]; then
+            cp -r custom /tmp/release-backup/
+            echo "[backup] custom/ 已备份"
+          fi
+          if [ -d ".github/workflows" ]; then
+            mkdir -p /tmp/release-backup/.github
+            cp -r .github/workflows /tmp/release-backup/.github/
+            echo "[backup] .github/workflows/ 已备份"
+          fi
+          echo "=== 备份内容 ==="
+          find /tmp/release-backup -type f | sort
+
+      # ====== 第 4 步：添加上游并获取所有 tag ======
+      - name: 添加上游仓库并获取所有 tag
+        run: |
+          git remote remove upstream 2>/dev/null || true
+          git remote add upstream https://github.com/Silent1566/webhtv.git
+          git fetch upstream --tags --prune
+          echo "=== 上游最近的 10 个 tag ==="
+          git tag -l 'v*' --sort=-creatordate | head -10
+
+      # ====== 第 5 步：获取上游最新 release tag ======
+      - name: 获取上游最新 release tag
+        id: get_release
+        run: |
+          # 如果手动指定了 tag，直接用
+          MANUAL_TAG="${{ github.event.inputs.release_tag }}"
+          if [ -n "$MANUAL_TAG" ]; then
+            RELEASE_TAG="$MANUAL_TAG"
+            echo "[info] 使用手动指定的 tag: $RELEASE_TAG"
+          else
+            # 自动获取上游最新 release（用 GitHub API）
+            echo "[info] 自动获取上游最新 release..."
+            RELEASE_TAG=$(gh release view --repo Silent1566/webhtv --json tagName --jq .tagName 2>/dev/null || echo "")
+            if [ -z "$RELEASE_TAG" ]; then
+              # 如果 API 失败，用最新的 v* tag 作为备选
+              RELEASE_TAG=$(git tag -l 'v*' --sort=-creatordate | head -1)
+              echo "[warn] GitHub API 获取失败，使用最新 tag: $RELEASE_TAG"
+            else
+              echo "[info] 上游最新 release: $RELEASE_TAG"
+            fi
+          fi
+
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "::error title=无法获取 release tag::请检查上游仓库是否有 release"
+            exit 1
+          fi
+
+          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+
+          # 计算分支名：release/<tag>，把 tag 中的 / 替换成 - 避免分支名嵌套
+          BRANCH_NAME="release/${RELEASE_TAG//\//-}"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "[info] 目标分支名: $BRANCH_NAME"
+
+          # 检查是否已经处理过这个 release
+          LAST_TAG_FILE="custom/.last_release_tag"
+          if [ -f "$LAST_TAG_FILE" ]; then
+            LAST_TAG=$(cat "$LAST_TAG_FILE")
+            echo "上次处理的 release: $LAST_TAG"
+            if [ "$LAST_TAG" = "$RELEASE_TAG" ] && [ "${{ github.event.inputs.force }}" != "true" ]; then
+              echo "has_new=false" >> $GITHUB_OUTPUT
+              echo "[info] 当前 release 已处理过，跳过（如需强制处理请选 force=true）"
+            else
+              echo "has_new=true" >> $GITHUB_OUTPUT
+              echo "[info] 发现新 release，开始处理"
+            fi
+          else
+            echo "has_new=true" >> $GITHUB_OUTPUT
+            echo "[info] 首次运行，开始处理最新 release"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ====== 第 6 步：基于 release tag 创建分支 ======
+      - name: 基于 release tag 创建分支
+        if: steps.get_release.outputs.has_new == 'true'
+        run: |
+          RELEASE_TAG="${{ steps.get_release.outputs.release_tag }}"
+          BRANCH_NAME="${{ steps.get_release.outputs.branch_name }}"
+
+          # checkout 到 release tag（detached HEAD）
+          git checkout "upstream/$RELEASE_TAG" 2>/dev/null || git checkout "$RELEASE_TAG" 2>/dev/null || {
+            echo "::error title=无法 checkout tag::$RELEASE_TAG 不存在"
+            exit 1
+          }
+          echo "[ok] 已 checkout 到 tag: $RELEASE_TAG"
+          git log -1 --oneline
+
+          # 创建并切换到 release 分支
+          git checkout -b "$BRANCH_NAME"
+          echo "[ok] 已创建分支: $BRANCH_NAME"
+
+      # ====== 第 7 步：恢复自定义文件 ======
+      - name: 恢复自定义文件到 release 分支
+        if: steps.get_release.outputs.has_new == 'true'
+        run: |
+          if [ -d "/tmp/release-backup/custom" ]; then
+            rm -rf custom
+            cp -r /tmp/release-backup/custom .
+            echo "[restore] custom/ 已恢复"
+          fi
+          if [ -d "/tmp/release-backup/.github/workflows" ]; then
+            mkdir -p .github
+            rm -rf .github/workflows
+            cp -r /tmp/release-backup/.github/workflows .github/
+            echo "[restore] .github/workflows/ 已恢复"
+          fi
+          echo "=== 恢复后的文件 ==="
+          find custom .github/workflows -type f 2>/dev/null | sort
+
+      # ====== 第 8 步：安装 Python 依赖 ======
+      - name: 安装 Python 依赖（Pillow）
+        if: steps.get_release.outputs.has_new == 'true'
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install Pillow
+          echo "[ok] Pillow 已安装"
+
+      # ====== 第 9 步：应用所有自定义修改 ======
+      - name: 自动应用所有自定义修改
+        if: steps.get_release.outputs.has_new == 'true'
+        run: |
+          echo "=== 应用自定义修改 ==="
+          echo "配置文件内容:"
+          cat custom/config.env
+          echo ""
+          python3 custom/apply_custom.py
+          echo ""
+          echo "=== 修改后的文件状态 ==="
+          git status --short | head -50
+
+      # ====== 第 10 步：生成图标 ======
+      - name: 自动运行图标生成脚本
+        if: steps.get_release.outputs.has_new == 'true'
+        run: |
+          echo "=== 生成应用图标 ==="
+          ICON_STYLE=$(grep '^ICON_STYLE=' custom/config.env | cut -d'"' -f2)
+          if [ -z "$ICON_STYLE" ]; then
+            ICON_STYLE="3d"
+          fi
+          echo "图标风格: $ICON_STYLE"
+          python3 custom/gen_app_icon.py --style "$ICON_STYLE"
+          echo ""
+          echo "=== 图标生成后的文件状态 ==="
+          git status --short | head -50
+
+      # ====== 第 11 步：提交并推送到 webhtv 仓库 ======
+      - name: 提交并推送到 webhtv 仓库
+        if: steps.get_release.outputs.has_new == 'true'
+        run: |
+          RELEASE_TAG="${{ steps.get_release.outputs.release_tag }}"
+          BRANCH_NAME="${{ steps.get_release.outputs.branch_name }}"
+
+          git add -A
+          if git diff --cached --quiet; then
+            echo "[info] 没有变化需要提交"
+          else
+            git commit -m "auto: 基于上游 release $RELEASE_TAG 构建并应用自定义修改"
+            echo "[ok] 已提交"
+          fi
+
+          # 检查 TANGTV_PAT
+          if [ -z "${{ secrets.TANGTV_PAT }}" ]; then
+            echo "::error title=未配置 TANGTV_PAT::无法推送包含工作流文件的分支"
+            exit 1
+          fi
+
+          # 清除默认认证头，使用 TANGTV_PAT 推送
+          git config --unset-all http.https://github.com/.extraheader 2>/dev/null || true
+          git config --global --unset-all http.https://github.com/.extraheader 2>/dev/null || true
+          PUSH_URL="https://x-access-token:${{ secrets.TANGTV_PAT }}@github.com/${{ github.repository }}.git"
+
+          git push "$PUSH_URL" "$BRANCH_NAME" --force
+          echo "[ok] 分支 $BRANCH_NAME 已推送到 webhtv 仓库"
+
+      # ====== 第 12 步：推送到 tangtv 仓库的 main 分支 ======
+      - name: 推送到 tangtv 仓库
+        if: steps.get_release.outputs.has_new == 'true'
+        run: |
+          RELEASE_TAG="${{ steps.get_release.outputs.release_tag }}"
+          BRANCH_NAME="${{ steps.get_release.outputs.branch_name }}"
+
+          echo "=== 推送到 tangtv 仓库 ==="
+          git remote remove tangtv 2>/dev/null || true
+          git remote add tangtv "https://x-access-token:${{ secrets.TANGTV_PAT }}@github.com/alantang1977/tangtv.git"
+          git fetch tangtv
+
+          # 把当前 release 分支推送到 tangtv 的 main 分支（强制覆盖）
+          git push tangtv "HEAD:refs/heads/main" --force
+          echo "[ok] 已推送到 tangtv 仓库的 main 分支 (基于 release $RELEASE_TAG)"
+
+          echo ""
+          echo "=== tangtv 仓库 main 分支最新提交 ==="
+          git log tangtv/main -1 --oneline
+
+      # ====== 第 13 步：更新已处理的 release tag 记录 ======
+      - name: 更新已处理的 release tag 记录
+        if: steps.get_release.outputs.has_new == 'true'
+        run: |
+          RELEASE_TAG="${{ steps.get_release.outputs.release_tag }}"
+
+          # 切换回 main 分支，更新 .last_release_tag
+          git checkout main
+
+          # 恢复自定义文件（因为 checkout main 后工作区是 main 的代码）
+          if [ -d "/tmp/release-backup/custom" ]; then
+            rm -rf custom
+            cp -r /tmp/release-backup/custom .
+          fi
+
+          # 更新记录文件
+          echo "$RELEASE_TAG" > custom/.last_release_tag
+          echo "[ok] 已记录已处理的 release: $RELEASE_TAG"
+
+          git add custom/.last_release_tag
+          git commit -m "bot: 记录已处理的上游 release $RELEASE_TAG" || echo "[info] 无变化"
+
+          # 推送 main 分支（用 TANGTV_PAT，因为包含工作流文件）
+          git config --unset-all http.https://github.com/.extraheader 2>/dev/null || true
+          git config --global --unset-all http.https://github.com/.extraheader 2>/dev/null || true
+          PUSH_URL="https://x-access-token:${{ secrets.TANGTV_PAT }}@github.com/${{ github.repository }}.git"
+          git push "$PUSH_URL" main --force
+          echo "[ok] main 分支已更新并推送"
+
+      # ====== 第 14 步：结果汇总 ======
+      - name: 同步结果汇总
+        run: |
+          echo "========================================"
+          echo "  基于上游 Release 同步完成！"
+          echo "========================================"
+          echo ""
+          RELEASE_TAG="${{ steps.get_release.outputs.release_tag }}"
+          HAS_NEW="${{ steps.get_release.outputs.has_new }}"
+          BRANCH_NAME="${{ steps.get_release.outputs.branch_name }}"
+
+          echo "上游最新 release: $RELEASE_TAG"
+          echo ""
+          if [ "$HAS_NEW" = "true" ]; then
+            echo "处理状态: 已处理新 release"
+            echo "webhtv 分支: $BRANCH_NAME"
+            echo "tangtv 仓库: https://github.com/alantang1977/tangtv (main 分支已更新)"
+          else
+            echo "处理状态: 无新 release，已跳过"
+            echo "（如需强制重新处理，手动触发时选 force=true）"
+          fi
+          echo ""
+          echo "========================================"
